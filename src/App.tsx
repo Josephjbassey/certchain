@@ -90,32 +90,44 @@ const App = () => (
           {/* Dashboard Pages with Sidebar Layout */}
           <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/dashboard/certificates" element={<Certificates />} />
-            <Route path="/dashboard/certificates/:id" element={<CertificateDetail />} />
-            <Route path="/dashboard/issue" element={<IssueCertificate />} />
-            <Route path="/dashboard/batch-issue" element={<BatchIssue />} />
-            <Route path="/dashboard/batch-upload-history" element={<BatchHistory />} />
-            <Route path="/dashboard/recipients" element={<Recipients />} />
-            <Route path="/dashboard/templates" element={<Templates />} />
-            <Route path="/dashboard/institution" element={<Institution />} />
-            <Route path="/dashboard/issuers" element={<Issuers />} />
-            <Route path="/dashboard/analytics" element={<Analytics />} />
-            <Route path="/dashboard/billing" element={<Billing />} />
-            <Route path="/dashboard/webhooks/logs" element={<WebhookLogs />} />
             <Route path="/dashboard/my-certificates" element={<MyCertificates />} />
             <Route path="/dashboard/my-certificates/:id" element={<MyCertificateDetail />} />
+            
+            {/* Issuer & Admin Routes */}
+            <Route path="/dashboard/certificates" element={<ProtectedRoute requiredRole="issuer"><Certificates /></ProtectedRoute>} />
+            <Route path="/dashboard/certificates/:id" element={<ProtectedRoute requiredRole="issuer"><CertificateDetail /></ProtectedRoute>} />
+            <Route path="/dashboard/issue" element={<ProtectedRoute requiredRole="issuer"><IssueCertificate /></ProtectedRoute>} />
+            <Route path="/dashboard/batch-issue" element={<ProtectedRoute requiredRole="issuer"><BatchIssue /></ProtectedRoute>} />
+            <Route path="/dashboard/batch-upload-history" element={<ProtectedRoute requiredRole="issuer"><BatchHistory /></ProtectedRoute>} />
+            <Route path="/dashboard/recipients" element={<ProtectedRoute requiredRole="issuer"><Recipients /></ProtectedRoute>} />
+            <Route path="/dashboard/templates" element={<ProtectedRoute requiredRole="issuer"><Templates /></ProtectedRoute>} />
+            <Route path="/dashboard/analytics" element={<ProtectedRoute requiredRole="issuer"><Analytics /></ProtectedRoute>} />
+            
+            {/* Admin Only Routes */}
+            <Route path="/dashboard/institution" element={<ProtectedRoute requiredRole="admin"><Institution /></ProtectedRoute>} />
+            <Route path="/dashboard/issuers" element={<ProtectedRoute requiredRole="admin"><Issuers /></ProtectedRoute>} />
+            <Route path="/dashboard/billing" element={<ProtectedRoute requiredRole="admin"><Billing /></ProtectedRoute>} />
+            <Route path="/dashboard/webhooks/logs" element={<ProtectedRoute requiredRole="admin"><WebhookLogs /></ProtectedRoute>} />
           </Route>
           
-          {/* Settings & Admin Pages with Sidebar Layout */}
+          {/* Settings Pages with Sidebar Layout */}
           <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
             <Route path="/settings/account" element={<AccountSettings />} />
             <Route path="/settings/notifications" element={<NotificationSettings />} />
             <Route path="/settings/privacy" element={<PrivacySettings />} />
             <Route path="/settings/security" element={<SecuritySettings />} />
-            <Route path="/settings/api-keys" element={<ApiKeys />} />
             <Route path="/settings/wallets" element={<Wallets />} />
-            <Route path="/settings/webhooks" element={<WebhooksSettings />} />
-            <Route path="/settings/integrations" element={<Integrations />} />
+            
+            {/* Issuer & Admin Settings */}
+            <Route path="/settings/api-keys" element={<ProtectedRoute requiredRole="issuer"><ApiKeys /></ProtectedRoute>} />
+            
+            {/* Admin Only Settings */}
+            <Route path="/settings/webhooks" element={<ProtectedRoute requiredRole="admin"><WebhooksSettings /></ProtectedRoute>} />
+            <Route path="/settings/integrations" element={<ProtectedRoute requiredRole="admin"><Integrations /></ProtectedRoute>} />
+          </Route>
+          
+          {/* Admin Pages with Sidebar Layout */}
+          <Route element={<ProtectedRoute requiredRole="admin"><DashboardLayout /></ProtectedRoute>}>
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/users" element={<UserManagement />} />
             <Route path="/admin/institutions" element={<InstitutionManagement />} />

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Shield, Mail, Lock, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
 import { useAuth } from "@/lib/auth-context";
+import { useUserRole, UserRole } from "@/hooks/useUserRole";
 
 const loginSchema = z.object({
   email: z.string().trim().email("Invalid email address"),
@@ -20,10 +21,30 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { data: userRole } = useUserRole();
 
-  // Redirect if already logged in
+  // Redirect based on role when user is logged in
+  useEffect(() => {
+    if (user && userRole) {
+      const redirectPath = getRedirectPath(userRole);
+      navigate(redirectPath);
+    }
+  }, [user, userRole, navigate]);
+
+  const getRedirectPath = (role: UserRole) => {
+    switch (role) {
+      case 'admin':
+        return '/admin';
+      case 'issuer':
+        return '/dashboard';
+      case 'user':
+        return '/dashboard/my-certificates';
+      default:
+        return '/dashboard';
+    }
+  };
+
   if (user) {
-    navigate("/dashboard");
     return null;
   }
 
@@ -49,7 +70,7 @@ const Login = () => {
       }
 
       toast.success("Signed in successfully!");
-      navigate("/dashboard");
+      // Role-based redirect will happen via useEffect
     } catch (error) {
       if (error instanceof z.ZodError) {
         toast.error(error.errors[0].message);

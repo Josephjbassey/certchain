@@ -1,15 +1,45 @@
 import { Award, Users, TrendingUp, Plus, FileCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useCertificateStats, useCertificates } from "@/hooks/useCertificates";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useUserRole } from "@/hooks/useUserRole";
+import { useEffect } from "react";
 
 const Dashboard = () => {
   const { data: stats, isLoading: statsLoading } = useCertificateStats();
   const { data: certificates, isLoading: certsLoading } = useCertificates();
+  const { data: userRole, isLoading: roleLoading } = useUserRole();
+  const navigate = useNavigate();
+
+  // Redirect based on role
+  useEffect(() => {
+    if (!roleLoading && userRole) {
+      if (userRole === 'admin') {
+        navigate('/admin');
+      } else if (userRole === 'user') {
+        navigate('/dashboard/my-certificates');
+      }
+      // issuers stay on /dashboard
+    }
+  }, [userRole, roleLoading, navigate]);
 
   const recentCertificates = certificates?.slice(0, 3) || [];
+
+  // Show loading while checking role
+  if (roleLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <Skeleton className="h-12 w-64 mb-8" />
+        <div className="grid md:grid-cols-4 gap-6">
+          {Array(4).fill(0).map((_, i) => (
+            <Skeleton key={i} className="h-32" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
