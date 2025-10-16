@@ -1,0 +1,178 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    --background: 141 25% 97%;
+    --foreground: 141 15% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 141 15% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 141 15% 12%;
+
+    --primary: 153 100% 25%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 153 80% 35%;
+
+    --secondary: 153 100% 15%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 141 10% 92%;
+    --muted-foreground: 141 5% 45%;
+
+    --accent: 43 60% 65%;
+    --accent-foreground: 141 15% 12%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 141 15% 88%;
+    --input: 141 15% 88%;
+    --ring: 153 100% 25%;
+
+    --radius: 0.75rem;
+    
+    --gradient-hero: linear-gradient(135deg, hsl(153 100% 25%), hsl(153 100% 15%));
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%), hsl(141 25% 98%));
+    --gradient-accent: linear-gradient(135deg, hsl(153 100% 25%), hsl(43 60% 65%));
+    
+    --shadow-elevated: 0 10px 40px -10px hsl(153 100% 25% / 0.2);
+    --shadow-glow: 0 0 40px hsl(153 80% 35% / 0.3);
+    
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 141 35% 6%;
+    --foreground: 141 15% 92%;
+
+    --card: 141 25% 8%;
+    --card-foreground: 141 15% 92%;
+
+    --popover: 141 25% 8%;
+    --popover-foreground: 141 15% 92%;
+
+    --primary: 153 100% 35%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 153 80% 45%;
+
+    --secondary: 153 80% 20%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 141 20% 15%;
+    --muted-foreground: 141 10% 60%;
+
+    --accent: 43 60% 55%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 75% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 141 25% 18%;
+    --input: 141 25% 18%;
+    --ring: 153 100% 35%;
+    
+    --gradient-hero: linear-gradient(135deg, hsl(153 100% 35%), hsl(153 100% 20%));
+    --gradient-card: linear-gradient(180deg, hsl(141 25% 8%), hsl(141 30% 10%));
+    --gradient-accent: linear-gradient(135deg, hsl(153 100% 35%), hsl(43 60% 55%));
+    
+    --shadow-elevated: 0 10px 40px -10px hsl(153 100% 35% / 0.4);
+    --shadow-glow: 0 0 60px hsl(153 80% 45% / 0.5);
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+  
+  .gradient-hero {
+    background: var(--gradient-hero);
+  }
+  
+  .gradient-card {
+    background: var(--gradient-card);
+  }
+  
+  .gradient-accent {
+    background: var(--gradient-accent);
+  }
+  
+  .shadow-elevated {
+    box-shadow: var(--shadow-elevated);
+  }
+  
+  .shadow-glow {
+    box-shadow: var(--shadow-glow);
+  }
+  
+  .transition-smooth {
+    transition: var(--transition-smooth);
+  }
+  
+  .cert-shine {
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .cert-shine::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+      45deg,
+      transparent 30%,
+      rgba(255, 255, 255, 0.1) 50%,
+      transparent 70%
+    );
+    transform: rotate(45deg);
+    animation: shine 3s infinite;
+  }
+  
+  @keyframes shine {
+    0% {
+      transform: translateX(-100%) translateY(-100%) rotate(45deg);
+    }
+    100% {
+      transform: translateX(100%) translateY(100%) rotate(45deg);
+    }
+  }
+}
