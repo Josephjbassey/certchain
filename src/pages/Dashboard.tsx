@@ -13,13 +13,13 @@ const Dashboard = () => {
   const { data: userRole, isLoading: roleLoading } = useUserRole();
   const navigate = useNavigate();
 
-  // Redirect based on role
+  // Redirect based on role - but only for issuers, admin and user stay where they are
   useEffect(() => {
     if (!roleLoading && userRole) {
       if (userRole === 'admin') {
-        navigate('/admin');
+        navigate('/admin', { replace: true });
       } else if (userRole === 'user') {
-        navigate('/dashboard/my-certificates');
+        navigate('/dashboard/my-certificates', { replace: true });
       }
       // issuers stay on /dashboard
     }

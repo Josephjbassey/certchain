@@ -14,16 +14,295 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      certificate_cache: {
+        Row: {
+          certificate_id: string
+          course_name: string
+          created_at: string | null
+          expires_at: string | null
+          hedera_tx_id: string | null
+          id: string
+          ipfs_cid: string
+          issued_at: string
+          issuer_did: string
+          last_synced_at: string | null
+          metadata: Json | null
+          recipient_account_id: string | null
+          recipient_did: string | null
+          recipient_email: string | null
+          revoked_at: string | null
+          serial_number: number
+          token_id: string
+        }
+        Insert: {
+          certificate_id: string
+          course_name: string
+          created_at?: string | null
+          expires_at?: string | null
+          hedera_tx_id?: string | null
+          id?: string
+          ipfs_cid: string
+          issued_at: string
+          issuer_did: string
+          last_synced_at?: string | null
+          metadata?: Json | null
+          recipient_account_id?: string | null
+          recipient_did?: string | null
+          recipient_email?: string | null
+          revoked_at?: string | null
+          serial_number: number
+          token_id: string
+        }
+        Update: {
+          certificate_id?: string
+          course_name?: string
+          created_at?: string | null
+          expires_at?: string | null
+          hedera_tx_id?: string | null
+          id?: string
+          ipfs_cid?: string
+          issued_at?: string
+          issuer_did?: string
+          last_synced_at?: string | null
+          metadata?: Json | null
+          recipient_account_id?: string | null
+          recipient_did?: string | null
+          recipient_email?: string | null
+          revoked_at?: string | null
+          serial_number?: number
+          token_id?: string
+        }
+        Relationships: []
+      }
+      claim_tokens: {
+        Row: {
+          certificate_id: string
+          claimed_at: string | null
+          claimed_by: string | null
+          created_at: string | null
+          expires_at: string
+          id: string
+          issued_by: string
+          nonce: string | null
+          token: string
+        }
+        Insert: {
+          certificate_id: string
+          claimed_at?: string | null
+          claimed_by?: string | null
+          created_at?: string | null
+          expires_at: string
+          id?: string
+          issued_by: string
+          nonce?: string | null
+          token: string
+        }
+        Update: {
+          certificate_id?: string
+          claimed_at?: string | null
+          claimed_by?: string | null
+          created_at?: string | null
+          expires_at?: string
+          id?: string
+          issued_by?: string
+          nonce?: string | null
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "claim_tokens_certificate_id_fkey"
+            columns: ["certificate_id"]
+            isOneToOne: false
+            referencedRelation: "certificate_cache"
+            referencedColumns: ["certificate_id"]
+          },
+        ]
+      }
+      hcs_events: {
+        Row: {
+          consensus_timestamp: string
+          created_at: string | null
+          id: string
+          message_type: string
+          payload: Json | null
+          processed: boolean | null
+          sequence_number: number
+          topic_id: string
+        }
+        Insert: {
+          consensus_timestamp: string
+          created_at?: string | null
+          id?: string
+          message_type: string
+          payload?: Json | null
+          processed?: boolean | null
+          sequence_number: number
+          topic_id: string
+        }
+        Update: {
+          consensus_timestamp?: string
+          created_at?: string | null
+          id?: string
+          message_type?: string
+          payload?: Json | null
+          processed?: boolean | null
+          sequence_number?: number
+          topic_id?: string
+        }
+        Relationships: []
+      }
+      institutions: {
+        Row: {
+          collection_token_id: string | null
+          created_at: string | null
+          did: string
+          domain: string | null
+          hcs_topic_id: string | null
+          hedera_account_id: string
+          id: string
+          logo_url: string | null
+          name: string
+          treasury_account_id: string | null
+          updated_at: string | null
+          verified: boolean | null
+        }
+        Insert: {
+          collection_token_id?: string | null
+          created_at?: string | null
+          did: string
+          domain?: string | null
+          hcs_topic_id?: string | null
+          hedera_account_id: string
+          id?: string
+          logo_url?: string | null
+          name: string
+          treasury_account_id?: string | null
+          updated_at?: string | null
+          verified?: boolean | null
+        }
+        Update: {
+          collection_token_id?: string | null
+          created_at?: string | null
+          did?: string
+          domain?: string | null
+          hcs_topic_id?: string | null
+          hedera_account_id?: string
+          id?: string
+          logo_url?: string | null
+          name?: string
+          treasury_account_id?: string | null
+          updated_at?: string | null
+          verified?: boolean | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          did: string | null
+          display_name: string | null
+          email: string | null
+          hedera_account_id: string | null
+          id: string
+          institution_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          did?: string | null
+          display_name?: string | null
+          email?: string | null
+          hedera_account_id?: string | null
+          id: string
+          institution_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          did?: string | null
+          display_name?: string | null
+          email?: string | null
+          hedera_account_id?: string | null
+          id?: string
+          institution_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      webhooks: {
+        Row: {
+          active: boolean | null
+          created_at: string | null
+          events: string[]
+          id: string
+          institution_id: string | null
+          secret: string
+          url: string
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string | null
+          events: string[]
+          id?: string
+          institution_id?: string | null
+          secret: string
+          url: string
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string | null
+          events?: string[]
+          id?: string
+          institution_id?: string | null
+          secret?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhooks_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "issuer" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +429,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "issuer", "user"],
+    },
   },
 } as const

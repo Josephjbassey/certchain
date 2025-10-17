@@ -25,11 +25,11 @@ const Login = () => {
 
   // Redirect based on role when user is logged in
   useEffect(() => {
-    if (user && userRole) {
+    if (user && userRole && !isLoading) {
       const redirectPath = getRedirectPath(userRole);
-      navigate(redirectPath);
+      navigate(redirectPath, { replace: true });
     }
-  }, [user, userRole, navigate]);
+  }, [user, userRole, isLoading, navigate]);
 
   const getRedirectPath = (role: UserRole) => {
     switch (role) {

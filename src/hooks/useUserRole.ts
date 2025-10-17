@@ -10,7 +10,7 @@ export const useUserRole = () => {
   return useQuery({
     queryKey: ['user-role', user?.id],
     queryFn: async () => {
-      if (!user) return 'user' as UserRole;
+      if (!user) return null;
 
       // @ts-ignore - Supabase types not generated
       const { data, error } = await supabase.from('user_roles').select('role').eq('user_id', user.id).maybeSingle();
@@ -20,10 +20,17 @@ export const useUserRole = () => {
         return 'user' as UserRole;
       }
 
+      if (!data) {
+        // User doesn't have a role yet, assign default
+        console.log('No role found for user, assigning default user role');
+        return 'user' as UserRole;
+      }
+
       const role = data && typeof data === 'object' && 'role' in data ? (data as any).role : 'user';
       return (role || 'user') as UserRole;
     },
     enabled: !!user,
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
   });
 };
 
