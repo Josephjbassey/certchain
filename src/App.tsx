@@ -87,54 +87,52 @@ const App = () => (
           <Route path="/auth/verify-email" element={<VerifyEmail />} />
           <Route path="/auth/2fa" element={<TwoFactor />} />
           
-          {/* Dashboard Pages with Sidebar Layout */}
+          {/* == Authenticated Routes == */}
+
+          {/* User, Issuer, and Admin Routes */}
           <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
-            <Route path="/dashboard" element={<Dashboard />} />
+            {/* The /dashboard route will redirect based on role inside the Dashboard component */}
+            <Route path="/dashboard" element={<Dashboard />} /> 
             <Route path="/dashboard/my-certificates" element={<MyCertificates />} />
             <Route path="/dashboard/my-certificates/:id" element={<MyCertificateDetail />} />
-            
-            {/* Issuer & Admin Routes */}
-            <Route path="/dashboard/certificates" element={<ProtectedRoute requiredRole="issuer"><Certificates /></ProtectedRoute>} />
-            <Route path="/dashboard/certificates/:id" element={<ProtectedRoute requiredRole="issuer"><CertificateDetail /></ProtectedRoute>} />
-            <Route path="/dashboard/issue" element={<ProtectedRoute requiredRole="issuer"><IssueCertificate /></ProtectedRoute>} />
-            <Route path="/dashboard/batch-issue" element={<ProtectedRoute requiredRole="issuer"><BatchIssue /></ProtectedRoute>} />
-            <Route path="/dashboard/batch-upload-history" element={<ProtectedRoute requiredRole="issuer"><BatchHistory /></ProtectedRoute>} />
-            <Route path="/dashboard/recipients" element={<ProtectedRoute requiredRole="issuer"><Recipients /></ProtectedRoute>} />
-            <Route path="/dashboard/templates" element={<ProtectedRoute requiredRole="issuer"><Templates /></ProtectedRoute>} />
-            <Route path="/dashboard/analytics" element={<ProtectedRoute requiredRole="issuer"><Analytics /></ProtectedRoute>} />
-            
-            {/* Admin Only Routes */}
-            <Route path="/dashboard/institution" element={<ProtectedRoute requiredRole="admin"><Institution /></ProtectedRoute>} />
-            <Route path="/dashboard/issuers" element={<ProtectedRoute requiredRole="admin"><Issuers /></ProtectedRoute>} />
-            <Route path="/dashboard/billing" element={<ProtectedRoute requiredRole="admin"><Billing /></ProtectedRoute>} />
-            <Route path="/dashboard/webhooks/logs" element={<ProtectedRoute requiredRole="admin"><WebhookLogs /></ProtectedRoute>} />
-          </Route>
-          
-          {/* Settings Pages with Sidebar Layout */}
-          <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
             <Route path="/settings/account" element={<AccountSettings />} />
             <Route path="/settings/notifications" element={<NotificationSettings />} />
             <Route path="/settings/privacy" element={<PrivacySettings />} />
             <Route path="/settings/security" element={<SecuritySettings />} />
             <Route path="/settings/wallets" element={<Wallets />} />
-            
-            {/* Issuer & Admin Settings */}
-            <Route path="/settings/api-keys" element={<ProtectedRoute requiredRole="issuer"><ApiKeys /></ProtectedRoute>} />
-            
-            {/* Admin Only Settings */}
-            <Route path="/settings/webhooks" element={<ProtectedRoute requiredRole="admin"><WebhooksSettings /></ProtectedRoute>} />
-            <Route path="/settings/integrations" element={<ProtectedRoute requiredRole="admin"><Integrations /></ProtectedRoute>} />
           </Route>
-          
-          {/* Admin Pages with Sidebar Layout */}
+
+          {/* Issuer and Admin Routes */}
+          <Route element={<ProtectedRoute requiredRole="issuer"><DashboardLayout /></ProtectedRoute>}>
+            <Route path="/dashboard/certificates" element={<Certificates />} />
+            <Route path="/dashboard/certificates/:id" element={<CertificateDetail />} />
+            <Route path="/dashboard/issue" element={<IssueCertificate />} />
+            <Route path="/dashboard/batch-issue" element={<BatchIssue />} />
+            <Route path="/dashboard/batch-upload-history" element={<BatchHistory />} />
+            <Route path="/dashboard/recipients" element={<Recipients />} />
+            <Route path="/dashboard/templates" element={<Templates />} />
+            <Route path="/dashboard/analytics" element={<Analytics />} />
+            <Route path="/settings/api-keys" element={<ApiKeys />} />
+          </Route>
+
+          {/* Admin Only Routes */}
           <Route element={<ProtectedRoute requiredRole="admin"><DashboardLayout /></ProtectedRoute>}>
+            {/* Admin Dashboard */}
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin/users" element={<UserManagement />} />
             <Route path="/admin/institutions" element={<InstitutionManagement />} />
             <Route path="/admin/settings" element={<SystemSettings />} />
             <Route path="/admin/logs" element={<AdminLogs />} />
+
+            {/* Admin-level Dashboard & Settings pages */}
+            <Route path="/dashboard/institution" element={<Institution />} />
+            <Route path="/dashboard/issuers" element={<Issuers />} />
+            <Route path="/dashboard/billing" element={<Billing />} />
+            <Route path="/dashboard/webhooks/logs" element={<WebhookLogs />} />
+            <Route path="/settings/webhooks" element={<WebhooksSettings />} />
+            <Route path="/settings/integrations" element={<Integrations />} />
           </Route>
-          
+
           {/* Profile Pages (without sidebar) */}
           <Route path="/profile/:accountId" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
           
@@ -142,7 +140,7 @@ const App = () => (
           <Route path="/claim/:claimToken" element={<Claim />} />
           <Route path="/credentials" element={<ProtectedRoute><Credentials /></ProtectedRoute>} />
           <Route path="/identity/did-setup" element={<ProtectedRoute><DidSetup /></ProtectedRoute>} />
-          <Route path="/ai-console" element={<ProtectedRoute><AiConsole /></ProtectedRoute>} />
+          <Route path="/ai-console" element={<ProtectedRoute requiredRole="issuer"><AiConsole /></ProtectedRoute>} />
           
           {/* Catch-all */}
           <Route path="*" element={<NotFound />} />

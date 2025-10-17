@@ -25,28 +25,32 @@ CertChain is a comprehensive decentralized application for issuing, verifying, a
 ## 🏗️ Architecture
 
 ### Frontend (This Repository)
+
 - **Framework**: React 18 + Vite + TypeScript
-- **UI**: TailwindCSS + shadcn/ui components
-- **State**: Zustand (ready for integration)
+- **UI**: TailwindCSS + `shadcn/ui` components
+- **State**: React Context (`AuthProvider`) + TanStack Query (`react-query`)
 - **Routing**: React Router v6
 - **Theme**: Dark mode with emerald green (#007E3A) primary color
 
 ### Backend (Separate Deployment Required)
-- **API**: Node.js + Express + TypeScript
+
+- **API**: Supabase (Edge Functions, Database, Auth)
 - **Blockchain**: Hedera SDK (`@hashgraph/sdk`)
-- **DID/VC**: `@hashgraph/did-sdk-js`
+- **DID/VC**: `@hashgraph/did-sdk-js` (in Edge Functions)
 - **Storage**: Pinata (server-side) + IPFS
 - **Wallet**: Hedera Wallet Connect integration
 - **AI**: Modular n8n microservice (optional)
 - **Deployment**: Docker on Railway
 
 ### Smart Contracts (Optional)
+
 - **HTS Native**: Primary approach using Hedera Token Service
 - **Solidity**: Optional `CertificateRegistry.sol` + `SoulboundNFT.sol` via Hardhat
 
 ## 🚀 Quick Start
 
 ### Prerequisites
+
 - Node.js 18+ and npm
 - Hedera testnet account (get one at [portal.hedera.com](https://portal.hedera.com))
 - Pinata API key (for IPFS uploads)
@@ -70,33 +74,52 @@ The app will be available at `http://localhost:8080`
 ## 📦 Pages & Routes
 
 ### Public Pages
+
 - `/` - Landing page with hero and features
 - `/verify` - Certificate verification
 - `/verify/[id]` - Certificate details
 - `/pricing` - Pricing plans
-- `/about` - About CertChain
-- `/docs` - Documentation
+- `/about` - About CertChain & `/docs` - Documentation
 
 ### Authentication
+
 - `/auth/login` - Sign in
 - `/auth/signup` - Register account
 - `/auth/forgot-password` - Password recovery
+- `/auth/2fa` - Two-Factor Authentication
 
 ### Dashboard (Authenticated)
-- `/dashboard` - Overview with stats
-- `/dashboard/certificates` - All certificates
+
+#### User Routes
+
+- `/dashboard/my-certificates` - View own certificates
+
+#### Issuer Routes (`issuer` & `admin`)
+
+- `/dashboard` - Main issuer dashboard
+- `/dashboard/certificates` - All issued certificates
 - `/dashboard/issue` - Issue single certificate
-- `/dashboard/batch-issue` - Bulk certificate upload
+- `/dashboard/batch-issue` - Bulk certificate issuance
 - `/dashboard/recipients` - Manage recipients
 - `/dashboard/templates` - Certificate templates
 - `/dashboard/analytics` - Issuance analytics
 
+#### Admin Routes (`admin` only)
+
+- `/admin` - Admin dashboard home
+- `/admin/users` - User management
+- `/admin/institutions` - Institution management
+- `/admin/logs` - System audit logs
+- `/dashboard/institution` - Manage own institution settings
+- `/dashboard/issuers` - Manage authorized issuers
+- `/dashboard/billing` - Billing & Subscriptions
+
 ### Settings
+
 - `/settings/account` - Account settings
 - `/settings/wallets` - Wallet management
 - `/settings/api-keys` - API key management
 - `/settings/webhooks` - Webhook configuration
-- `/settings/security` - Security settings
 
 ## 🔧 Backend Integration
 
@@ -105,12 +128,14 @@ The app will be available at `http://localhost:8080`
 This frontend requires a backend API with the following endpoints:
 
 #### Authentication
+
 ```typescript
-POST /api/auth/connect-wallet
-POST /api/auth/did-verify
+POST / api / auth / connect - wallet;
+POST / api / auth / did - verify;
 ```
 
 #### Certificates
+
 ```typescript
 POST /api/certificates              // Issue certificate
 GET  /api/certificates              // List certificates
@@ -120,17 +145,20 @@ POST /api/certificates/:id/revoke   // Revoke certificate
 ```
 
 #### Verification
+
 ```typescript
-POST /api/claim/generate            // Generate claim token
-POST /api/claim/verify              // Verify claim token
+POST / api / claim / generate; // Generate claim token
+POST / api / claim / verify; // Verify claim token
 ```
 
 #### Storage
+
 ```typescript
-POST /api/upload/pinata             // Upload to Pinata/IPFS
+POST / api / upload / pinata; // Upload to Pinata/IPFS
 ```
 
 #### Hedera Integration
+
 ```typescript
 GET  /api/mirror/owner/:accountId   // Get NFTs by owner
 GET  /api/hcs/topic/:topicId/messages // Get HCS messages
@@ -256,8 +284,8 @@ const vc = await HcsVc.issue({
   subject: recipientDid,
   credentialSubject: {
     certificateId: "cert-001",
-    courseName: "Blockchain Development"
-  }
+    courseName: "Blockchain Development",
+  },
 });
 ```
 
@@ -273,7 +301,7 @@ const result = await pinata.pinJSONToIPFS({
   certificateId: "cert-001",
   recipientName: "John Doe",
   courseName: "Advanced Blockchain",
-  issuedDate: new Date().toISOString()
+  issuedDate: new Date().toISOString(),
 });
 
 console.log(`IPFS CID: ${result.IpfsHash}`);
@@ -282,6 +310,7 @@ console.log(`IPFS CID: ${result.IpfsHash}`);
 ## 🚢 Deployment
 
 ### Frontend Deployment (This Repository)
+
 ```bash
 npm run build
 # Deploy dist/ to Vercel, Netlify, or any static host
@@ -340,6 +369,7 @@ MIT License - see [LICENSE](LICENSE) file for details
 ## 📧 Support
 
 For questions and support:
+
 - Create an issue in this repository
 - Join our Discord community
 - Email: support@certchain.example

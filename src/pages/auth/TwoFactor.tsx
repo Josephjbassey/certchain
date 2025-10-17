@@ -1,29 +1,55 @@
 import { useState } from "react";
-import { Shield, KeyRound } from "lucide-react";
+import { Shield, KeyRound, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth-context";
 
 const TwoFactor = () => {
   const [code, setCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const { refreshSession } = useAuth();
+  const email = location.state?.email; // Passed from login page
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
-    setTimeout(() => {
-      if (code.length === 6) {
-        toast.success("2FA verified successfully!");
-        navigate("/dashboard");
-      } else {
-        toast.error("Invalid code");
-      }
+
+    if (!email) {
+      toast.error("Session error. Please try logging in again.");
       setIsLoading(false);
-    }, 1000);
+      navigate("/auth/login");
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.auth.verifyOtp({
+        email,
+        token: code,
+        type: 'totp',
+      });
+
+      if (error) {
+        throw new Error(error.message || "Invalid 2FA code.");
+      }
+
+      if (data.session) {
+        await refreshSession(); // Update the auth context
+        toast.success("2FA verified successfully!");
+        navigate("/dashboard"); // This will now redirect based on role
+      } else {
+        throw new Error("Verification failed. Please try again.");
+      }
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -62,7 +88,12 @@ const TwoFactor = () => {
             </div>
 
             <Button type="submit" variant="hero" size="lg" className="w-full" disabled={isLoading || code.length !== 6}>
-              {isLoading ? "Verifying..." : "Verify"}
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Verifying...
+                </>
+              ) : "Verify"}
             </Button>
 
             <div className="text-center space-y-2">
