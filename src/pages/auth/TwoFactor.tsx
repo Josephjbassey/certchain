@@ -13,7 +13,6 @@ const TwoFactor = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const { refreshSession } = useAuth();
   const email = location.state?.email; // Passed from login page
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -31,7 +30,7 @@ const TwoFactor = () => {
       const { data, error } = await supabase.auth.verifyOtp({
         email,
         token: code,
-        type: 'totp',
+        type: 'email',
       });
 
       if (error) {
@@ -39,7 +38,7 @@ const TwoFactor = () => {
       }
 
       if (data.session) {
-        await refreshSession(); // Update the auth context
+        // Auth context will automatically update via onAuthStateChange
         toast.success("2FA verified successfully!");
         navigate("/dashboard"); // This will now redirect based on role
       } else {
