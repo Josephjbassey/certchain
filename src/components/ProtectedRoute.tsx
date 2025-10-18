@@ -42,18 +42,31 @@ export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) 
 
 // Helper function to check if user has required permission
 const checkRolePermission = (userRole: UserRole, requiredRole: UserRole): boolean => {
-  // Admin has access to everything
-  if (userRole === 'admin') return true;
+  const roleStr = userRole as string;
+  const requiredStr = requiredRole as string;
   
-  // Issuer has access to issuer and user features
-  if (userRole === 'issuer' && (requiredRole === 'issuer' || requiredRole === 'user')) {
-    return true;
+  // Super admin has access to everything
+  if (roleStr === 'super_admin') return true;
+  
+  // Institution admin has access to institution features and below
+  if (roleStr === 'institution_admin') {
+    return ['institution_admin', 'instructor', 'candidate', 'issuer', 'user'].includes(requiredStr);
   }
   
-  // User only has access to user features
-  if (userRole === 'user' && requiredRole === 'user') {
-    return true;
+  // Instructor has access to instructor and candidate features
+  if (roleStr === 'instructor') {
+    return ['instructor', 'candidate', 'user'].includes(requiredStr);
   }
+  
+  // Candidate only has access to candidate features
+  if (roleStr === 'candidate') {
+    return ['candidate', 'user'].includes(requiredStr);
+  }
+  
+  // Backward compatibility for old roles
+  if (roleStr === 'admin') return true;
+  if (roleStr === 'issuer') return ['issuer', 'user', 'instructor', 'candidate'].includes(requiredStr);
+  if (roleStr === 'user') return requiredStr === 'user';
   
   return false;
 };
@@ -61,6 +74,15 @@ const checkRolePermission = (userRole: UserRole, requiredRole: UserRole): boolea
 // Helper function to get default path based on role
 const getDefaultPathForRole = (role: UserRole): string => {
   switch (role) {
+    case 'super_admin':
+      return '/admin';
+    case 'institution_admin':
+      return '/institution';
+    case 'instructor':
+      return '/instructor';
+    case 'candidate':
+      return '/candidate/my-certificates';
+    // Backward compatibility
     case 'admin':
       return '/admin';
     case 'issuer':

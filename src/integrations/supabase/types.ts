@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string | null
+          id: string
+          institution_id: string | null
+          metadata: Json | null
+          target_id: string | null
+          target_type: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          id?: string
+          institution_id?: string | null
+          metadata?: Json | null
+          target_id?: string | null
+          target_type?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          id?: string
+          institution_id?: string | null
+          metadata?: Json | null
+          target_id?: string | null
+          target_type?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_logs_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "audit_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       certificate_cache: {
         Row: {
           certificate_id: string
@@ -22,8 +70,10 @@ export type Database = {
           expires_at: string | null
           hedera_tx_id: string | null
           id: string
+          institution_id: string | null
           ipfs_cid: string
           issued_at: string
+          issued_by_user_id: string | null
           issuer_did: string
           last_synced_at: string | null
           metadata: Json | null
@@ -41,8 +91,10 @@ export type Database = {
           expires_at?: string | null
           hedera_tx_id?: string | null
           id?: string
+          institution_id?: string | null
           ipfs_cid: string
           issued_at: string
+          issued_by_user_id?: string | null
           issuer_did: string
           last_synced_at?: string | null
           metadata?: Json | null
@@ -60,8 +112,10 @@ export type Database = {
           expires_at?: string | null
           hedera_tx_id?: string | null
           id?: string
+          institution_id?: string | null
           ipfs_cid?: string
           issued_at?: string
+          issued_by_user_id?: string | null
           issuer_did?: string
           last_synced_at?: string | null
           metadata?: Json | null
@@ -72,7 +126,22 @@ export type Database = {
           serial_number?: number
           token_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "certificate_cache_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificate_cache_issued_by_user_id_fkey"
+            columns: ["issued_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       claim_tokens: {
         Row: {
@@ -153,6 +222,7 @@ export type Database = {
       }
       institutions: {
         Row: {
+          admin_user_id: string | null
           collection_token_id: string | null
           created_at: string | null
           did: string
@@ -162,11 +232,14 @@ export type Database = {
           id: string
           logo_url: string | null
           name: string
+          status: string | null
+          subscription_tier: string | null
           treasury_account_id: string | null
           updated_at: string | null
           verified: boolean | null
         }
         Insert: {
+          admin_user_id?: string | null
           collection_token_id?: string | null
           created_at?: string | null
           did: string
@@ -176,11 +249,14 @@ export type Database = {
           id?: string
           logo_url?: string | null
           name: string
+          status?: string | null
+          subscription_tier?: string | null
           treasury_account_id?: string | null
           updated_at?: string | null
           verified?: boolean | null
         }
         Update: {
+          admin_user_id?: string | null
           collection_token_id?: string | null
           created_at?: string | null
           did?: string
@@ -190,11 +266,70 @@ export type Database = {
           id?: string
           logo_url?: string | null
           name?: string
+          status?: string | null
+          subscription_tier?: string | null
           treasury_account_id?: string | null
           updated_at?: string | null
           verified?: boolean | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "institutions_admin_user_id_fkey"
+            columns: ["admin_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      instructor_candidates: {
+        Row: {
+          candidate_id: string
+          enrolled_at: string | null
+          id: string
+          institution_id: string
+          instructor_id: string
+          status: string | null
+        }
+        Insert: {
+          candidate_id: string
+          enrolled_at?: string | null
+          id?: string
+          institution_id: string
+          instructor_id: string
+          status?: string | null
+        }
+        Update: {
+          candidate_id?: string
+          enrolled_at?: string | null
+          id?: string
+          institution_id?: string
+          instructor_id?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instructor_candidates_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "instructor_candidates_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "instructor_candidates_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -250,6 +385,64 @@ export type Database = {
         }
         Relationships: []
       }
+      user_scopes: {
+        Row: {
+          can_issue_certificates: boolean | null
+          can_manage_users: boolean | null
+          can_view_analytics: boolean | null
+          created_at: string | null
+          created_by: string | null
+          id: string
+          institution_id: string | null
+          scope_type: string | null
+          user_id: string
+        }
+        Insert: {
+          can_issue_certificates?: boolean | null
+          can_manage_users?: boolean | null
+          can_view_analytics?: boolean | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          institution_id?: string | null
+          scope_type?: string | null
+          user_id: string
+        }
+        Update: {
+          can_issue_certificates?: boolean | null
+          can_manage_users?: boolean | null
+          can_view_analytics?: boolean | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          institution_id?: string | null
+          scope_type?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_scopes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_scopes_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_scopes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       webhooks: {
         Row: {
           active: boolean | null
@@ -293,11 +486,35 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_manage_user: {
+        Args: { _manager_id: string; _target_user_id: string }
+        Returns: boolean
+      }
+      get_instructor_candidates: {
+        Args: { _instructor_id: string }
+        Returns: string[]
+      }
+      get_user_institution: {
+        Args: { _user_id: string }
+        Returns: string
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_institution_admin: {
+        Args: { _institution_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_instructor: {
+        Args: { _institution_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_super_admin: {
+        Args: { _user_id: string }
         Returns: boolean
       }
     }
