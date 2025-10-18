@@ -5,6 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useCertificateStats, useCertificates } from "@/hooks/useCertificates";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useUserRole } from "@/hooks/useUserRole";
+import type { UserRole } from "@/hooks/useUserRole";
 import { useEffect } from "react";
 
 const Dashboard = () => {
@@ -13,17 +14,35 @@ const Dashboard = () => {
   const { data: userRole, isLoading: roleLoading } = useUserRole();
   const navigate = useNavigate();
 
-  // Redirect based on role - but only for issuers, admin and user stay where they are
+  // Redirect based on role to role-specific dashboard
   useEffect(() => {
     if (!roleLoading && userRole) {
-      if (userRole === 'admin') {
-        navigate('/admin', { replace: true });
-      } else if (userRole === 'user') {
-        navigate('/dashboard/my-certificates', { replace: true });
+      const rolePrefix = getRolePrefix(userRole);
+      const expectedPath = `/${rolePrefix}/dashboard`;
+      
+      // If we're on /dashboard (legacy) redirect to role-based path
+      if (window.location.pathname === '/dashboard') {
+        navigate(expectedPath, { replace: true });
       }
-      // issuers stay on /dashboard
     }
   }, [userRole, roleLoading, navigate]);
+
+  const getRolePrefix = (role: UserRole): string => {
+    switch (role) {
+      case 'super_admin':
+      case 'admin':
+        return 'super_admin';
+      case 'institution_admin':
+        return 'institution';
+      case 'instructor':
+      case 'issuer':
+        return 'instructor';
+      case 'candidate':
+      case 'user':
+      default:
+        return 'candidate';
+    }
+  };
 
   const recentCertificates = certificates?.slice(0, 3) || [];
 

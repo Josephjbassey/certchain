@@ -33,14 +33,23 @@ const Login = () => {
 
   const getRedirectPath = (role: UserRole) => {
     switch (role) {
+      case 'super_admin':
+        return '/admin/dashboard';
+      case 'institution_admin':
+        return '/institution/dashboard';
+      case 'instructor':
+        return '/instructor/dashboard';
+      case 'candidate':
+        return '/candidate/dashboard';
+      // Backward compatibility
       case 'admin':
-        return '/admin';
+        return '/admin/dashboard';
       case 'issuer':
-        return '/dashboard';
+        return '/instructor/dashboard';
       case 'user':
-        return '/dashboard/my-certificates';
+        return '/candidate/dashboard';
       default:
-        return '/dashboard';
+        return '/candidate/dashboard';
     }
   };
 

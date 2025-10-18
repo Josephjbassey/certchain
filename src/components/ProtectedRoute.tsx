@@ -1,7 +1,8 @@
 import { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth-context';
-import { useUserRole, UserRole } from '@/hooks/useUserRole';
+import { useUserRole, useHasRole } from '@/hooks/useUserRole';
+import type { UserRole } from '@/hooks/useUserRole';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -11,9 +12,10 @@ interface ProtectedRouteProps {
 export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
   const { user, loading: authLoading } = useAuth();
   const { data: userRole, isLoading: roleLoading } = useUserRole();
+  const { hasRole, isLoading: hasRoleLoading } = useHasRole(requiredRole || 'candidate');
 
   // Show loading state while checking auth and role
-  if (authLoading || roleLoading) {
+  if (authLoading || roleLoading || hasRoleLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
@@ -27,12 +29,10 @@ export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) 
   }
 
   // Check role requirements
-  if (requiredRole && userRole) {
-    const hasPermission = checkRolePermission(userRole, requiredRole);
-    
-    if (!hasPermission) {
+  if (requiredRole) {
+    if (!hasRole) {
       // Redirect based on actual role
-      const redirectPath = getDefaultPathForRole(userRole);
+      const redirectPath = getDefaultPathForRole(userRole || 'candidate');
       return <Navigate to={redirectPath} replace />;
     }
   }
@@ -40,55 +40,24 @@ export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) 
   return <>{children}</>;
 };
 
-// Helper function to check if user has required permission
-const checkRolePermission = (userRole: UserRole, requiredRole: UserRole): boolean => {
-  const roleStr = userRole as string;
-  const requiredStr = requiredRole as string;
-  
-  // Super admin has access to everything
-  if (roleStr === 'super_admin') return true;
-  
-  // Institution admin has access to institution features and below
-  if (roleStr === 'institution_admin') {
-    return ['institution_admin', 'instructor', 'candidate', 'issuer', 'user'].includes(requiredStr);
-  }
-  
-  // Instructor has access to instructor and candidate features
-  if (roleStr === 'instructor') {
-    return ['instructor', 'candidate', 'user'].includes(requiredStr);
-  }
-  
-  // Candidate only has access to candidate features
-  if (roleStr === 'candidate') {
-    return ['candidate', 'user'].includes(requiredStr);
-  }
-  
-  // Backward compatibility for old roles
-  if (roleStr === 'admin') return true;
-  if (roleStr === 'issuer') return ['issuer', 'user', 'instructor', 'candidate'].includes(requiredStr);
-  if (roleStr === 'user') return requiredStr === 'user';
-  
-  return false;
-};
-
 // Helper function to get default path based on role
 const getDefaultPathForRole = (role: UserRole): string => {
   switch (role) {
     case 'super_admin':
-      return '/admin';
+      return '/admin/dashboard';
     case 'institution_admin':
-      return '/institution';
+      return '/institution/dashboard';
     case 'instructor':
-      return '/instructor';
+      return '/instructor/dashboard';
     case 'candidate':
-      return '/candidate/my-certificates';
+      return '/candidate/dashboard';
     // Backward compatibility
     case 'admin':
-      return '/admin';
+      return '/super/dashboard';
     case 'issuer':
-      return '/dashboard';
+      return '/instructor/dashboard';
     case 'user':
-      return '/dashboard/my-certificates';
+      return '/candidate/dashboard';
     default:
       return '/';
   }
