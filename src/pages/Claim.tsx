@@ -62,7 +62,7 @@ const Claim = () => {
       if (error) throw error;
 
       toast.success("Certificate claimed successfully!");
-      navigate(`/dashboard/my-certificates/${data.certificateId}`);
+      navigate(`/candidate/my-certificates/${data.certificateId}`);
     } catch (err) {
       console.error("Error claiming certificate:", err);
       toast.error("Failed to claim certificate");

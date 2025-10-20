@@ -46,9 +46,9 @@ const getRolePrefix = (role: UserRole | null | undefined): string => {
   switch (role) {
     case 'super_admin':
     case 'admin':
-      return 'super_admin';
+      return 'admin';
     case 'institution_admin':
-      return 'institution_admin';
+      return 'institution';
     case 'instructor':
     case 'issuer':
       return 'instructor';

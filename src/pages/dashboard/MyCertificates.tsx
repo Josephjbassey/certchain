@@ -12,13 +12,13 @@ const MyCertificates = () => {
     <div className="min-h-screen bg-background">
       <header className="border-b border-border/40 backdrop-blur-sm sticky top-0 z-50 bg-background/80">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link to="/dashboard" className="flex items-center gap-2">
+          <Link to="/candidate/dashboard" className="flex items-center gap-2">
             <Shield className="h-8 w-8 text-primary" />
             <span className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
               CertChain
             </span>
           </Link>
-          <Link to="/dashboard">
+          <Link to="/candidate/dashboard">
             <Button variant="ghost" size="sm">Back</Button>
           </Link>
         </div>
@@ -79,7 +79,7 @@ const MyCertificates = () => {
                         </span>
                       )}
                     </div>
-                    <Link to={`/dashboard/my-certificates/${cert.certificate_id}`}>
+                    <Link to={`/candidate/my-certificates/${cert.certificate_id}`}>
                       <Button variant="outline" size="sm">View Details</Button>
                     </Link>
                   </div>
