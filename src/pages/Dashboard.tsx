@@ -31,7 +31,7 @@ const Dashboard = () => {
     switch (role) {
       case 'super_admin':
       case 'admin':
-        return 'super_admin';
+        return 'admin';
       case 'institution_admin':
         return 'institution';
       case 'instructor':
@@ -45,6 +45,7 @@ const Dashboard = () => {
   };
 
   const recentCertificates = certificates?.slice(0, 3) || [];
+  const rolePrefix = userRole ? getRolePrefix(userRole) : 'candidate';
 
   // Show loading while checking role
   if (roleLoading) {
@@ -70,7 +71,7 @@ const Dashboard = () => {
               Manage your certificates and track issuance activity
             </p>
           </div>
-          <Link to="/dashboard/issue">
+          <Link to={`/${rolePrefix}/issue`}>
             <Button variant="hero" size="lg" className="mt-4 md:mt-0">
               <Plus className="h-5 w-5" />
               <span className="ml-2">Issue Certificate</span>
@@ -139,7 +140,7 @@ const Dashboard = () => {
             <Award className="h-10 w-10 text-primary" />
             <h3 className="font-semibold text-lg">Issue Certificate</h3>
             <p className="text-sm text-muted-foreground">Create and mint a new certificate NFT</p>
-            <Link to="/dashboard/issue">
+            <Link to={`/${rolePrefix}/issue`}>
               <Button variant="outline" className="w-full">Get Started</Button>
             </Link>
           </Card>
@@ -148,7 +149,7 @@ const Dashboard = () => {
             <Users className="h-10 w-10 text-primary" />
             <h3 className="font-semibold text-lg">Batch Upload</h3>
             <p className="text-sm text-muted-foreground">Issue multiple certificates at once</p>
-            <Link to="/dashboard/batch-issue">
+            <Link to={`/${rolePrefix}/batch-issue`}>
               <Button variant="outline" className="w-full">Upload CSV</Button>
             </Link>
           </Card>
@@ -157,7 +158,7 @@ const Dashboard = () => {
             <TrendingUp className="h-10 w-10 text-primary" />
             <h3 className="font-semibold text-lg">Analytics</h3>
             <p className="text-sm text-muted-foreground">View detailed issuance reports</p>
-            <Link to="/dashboard/analytics">
+            <Link to={`/${rolePrefix}/analytics`}>
               <Button variant="outline" className="w-full">View Reports</Button>
             </Link>
           </Card>
@@ -167,7 +168,7 @@ const Dashboard = () => {
         <Card className="p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold">Recent Certificates</h2>
-            <Link to="/dashboard/certificates">
+            <Link to={`/${rolePrefix}/certificates`}>
               <Button variant="ghost" size="sm">View All</Button>
             </Link>
           </div>
@@ -218,7 +219,7 @@ const Dashboard = () => {
                         </span>
                       )}
                     </div>
-                    <Link to={`/dashboard/certificates/${cert.certificate_id}`}>
+                    <Link to={`/${rolePrefix}/certificates/${cert.certificate_id}`}>
                       <Button variant="ghost" size="sm">View</Button>
                     </Link>
                   </div>
