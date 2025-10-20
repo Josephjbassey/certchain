@@ -28,7 +28,6 @@ const DidSetup = () => {
 
     setLoading(true);
     try {
-      console.log("Creating DID for account:", hederaAccountId);
 
       // Call Hedera edge function to create DID
       const { data, error } = await supabase.functions.invoke("hedera-create-did", {
