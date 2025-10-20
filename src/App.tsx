@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/lib/theme-provider";
 import { AuthProvider } from "@/lib/auth-context";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Verify from "./pages/Verify";
@@ -60,135 +61,137 @@ import { DashboardLayout } from "./components/DashboardLayout";
 const queryClient = new QueryClient();
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <ThemeProvider defaultTheme="dark">
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <AuthProvider>
-            <Routes>
-          {/* Public Pages */}
-          <Route path="/" element={<Index />} />
-          <Route path="/verify" element={<Verify />} />
-          <Route path="/verify/:certificateId" element={<VerifyDetail />} />
-          <Route path="/verify/scan" element={<VerifyScan />} />
-          <Route path="/verify/status/:verificationId" element={<VerifyStatus />} />
-          <Route path="/pricing" element={<Pricing />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/docs" element={<Docs />} />
-          <Route path="/contact" element={<Contact />} />
-          
-          {/* Auth Pages */}
-          <Route path="/auth/login" element={<Login />} />
-          <Route path="/auth/signup" element={<Signup />} />
-          <Route path="/auth/forgot-password" element={<ForgotPassword />} />
-          <Route path="/auth/reset-password/:token" element={<ResetPassword />} />
-          <Route path="/auth/verify-email" element={<VerifyEmail />} />
-          <Route path="/auth/2fa" element={<TwoFactor />} />
-          
-          {/* == Authenticated Routes == */}
+  <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider defaultTheme="dark">
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <AuthProvider>
+              <Routes>
+                {/* Public Pages */}
+                <Route path="/" element={<Index />} />
+                <Route path="/verify" element={<Verify />} />
+                <Route path="/verify/:certificateId" element={<VerifyDetail />} />
+                <Route path="/verify/scan" element={<VerifyScan />} />
+                <Route path="/verify/status/:verificationId" element={<VerifyStatus />} />
+                <Route path="/pricing" element={<Pricing />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/docs" element={<Docs />} />
+                <Route path="/contact" element={<Contact />} />
 
-          {/* Legacy /dashboard redirect - will redirect to role-specific dashboard */}
-          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                {/* Auth Pages */}
+                <Route path="/auth/login" element={<Login />} />
+                <Route path="/auth/signup" element={<Signup />} />
+                <Route path="/auth/forgot-password" element={<ForgotPassword />} />
+                <Route path="/auth/reset-password/:token" element={<ResetPassword />} />
+                <Route path="/auth/verify-email" element={<VerifyEmail />} />
+                <Route path="/auth/2fa" element={<TwoFactor />} />
 
-          {/* Candidate Dashboard Routes */}
-          <Route element={<ProtectedRoute requiredRole="candidate"><DashboardLayout /></ProtectedRoute>}>
-            <Route path="/candidate/dashboard" element={<Dashboard />} />
-            <Route path="/candidate/my-certificates" element={<MyCertificates />} />
-            <Route path="/candidate/my-certificates/:id" element={<MyCertificateDetail />} />
-            <Route path="/candidate/settings/account" element={<AccountSettings />} />
-            <Route path="/candidate/settings/notifications" element={<NotificationSettings />} />
-            <Route path="/candidate/settings/privacy" element={<PrivacySettings />} />
-            <Route path="/candidate/settings/security" element={<SecuritySettings />} />
-            <Route path="/candidate/settings/wallets" element={<Wallets />} />
-          </Route>
+                {/* == Authenticated Routes == */}
 
-          {/* Instructor Dashboard Routes */}
-          <Route element={<ProtectedRoute requiredRole="instructor"><DashboardLayout /></ProtectedRoute>}>
-            <Route path="/instructor/dashboard" element={<Dashboard />} />
-            <Route path="/instructor/certificates" element={<Certificates />} />
-            <Route path="/instructor/certificates/:id" element={<CertificateDetail />} />
-            <Route path="/instructor/issue" element={<IssueCertificate />} />
-            <Route path="/instructor/batch-issue" element={<BatchIssue />} />
-            <Route path="/instructor/batch-upload-history" element={<BatchHistory />} />
-            <Route path="/instructor/recipients" element={<Recipients />} />
-            <Route path="/instructor/templates" element={<Templates />} />
-            <Route path="/instructor/analytics" element={<Analytics />} />
-            <Route path="/instructor/my-certificates" element={<MyCertificates />} />
-            <Route path="/instructor/my-certificates/:id" element={<MyCertificateDetail />} />
-            <Route path="/instructor/settings/account" element={<AccountSettings />} />
-            <Route path="/instructor/settings/notifications" element={<NotificationSettings />} />
-            <Route path="/instructor/settings/privacy" element={<PrivacySettings />} />
-            <Route path="/instructor/settings/security" element={<SecuritySettings />} />
-            <Route path="/instructor/settings/wallets" element={<Wallets />} />
-            <Route path="/instructor/settings/api-keys" element={<ApiKeys />} />
-          </Route>
+                {/* Legacy /dashboard redirect - will redirect to role-specific dashboard */}
+                <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
 
-          {/* Institution Admin Dashboard Routes */}
-          <Route element={<ProtectedRoute requiredRole="institution_admin"><DashboardLayout /></ProtectedRoute>}>
-            <Route path="/institution/dashboard" element={<Dashboard />} />
-            <Route path="/institution/certificates" element={<Certificates />} />
-            <Route path="/institution/certificates/:id" element={<CertificateDetail />} />
-            <Route path="/institution/issue" element={<IssueCertificate />} />
-            <Route path="/institution/batch-issue" element={<BatchIssue />} />
-            <Route path="/institution/batch-upload-history" element={<BatchHistory />} />
-            <Route path="/institution/recipients" element={<Recipients />} />
-            <Route path="/institution/templates" element={<Templates />} />
-            <Route path="/institution/analytics" element={<Analytics />} />
-            <Route path="/institution/institution" element={<Institution />} />
-            <Route path="/institution/issuers" element={<Issuers />} />
-            <Route path="/institution/billing" element={<Billing />} />
-            <Route path="/institution/webhooks/logs" element={<WebhookLogs />} />
-            <Route path="/institution/my-certificates" element={<MyCertificates />} />
-            <Route path="/institution/my-certificates/:id" element={<MyCertificateDetail />} />
-            <Route path="/institution/settings/account" element={<AccountSettings />} />
-            <Route path="/institution/settings/notifications" element={<NotificationSettings />} />
-            <Route path="/institution/settings/privacy" element={<PrivacySettings />} />
-            <Route path="/institution/settings/security" element={<SecuritySettings />} />
-            <Route path="/institution/settings/wallets" element={<Wallets />} />
-            <Route path="/institution/settings/api-keys" element={<ApiKeys />} />
-            <Route path="/institution/settings/webhooks" element={<WebhooksSettings />} />
-            <Route path="/institution/settings/integrations" element={<Integrations />} />
-          </Route>
+                {/* Candidate Dashboard Routes */}
+                <Route element={<ProtectedRoute requiredRole="candidate"><DashboardLayout /></ProtectedRoute>}>
+                  <Route path="/candidate/dashboard" element={<Dashboard />} />
+                  <Route path="/candidate/my-certificates" element={<MyCertificates />} />
+                  <Route path="/candidate/my-certificates/:id" element={<MyCertificateDetail />} />
+                  <Route path="/candidate/settings/account" element={<AccountSettings />} />
+                  <Route path="/candidate/settings/notifications" element={<NotificationSettings />} />
+                  <Route path="/candidate/settings/privacy" element={<PrivacySettings />} />
+                  <Route path="/candidate/settings/security" element={<SecuritySettings />} />
+                  <Route path="/candidate/settings/wallets" element={<Wallets />} />
+                </Route>
 
-          {/* Super Admin Dashboard Routes */}
-          <Route element={<ProtectedRoute requiredRole="super_admin"><DashboardLayout /></ProtectedRoute>}>
-            <Route path="/admin/dashboard" element={<Dashboard />} />
-            <Route path="/admin/users" element={<UserManagement />} />
-            <Route path="/admin/institutions" element={<InstitutionManagement />} />
-            <Route path="/admin/settings" element={<SystemSettings />} />
-            <Route path="/admin/logs" element={<AdminLogs />} />
-            <Route path="/admin/certificates" element={<Certificates />} />
-            <Route path="/admin/certificates/:id" element={<CertificateDetail />} />
-            <Route path="/admin/analytics" element={<Analytics />} />
-            <Route path="/admin/billing" element={<Billing />} />
-          </Route>
+                {/* Instructor Dashboard Routes */}
+                <Route element={<ProtectedRoute requiredRole="instructor"><DashboardLayout /></ProtectedRoute>}>
+                  <Route path="/instructor/dashboard" element={<Dashboard />} />
+                  <Route path="/instructor/certificates" element={<Certificates />} />
+                  <Route path="/instructor/certificates/:id" element={<CertificateDetail />} />
+                  <Route path="/instructor/issue" element={<IssueCertificate />} />
+                  <Route path="/instructor/batch-issue" element={<BatchIssue />} />
+                  <Route path="/instructor/batch-upload-history" element={<BatchHistory />} />
+                  <Route path="/instructor/recipients" element={<Recipients />} />
+                  <Route path="/instructor/templates" element={<Templates />} />
+                  <Route path="/instructor/analytics" element={<Analytics />} />
+                  <Route path="/instructor/my-certificates" element={<MyCertificates />} />
+                  <Route path="/instructor/my-certificates/:id" element={<MyCertificateDetail />} />
+                  <Route path="/instructor/settings/account" element={<AccountSettings />} />
+                  <Route path="/instructor/settings/notifications" element={<NotificationSettings />} />
+                  <Route path="/instructor/settings/privacy" element={<PrivacySettings />} />
+                  <Route path="/instructor/settings/security" element={<SecuritySettings />} />
+                  <Route path="/instructor/settings/wallets" element={<Wallets />} />
+                  <Route path="/instructor/settings/api-keys" element={<ApiKeys />} />
+                </Route>
 
-          {/* Shared Settings Routes (all authenticated users) */}
-          <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
-            <Route path="/settings/account" element={<AccountSettings />} />
-            <Route path="/settings/notifications" element={<NotificationSettings />} />
-            <Route path="/settings/privacy" element={<PrivacySettings />} />
-            <Route path="/settings/security" element={<SecuritySettings />} />
-            <Route path="/settings/wallets" element={<Wallets />} />
-          </Route>
+                {/* Institution Admin Dashboard Routes */}
+                <Route element={<ProtectedRoute requiredRole="institution_admin"><DashboardLayout /></ProtectedRoute>}>
+                  <Route path="/institution/dashboard" element={<Dashboard />} />
+                  <Route path="/institution/certificates" element={<Certificates />} />
+                  <Route path="/institution/certificates/:id" element={<CertificateDetail />} />
+                  <Route path="/institution/issue" element={<IssueCertificate />} />
+                  <Route path="/institution/batch-issue" element={<BatchIssue />} />
+                  <Route path="/institution/batch-upload-history" element={<BatchHistory />} />
+                  <Route path="/institution/recipients" element={<Recipients />} />
+                  <Route path="/institution/templates" element={<Templates />} />
+                  <Route path="/institution/analytics" element={<Analytics />} />
+                  <Route path="/institution/institution" element={<Institution />} />
+                  <Route path="/institution/issuers" element={<Issuers />} />
+                  <Route path="/institution/billing" element={<Billing />} />
+                  <Route path="/institution/webhooks/logs" element={<WebhookLogs />} />
+                  <Route path="/institution/my-certificates" element={<MyCertificates />} />
+                  <Route path="/institution/my-certificates/:id" element={<MyCertificateDetail />} />
+                  <Route path="/institution/settings/account" element={<AccountSettings />} />
+                  <Route path="/institution/settings/notifications" element={<NotificationSettings />} />
+                  <Route path="/institution/settings/privacy" element={<PrivacySettings />} />
+                  <Route path="/institution/settings/security" element={<SecuritySettings />} />
+                  <Route path="/institution/settings/wallets" element={<Wallets />} />
+                  <Route path="/institution/settings/api-keys" element={<ApiKeys />} />
+                  <Route path="/institution/settings/webhooks" element={<WebhooksSettings />} />
+                  <Route path="/institution/settings/integrations" element={<Integrations />} />
+                </Route>
 
-          {/* Profile & Utility Pages (without sidebar) */}
-          <Route path="/profile/:accountId" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-          <Route path="/claim/:claimToken" element={<Claim />} />
-          <Route path="/credentials" element={<ProtectedRoute><Credentials /></ProtectedRoute>} />
-          <Route path="/identity/did-setup" element={<ProtectedRoute><DidSetup /></ProtectedRoute>} />
-          <Route path="/ai-console" element={<ProtectedRoute requiredRole="instructor"><AiConsole /></ProtectedRoute>} />
-          
-          {/* Catch-all */}
-          <Route path="*" element={<NotFound />} />
-            </Routes>
-          </AuthProvider>
-        </BrowserRouter>
-      </TooltipProvider>
-    </ThemeProvider>
-  </QueryClientProvider>
+                {/* Super Admin Dashboard Routes */}
+                <Route element={<ProtectedRoute requiredRole="super_admin"><DashboardLayout /></ProtectedRoute>}>
+                  <Route path="/admin/dashboard" element={<Dashboard />} />
+                  <Route path="/admin/users" element={<UserManagement />} />
+                  <Route path="/admin/institutions" element={<InstitutionManagement />} />
+                  <Route path="/admin/settings" element={<SystemSettings />} />
+                  <Route path="/admin/logs" element={<AdminLogs />} />
+                  <Route path="/admin/certificates" element={<Certificates />} />
+                  <Route path="/admin/certificates/:id" element={<CertificateDetail />} />
+                  <Route path="/admin/analytics" element={<Analytics />} />
+                  <Route path="/admin/billing" element={<Billing />} />
+                </Route>
+
+                {/* Shared Settings Routes (all authenticated users) */}
+                <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
+                  <Route path="/settings/account" element={<AccountSettings />} />
+                  <Route path="/settings/notifications" element={<NotificationSettings />} />
+                  <Route path="/settings/privacy" element={<PrivacySettings />} />
+                  <Route path="/settings/security" element={<SecuritySettings />} />
+                  <Route path="/settings/wallets" element={<Wallets />} />
+                </Route>
+
+                {/* Profile & Utility Pages (without sidebar) */}
+                <Route path="/profile/:accountId" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                <Route path="/claim/:claimToken" element={<Claim />} />
+                <Route path="/credentials" element={<ProtectedRoute><Credentials /></ProtectedRoute>} />
+                <Route path="/identity/did-setup" element={<ProtectedRoute><DidSetup /></ProtectedRoute>} />
+                <Route path="/ai-console" element={<ProtectedRoute requiredRole="instructor"><AiConsole /></ProtectedRoute>} />
+
+                {/* Catch-all */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </AuthProvider>
+          </BrowserRouter>
+        </TooltipProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;

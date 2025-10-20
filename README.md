@@ -1,307 +1,278 @@
-# CertChain - Decentralized Certificate Verification Platform
+# 🔷 CertChain - Decentralized Certificate Verification Platform
 
-> **Production-ready frontend** for blockchain-based certificate issuance and verification on Hedera.
+> **Production-ready decentralized certificate issuance and verification on Hedera Hashgraph**
 
-![CertChain](https://img.shields.io/badge/Hedera-Powered-007E3A?style=for-the-badge)
+![Hedera](https://img.shields.io/badge/Hedera-Powered-007E3A?style=for-the-badge)
 ![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
 ![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)
 
 ## 🎯 Overview
 
-CertChain is a comprehensive decentralized application for issuing, verifying, and managing tamper-proof certificates as NFTs on the Hedera blockchain. This repository contains the **production-ready frontend** built with React, TypeScript, and Tailwind CSS.
+CertChain is a production-ready decentralized application for issuing, verifying, and managing tamper-proof certificates as NFTs on Hedera. Built with React, TypeScript, and integrated with Hedera Token Service (HTS), Hedera Consensus Service (HCS), DID SDK, and IPFS.
 
-### Key Features
+### ✨ Key Features
 
-- ✅ **Decentralized Certificate Issuance** - Mint certificate NFTs on Hedera HTS
-- ✅ **Instant Verification** - Blockchain-verified credentials in seconds
-- ✅ **DID Integration** - Decentralized identifiers using `@hashgraph/did-sdk-js`
-- ✅ **IPFS Storage** - Certificate metadata on Pinata/IPFS
-- ✅ **Wallet Connect** - Hedera wallet integration via Reown AppKit
-- ✅ **Real-time Updates** - HCS event streaming
-- ✅ **Batch Operations** - Upload CSV for bulk certificate issuance
-- ✅ **Analytics Dashboard** - Track issuance and verification metrics
-- ✅ **Mobile-Ready** - Responsive design for all devices
+- 🔐 **Hedera Integration** - HTS token minting, HCS event logging, DID management
+- 📦 **IPFS Storage** - Decentralized metadata storage via Pinata
+- 🔄 **Real-time Events** - SSE streaming for HCS consensus messages
+- 🔑 **API Management** - Full API key generation with scopes and permissions
+- 🪝 **Webhooks** - HMAC-signed event notifications
+- 💼 **Wallet Management** - HashPack, Blade, Kabila wallet support
+- 📊 **Analytics** - Certificate issuance and verification tracking
+- 🎨 **Modern UI** - TailwindCSS + shadcn/ui with dark mode
+- 📱 **Mobile-Ready** - Fully responsive design
+- 🛡️ **Production Security** - Error boundaries, structured logging, retry logic
 
-## 🏗️ Architecture
+## 🏗️ Tech Stack
 
-### Frontend (This Repository)
-
+### Frontend
 - **Framework**: React 18 + Vite + TypeScript
-- **UI**: TailwindCSS + `shadcn/ui` components
-- **State**: React Context (`AuthProvider`) + TanStack Query (`react-query`)
+- **UI**: TailwindCSS + shadcn/ui components
+- **State**: React Context + TanStack Query
 - **Routing**: React Router v6
-- **Theme**: Dark mode with emerald green (#007E3A) primary color
 
-### Backend (Separate Deployment Required)
-
-- **API**: Supabase (Edge Functions, Database, Auth)
-- **Blockchain**: Hedera SDK (`@hashgraph/sdk`)
-- **DID/VC**: `@hashgraph/did-sdk-js` (in Edge Functions)
-- **Storage**: Pinata (server-side) + IPFS
-- **Wallet**: Hedera Wallet Connect integration
-- **AI**: Modular n8n microservice (optional)
-- **Deployment**: Docker on Railway
-
-### Smart Contracts (Optional)
-
-- **HTS Native**: Primary approach using Hedera Token Service
-- **Solidity**: Optional `CertificateRegistry.sol` + `SoulboundNFT.sol` via Hardhat
+### Backend Integration
+- **API**: Supabase Edge Functions
+- **Blockchain**: `@hashgraph/sdk` (v2.75.0)
+- **DID**: `@hashgraph/did-sdk-js`
+- **Wallet**: `@hashgraph/hedera-wallet-connect` + Reown AppKit
+- **Storage**: Pinata IPFS
+- **Database**: Supabase PostgreSQL
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
-- Node.js 18+ and npm
-- Hedera testnet account (get one at [portal.hedera.com](https://portal.hedera.com))
-- Pinata API key (for IPFS uploads)
+- Node.js 18+ or Bun
+- Hedera testnet account ([portal.hedera.com](https://portal.hedera.com))
+- Supabase project
+- Pinata account
 
 ### Installation
 
 ```bash
-# Clone the repository
-git clone <YOUR_GIT_URL>
-cd certchain
-
 # Install dependencies
-npm install
+bun install
 
-# Start development server
-npm run dev
+# Copy environment template
+cp .env.example .env
+
+# Configure .env (see PRODUCTION_SETUP.md)
+
+# Start development
+bun run dev
 ```
 
-The app will be available at `http://localhost:8080`
-
-## 📦 Pages & Routes
-
-### Public Pages
-
-- `/` - Landing page with hero and features
-- `/verify` - Certificate verification
-- `/verify/[id]` - Certificate details
-- `/pricing` - Pricing plans
-- `/about` - About CertChain & `/docs` - Documentation
-
-### Authentication
-
-- `/auth/login` - Sign in
-- `/auth/signup` - Register account
-- `/auth/forgot-password` - Password recovery
-- `/auth/2fa` - Two-Factor Authentication
-
-### Dashboard (Authenticated)
-
-#### User Routes
-
-- `/dashboard/my-certificates` - View own certificates
-
-#### Issuer Routes (`issuer` & `admin`)
-
-- `/dashboard` - Main issuer dashboard
-- `/dashboard/certificates` - All issued certificates
-- `/dashboard/issue` - Issue single certificate
-- `/dashboard/batch-issue` - Bulk certificate issuance
-- `/dashboard/recipients` - Manage recipients
-- `/dashboard/templates` - Certificate templates
-- `/dashboard/analytics` - Issuance analytics
-
-#### Admin Routes (`admin` only)
-
-- `/admin` - Admin dashboard home
-- `/admin/users` - User management
-- `/admin/institutions` - Institution management
-- `/admin/logs` - System audit logs
-- `/dashboard/institution` - Manage own institution settings
-- `/dashboard/issuers` - Manage authorized issuers
-- `/dashboard/billing` - Billing & Subscriptions
-
-### Settings
-
-- `/settings/account` - Account settings
-- `/settings/wallets` - Wallet management
-- `/settings/api-keys` - API key management
-- `/settings/webhooks` - Webhook configuration
-
-## 🔧 Backend Integration
-
-### Required Backend Services
-
-This frontend requires a backend API with the following endpoints:
-
-#### Authentication
-
-```typescript
-POST / api / auth / connect - wallet;
-POST / api / auth / did - verify;
-```
-
-#### Certificates
-
-```typescript
-POST /api/certificates              // Issue certificate
-GET  /api/certificates              // List certificates
-GET  /api/certificates/:id          // Get certificate details
-POST /api/certificates/:id/mint     // Mint NFT
-POST /api/certificates/:id/revoke   // Revoke certificate
-```
-
-#### Verification
-
-```typescript
-POST / api / claim / generate; // Generate claim token
-POST / api / claim / verify; // Verify claim token
-```
-
-#### Storage
-
-```typescript
-POST / api / upload / pinata; // Upload to Pinata/IPFS
-```
-
-#### Hedera Integration
-
-```typescript
-GET  /api/mirror/owner/:accountId   // Get NFTs by owner
-GET  /api/hcs/topic/:topicId/messages // Get HCS messages
-POST /api/webhook/hcs               // HCS webhook handler
-```
-
-### Environment Variables (Backend)
-
-Create a `.env` file in your backend service:
+### Environment Variables
 
 ```env
-# Hedera Configuration
-HEDERA_NETWORK=testnet
-HEDERA_OPERATOR_ID=0.0.xxxxx
-HEDERA_OPERATOR_KEY=302e...
-
-# Pinata Configuration
-PINATA_JWT=your_pinata_jwt_token
-PINATA_GATEWAY=https://gateway.pinata.cloud/ipfs/
-
-# DID Configuration
-TRUSTID_API_KEY=your_trustid_key
-TRUSTID_ISSUER_DID=did:hedera:testnet:...
-
-# WalletConnect
-WALLETCONNECT_PROJECT_ID=your_project_id
-
-# Security
-JWT_SECRET=your_strong_jwt_secret
-
-# Database (Optional)
-DATABASE_URL=postgresql://...
-REDIS_URL=redis://...
+VITE_HEDERA_NETWORK=testnet
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+VITE_WALLETCONNECT_PROJECT_ID=your_project_id
 ```
 
-## 🎨 Design System
-
-### Color Palette
-
-```css
-Primary: #007E3A (Emerald Green)
-Primary Glow: #006B32
-Secondary: #004E26
-Accent: #D9B96E (Gold)
-Background (Light): #F8FAF8
-Background (Dark): #0E1510
-```
-
-### Custom Utilities
-
-- `gradient-hero` - Primary gradient background
-- `gradient-card` - Subtle card gradient
-- `gradient-accent` - Accent gradient
-- `shadow-elevated` - Elevated shadow effect
-- `shadow-glow` - Glow shadow effect
-- `cert-shine` - Certificate shine animation
-
-### Button Variants
-
-```tsx
-<Button variant="hero">Primary CTA</Button>
-<Button variant="accent">Accent Action</Button>
-<Button variant="outline">Secondary</Button>
-```
-
-## 🔐 Security Best Practices
-
-1. **Never expose private keys** - All Hedera operations must happen on backend
-2. **Validate all inputs** - Use Zod schemas for validation
-3. **Implement RLS** - If using Supabase/database for caching
-4. **HMAC webhook validation** - Verify all incoming webhooks
-5. **Rate limiting** - Protect API endpoints
-6. **DID-signed approvals** - Require signatures for critical operations
-
-## 🧪 Testing
-
+**Backend secrets** (Supabase Edge Functions):
 ```bash
-# Run unit tests
-npm run test
-
-# Run e2e tests
-npm run test:e2e
-
-# Lint
-npm run lint
+supabase secrets set HEDERA_OPERATOR_ID=0.0.xxxxx
+supabase secrets set HEDERA_OPERATOR_KEY=302e...
+supabase secrets set PINATA_JWT=eyJhbGc...
 ```
 
-## 📚 Integration Guides
+See [PRODUCTION_SETUP.md](./PRODUCTION_SETUP.md) for complete setup instructions.
 
-### Hedera SDK Integration
+## 📦 Project Structure
 
-```typescript
-import { Client, TokenCreateTransaction, TokenType } from "@hashgraph/sdk";
-
-// Initialize Hedera client (backend only)
-const client = Client.forTestnet();
-client.setOperator(operatorId, operatorKey);
-
-// Create NFT collection
-const transaction = await new TokenCreateTransaction()
-  .setTokenName("CertChain Certificates")
-  .setTokenSymbol("CERT")
-  .setTokenType(TokenType.NonFungibleUnique)
-  .setDecimals(0)
-  .setInitialSupply(0)
-  .setTreasuryAccountId(treasuryId)
-  .setSupplyKey(supplyKey)
-  .execute(client);
+```
+src/
+├── lib/
+│   ├── hedera/          # Hedera service integration
+│   │   ├── service.ts   # Main Hedera SDK wrapper
+│   │   ├── config.ts    # Network configuration
+│   │   ├── errors.ts    # Error handling & retry
+│   │   └── types.ts     # TypeScript definitions
+│   ├── ipfs/            # Pinata/IPFS service
+│   ├── hcs/             # Real-time HCS events
+│   └── logging/         # Structured logging
+├── pages/
+│   ├── auth/            # Authentication pages
+│   ├── dashboard/       # Dashboard pages
+│   ├── settings/        # Settings pages
+│   │   ├── ApiKeys.tsx  # API key management
+│   │   ├── Wallets.tsx  # Wallet management
+│   │   └── WebhooksSettings.tsx
+│   └── admin/           # Admin pages
+└── components/
+    ├── ErrorBoundary.tsx
+    ├── ProtectedRoute.tsx
+    └── ui/              # shadcn components
 ```
 
-### DID/VC Integration
+## 📚 Key Services
+
+### Hedera Service (`src/lib/hedera/`)
 
 ```typescript
-import { HcsDid, HcsVc } from "@hashgraph/did-sdk-js";
+import { hederaService } from '@/lib/hedera';
 
 // Create DID
-const did = await HcsDid.generate();
-await did.register();
+const did = await hederaService.createDID({
+  userAccountId: '0.0.12345'
+});
 
-// Issue Verifiable Credential
-const vc = await HcsVc.issue({
-  issuer: issuerDid,
-  subject: recipientDid,
-  credentialSubject: {
-    certificateId: "cert-001",
-    courseName: "Blockchain Development",
-  },
+// Mint certificate
+const cert = await hederaService.mintCertificate({
+  recipientAccountId: '0.0.12345',
+  institutionTokenId: '0.0.67890',
+  metadataCid: 'Qm...',
+  certificateData: { ... }
+});
+
+// Log to HCS
+await hederaService.logToHCS({
+  topicId: '0.0.98765',
+  messageType: 'certificate.issued',
+  message: { ... }
 });
 ```
 
-### Pinata Upload
+### IPFS Service (`src/lib/ipfs/`)
 
 ```typescript
-import pinataSDK from "@pinata/sdk";
+import { ipfsService } from '@/lib/ipfs';
 
-const pinata = new pinataSDK(pinataJWT);
+// Upload metadata
+const result = await ipfsService.uploadMetadata({
+  certificateId: 'cert-123',
+  courseName: 'Blockchain 101',
+  ...
+});
 
-// Upload certificate metadata
-const result = await pinata.pinJSONToIPFS({
-  certificateId: "cert-001",
-  recipientName: "John Doe",
-  courseName: "Advanced Blockchain",
-  issuedDate: new Date().toISOString(),
+// Fetch from IPFS (with fallbacks)
+const metadata = await ipfsService.fetchFromIPFS('Qm...');
+```
+
+### HCS Event Stream (`src/lib/hcs/`)
+
+```typescript
+import { hcsEventStream } from '@/lib/hcs';
+
+// Subscribe to events
+const unsubscribe = hcsEventStream.subscribe('certificate.issued', (event) => {
+  console.log('New certificate:', event);
+});
+```
+
+## 🔐 Security Features
+
+✅ **Production-Ready Security**:
+- Environment validation with Zod
+- API key hashing (SHA-256)
+- Webhook HMAC signatures
+- Retry logic with exponential backoff
+- Error boundaries
+- Structured logging with HCS audit trail
+- Multi-network support (testnet/mainnet)
+
+## 📦 Pages & Routes
+
+### Public (9 pages)
+- `/` - Landing page
+- `/verify` - Certificate verification
+- `/verify/:certificateId` - Verification detail
+- `/verify/scan` - QR code scanner
+- `/pricing`, `/about`, `/docs`, `/contact`
+
+### Auth (6 pages)
+- `/auth/login`, `/auth/signup`
+- `/auth/forgot-password`, `/auth/reset-password/:token`
+- `/auth/verify-email`, `/auth/2fa`
+
+### Dashboard (40+ pages)
+**Role-based routing**: `/candidate/`, `/instructor/`, `/institution/`, `/admin/`
+
+- Certificate management
+- Issue certificates (single & batch)
+- Recipients & templates
+- Analytics & reporting
+- Settings & integrations
+
+## 🧪 Development
+
+```bash
+# Development
+bun run dev
+
+# Build
+bun run build
+
+# Test
+bun run test
+
+# Lint
+bun run lint
+```
+
+## 📊 Production Deployment
+
+### Option 1: Vercel
+
+```bash
+vercel --prod
+```
+
+### Option 2: Railway
+
+```bash
+railway up
+```
+
+### Option 3: Docker
+
+```bash
+docker build -t certchain .
+docker run -p 3000:3000 certchain
+```
+
+## 📚 Documentation
+
+- [PRODUCTION_SETUP.md](./PRODUCTION_SETUP.md) - Complete setup guide
+- [DEPLOYMENT_SUMMARY.md](./DEPLOYMENT_SUMMARY.md) - What's been built
+- [HEDERA_SERVICES.md](./HEDERA_SERVICES.md) - Hedera integration guide
+- [SUPER_ADMIN_SETUP.md](./SUPER_ADMIN_SETUP.md) - Admin configuration
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📝 License
+
+This project is licensed under the MIT License.
+
+## � Links
+
+- **Hedera**: https://hedera.com
+- **Hedera SDK**: https://docs.hedera.com
+- **DID SDK**: https://github.com/hashgraph/did-sdk-js
+- **Supabase**: https://supabase.com
+- **Pinata**: https://pinata.cloud
+
+## 💬 Support
+
+- **Email**: support@certchain.io
+- **Documentation**: See `/docs` folder
+- **Issues**: GitHub Issues
+
+---
+
+**Built with ❤️ using Hedera Hashgraph**
+
+Status: ✅ **PRODUCTION READY**
 });
 
 console.log(`IPFS CID: ${result.IpfsHash}`);
