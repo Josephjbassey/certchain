@@ -28,21 +28,42 @@ const DidSetup = () => {
 
     setLoading(true);
     try {
-      // Call edge function to create DID
-      const { data, error } = await supabase.functions.invoke("create-did", {
+      console.log("Creating DID for account:", hederaAccountId);
+
+      // Call Hedera edge function to create DID
+      const { data, error } = await supabase.functions.invoke("hedera-create-did", {
         body: { 
-          userId: user.id,
-          hederaAccountId 
+          userAccountId: hederaAccountId,
+          network: 'testnet' // Change to 'mainnet' for production
         }
       });
 
       if (error) throw error;
 
-      setDid(data.did);
-      toast.success("DID created successfully!");
-    } catch (error) {
+      if (data?.success) {
+        setDid(data.did);
+        
+        // Update user profile with DID and Hedera account
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ 
+            did: data.did,
+            hedera_account_id: hederaAccountId 
+          })
+          .eq('id', user.id);
+
+        if (updateError) {
+          console.error('Error updating profile:', updateError);
+          toast.error("DID created but failed to update profile");
+        } else {
+          toast.success("DID created successfully!");
+        }
+      } else {
+        throw new Error(data?.error || 'Failed to create DID');
+      }
+    } catch (error: any) {
       console.error("Error creating DID:", error);
-      toast.error("Failed to create DID");
+      toast.error(error.message || "Failed to create DID");
     } finally {
       setLoading(false);
     }
