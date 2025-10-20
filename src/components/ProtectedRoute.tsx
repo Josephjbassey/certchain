@@ -53,7 +53,7 @@ const getDefaultPathForRole = (role: UserRole): string => {
       return '/candidate/dashboard';
     // Backward compatibility
     case 'admin':
-      return '/super/dashboard';
+      return '/admin/dashboard';
     case 'issuer':
       return '/instructor/dashboard';
     case 'user':

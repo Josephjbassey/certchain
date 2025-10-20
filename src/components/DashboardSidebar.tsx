@@ -79,20 +79,38 @@ const hasAccessToFeature = (userRole: UserRole | null | undefined, allowedRoles?
   return false;
 };
 
-const dashboardItems = [
+const candidateDashboardItems = [
   { title: "Dashboard", path: "dashboard", icon: LayoutDashboard },
   { title: "My Certificates", path: "my-certificates", icon: FolderClosed },
-  { title: "All Certificates", path: "certificates", icon: Award, roles: ["instructor", "institution_admin"] },
-  { title: "Issue Certificate", path: "issue", icon: FileText, roles: ["instructor", "institution_admin"] },
-  { title: "Batch Issue", path: "batch-issue", icon: Upload, roles: ["instructor", "institution_admin"] },
-  { title: "Batch History", path: "batch-upload-history", icon: Clock, roles: ["instructor", "institution_admin"] },
-  { title: "Recipients", path: "recipients", icon: Users, roles: ["instructor", "institution_admin"] },
-  { title: "Templates", path: "templates", icon: FileStack, roles: ["instructor", "institution_admin"] },
-  { title: "Institution", path: "institution", icon: Building2, roles: ["institution_admin"] },
-  { title: "Issuers", path: "issuers", icon: UserCheck, roles: ["institution_admin"] },
-  { title: "Analytics", path: "analytics", icon: BarChart3, roles: ["instructor", "institution_admin"] },
-  { title: "Billing", path: "billing", icon: CreditCard, roles: ["institution_admin"] },
-  { title: "Webhook Logs", path: "webhooks/logs", icon: Webhook, roles: ["institution_admin"] },
+];
+
+const instructorDashboardItems = [
+  { title: "Dashboard", path: "dashboard", icon: LayoutDashboard },
+  { title: "All Certificates", path: "certificates", icon: Award },
+  { title: "Issue Certificate", path: "issue", icon: FileText },
+  { title: "Batch Issue", path: "batch-issue", icon: Upload },
+  { title: "Batch History", path: "batch-upload-history", icon: Clock },
+  { title: "Candidates", path: "recipients", icon: Users },
+  { title: "Templates", path: "templates", icon: FileStack },
+  { title: "Analytics", path: "analytics", icon: BarChart3 },
+];
+
+const institutionDashboardItems = [
+  { title: "Dashboard", path: "dashboard", icon: LayoutDashboard },
+  { title: "All Certificates", path: "certificates", icon: Award },
+  { title: "Issue Certificate", path: "issue", icon: FileText },
+  { title: "Batch Issue", path: "batch-issue", icon: Upload },
+  { title: "Batch History", path: "batch-upload-history", icon: Clock },
+  { title: "Institution", path: "institution", icon: Building2 },
+  { title: "Staff & Instructors", path: "issuers", icon: UserCheck },
+  { title: "Templates", path: "templates", icon: FileStack },
+  { title: "Analytics", path: "analytics", icon: BarChart3 },
+  { title: "Billing", path: "billing", icon: CreditCard },
+  { title: "Webhook Logs", path: "webhooks/logs", icon: Webhook },
+];
+
+const adminDashboardItems = [
+  { title: "Dashboard", path: "dashboard", icon: LayoutDashboard },
 ];
 
 const settingsItems = [
@@ -108,7 +126,7 @@ const settingsItems = [
 
 const adminItems = [
   { title: "Users", path: "users", icon: Users, roles: ["super_admin"] },
-  { title: "Institutions", path: "institutions", icon: Building2, roles: ["super_admin"] },
+  { title: "Onboard Institutions", path: "institutions", icon: Building2, roles: ["super_admin"] },
   { title: "Analytics", path: "analytics", icon: BarChart3, roles: ["super_admin"] },
   { title: "System Settings", path: "settings", icon: Settings, roles: ["super_admin"] },
   { title: "Audit Logs", path: "logs", icon: Logs, roles: ["super_admin"] },
@@ -142,7 +160,19 @@ export function DashboardSidebar() {
     return `/${rolePrefix}/${item.path}`;
   };
 
-  const filteredDashboard = dashboardItems.filter(item => hasAccessToFeature(userRole, item.roles));
+  const menuItems = (() => {
+  switch (rolePrefix) {
+    case 'admin':
+      return adminDashboardItems;
+    case 'institution':
+      return institutionDashboardItems;
+    case 'instructor':
+      return instructorDashboardItems;
+    case 'candidate':
+    default:
+      return candidateDashboardItems;
+  }
+})();
   const filteredSettings = settingsItems.filter(item => hasAccessToFeature(userRole, item.roles));
   const filteredAdmin = adminItems.filter(item => hasAccessToFeature(userRole, item.roles));
 
@@ -154,7 +184,7 @@ export function DashboardSidebar() {
           <SidebarGroupLabel>Dashboard</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {filteredDashboard.map((item) => {
+              {menuItems.map((item) => {
                 const fullPath = buildPath(item);
                 return (
                   <SidebarMenuItem key={item.title}>
