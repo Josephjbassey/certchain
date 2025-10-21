@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { useState } from "react";
+import { PublicHeader } from "@/components/PublicHeader";
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -23,19 +24,7 @@ const Contact = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border/40 backdrop-blur-sm sticky top-0 z-50 bg-background/80">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
-            <Shield className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              CertChain
-            </span>
-          </Link>
-          <Link to="/auth/signup">
-            <Button variant="hero" size="sm">Get Started</Button>
-          </Link>
-        </div>
-      </header>
+      <PublicHeader />
 
       <div className="container mx-auto px-4 py-16">
         <div className="max-w-5xl mx-auto">

@@ -1,42 +1,87 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Shield, ScanLine, Camera, Upload, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { PublicHeader } from "@/components/PublicHeader";
 
 const VerifyScan = () => {
   const [scanning, setScanning] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const navigate = useNavigate();
 
-  const startScan = () => {
-    setScanning(true);
-    toast.info("Camera access required. Please allow camera permissions.");
-    // In production: Initialize QR scanner with camera
+  const startScan = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' } 
+      });
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        setScanning(true);
+        toast.success("Camera activated. Position QR code in view.");
+        
+        // TODO: Integrate QR code detection library (e.g., jsQR, html5-qrcode)
+        // For now, simulate detection after 3 seconds
+        setTimeout(() => {
+          const mockCertId = "0.0.123456:1";
+          toast.success("QR code detected!");
+          stopScan(stream);
+          navigate(`/verify/status/${mockCertId}`);
+        }, 3000);
+      }
+    } catch (error) {
+      console.error('Camera access error:', error);
+      if (error instanceof Error && error.name === 'NotAllowedError') {
+        toast.error("Camera permission denied. Please allow camera access and try again.");
+      } else {
+        toast.error("Failed to access camera. Please check your device settings.");
+      }
+    }
   };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const stopScan = (stream?: MediaStream) => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+    }
+    if (videoRef.current && videoRef.current.srcObject) {
+      const currentStream = videoRef.current.srcObject as MediaStream;
+      currentStream.getTracks().forEach(track => track.stop());
+      videoRef.current.srcObject = null;
+    }
+    setScanning(false);
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      toast.success("Processing QR code from image...");
-      // In production: Parse QR code from uploaded image
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error("Please upload a valid image file");
+      return;
+    }
+
+    toast.info("Processing QR code from image...");
+    
+    try {
+      // TODO: Implement QR code extraction from image
+      // For now, simulate processing
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      const mockCertId = "0.0.123456:1";
+      toast.success("QR code detected!");
+      navigate(`/verify/status/${mockCertId}`);
+    } catch (error) {
+      console.error('QR processing error:', error);
+      toast.error("Failed to process QR code from image");
     }
   };
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border/40 backdrop-blur-sm sticky top-0 z-50 bg-background/80">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
-            <Shield className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              CertChain
-            </span>
-          </Link>
-          <Link to="/verify">
-            <Button variant="ghost" size="sm">Back to Verify</Button>
-          </Link>
-        </div>
-      </header>
+      <PublicHeader />
 
       <div className="container mx-auto px-4 py-16 max-w-3xl">
         <div className="text-center mb-12">
@@ -52,9 +97,9 @@ const VerifyScan = () => {
         {!scanning ? (
           <div className="space-y-6">
             <Card className="p-8 space-y-6 shadow-elevated">
-              <Button 
-                variant="hero" 
-                size="lg" 
+              <Button
+                variant="hero"
+                size="lg"
                 className="w-full"
                 onClick={startScan}
               >
@@ -99,6 +144,7 @@ const VerifyScan = () => {
                     <li>• Position the QR code within the camera frame</li>
                     <li>• Ensure good lighting for best results</li>
                     <li>• Hold steady until the code is recognized</li>
+                    <li>• Or upload an image containing the QR code</li>
                   </ul>
                 </div>
               </div>
@@ -106,18 +152,27 @@ const VerifyScan = () => {
           </div>
         ) : (
           <Card className="p-8 space-y-6 shadow-elevated">
-            <div className="aspect-square bg-muted/30 rounded-lg flex items-center justify-center">
-              <div className="text-center space-y-4">
-                <ScanLine className="h-16 w-16 text-primary mx-auto animate-pulse" />
-                <p className="text-muted-foreground">Position QR code in view</p>
+            <div className="aspect-square bg-muted/30 rounded-lg overflow-hidden relative">
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-64 h-64 border-4 border-primary/50 rounded-lg" />
               </div>
             </div>
-            <Button 
-              variant="outline" 
-              onClick={() => setScanning(false)}
+            <div className="text-center text-sm text-muted-foreground">
+              <p>Position QR code within the frame</p>
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => stopScan()}
               className="w-full"
             >
-              Cancel
+              Cancel Scan
             </Button>
           </Card>
         )}

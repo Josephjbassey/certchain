@@ -2,8 +2,11 @@ import { Shield, Book, Code, Rocket, FileText, Key, Webhook, Zap } from "lucide-
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Link } from "react-router-dom";
+import { PublicHeader } from "@/components/PublicHeader";
+import { useAuth } from "@/lib/auth-context";
 
 const Docs = () => {
+  const { user } = useAuth();
   const sections = [
     {
       title: "Getting Started",
@@ -53,19 +56,7 @@ const Docs = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border/40 backdrop-blur-sm sticky top-0 z-50 bg-background/80">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
-            <Shield className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              CertChain
-            </span>
-          </Link>
-          <Link to="/auth/signup">
-            <Button variant="hero" size="sm">Get Started</Button>
-          </Link>
-        </div>
-      </header>
+      <PublicHeader />
 
       <div className="container mx-auto px-4 py-16">
         <div className="max-w-4xl mx-auto text-center mb-16">
@@ -111,31 +102,49 @@ const Docs = () => {
               <Key className="h-10 w-10 text-primary mx-auto" />
               <h3 className="font-semibold">API Keys</h3>
               <p className="text-sm text-muted-foreground">Generate and manage API keys</p>
-              <Link to="/settings/api-keys">
-                <Button variant="outline" size="sm" className="w-full">
-                  Manage Keys
-                </Button>
-              </Link>
+              {user ? (
+                <Link to="/settings/api-keys">
+                  <Button variant="outline" size="sm" className="w-full">
+                    Manage Keys
+                  </Button>
+                </Link>
+              ) : (
+                <Link to="/auth/login">
+                  <Button variant="outline" size="sm" className="w-full">
+                    Sign In to Access
+                  </Button>
+                </Link>
+              )}
             </Card>
 
             <Card className="p-6 text-center space-y-3 hover:shadow-elevated transition-smooth">
               <Webhook className="h-10 w-10 text-primary mx-auto" />
               <h3 className="font-semibold">Webhooks</h3>
               <p className="text-sm text-muted-foreground">Set up event notifications</p>
-              <Link to="/settings/webhooks">
-                <Button variant="outline" size="sm" className="w-full">
-                  Configure
-                </Button>
-              </Link>
+              {user ? (
+                <Link to="/settings/webhooks">
+                  <Button variant="outline" size="sm" className="w-full">
+                    Configure
+                  </Button>
+                </Link>
+              ) : (
+                <Link to="/auth/login">
+                  <Button variant="outline" size="sm" className="w-full">
+                    Sign In to Access
+                  </Button>
+                </Link>
+              )}
             </Card>
 
             <Card className="p-6 text-center space-y-3 hover:shadow-elevated transition-smooth">
               <Code className="h-10 w-10 text-primary mx-auto" />
               <h3 className="font-semibold">Code Examples</h3>
               <p className="text-sm text-muted-foreground">Ready-to-use code snippets</p>
-              <Button variant="outline" size="sm" className="w-full">
-                View Examples
-              </Button>
+              <a href="https://github.com/hedera-dev/hedera-code-snippets" target="_blank" rel="noopener noreferrer">
+                <Button variant="outline" size="sm" className="w-full">
+                  View Examples
+                </Button>
+              </a>
             </Card>
           </div>
         </div>

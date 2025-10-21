@@ -2,43 +2,12 @@ import { Shield, CheckCircle2, Zap, Award, ArrowRight, Sparkles, Lock, Globe } f
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Link } from "react-router-dom";
+import { PublicHeader } from "@/components/PublicHeader";
 
 const Index = () => {
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border/40 backdrop-blur-sm sticky top-0 z-50 bg-background/80">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Shield className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              CertChain
-            </span>
-          </div>
-          <nav className="hidden md:flex items-center gap-6">
-            <Link to="/verify" className="text-sm text-muted-foreground hover:text-foreground transition-smooth">
-              Verify
-            </Link>
-            <Link to="/pricing" className="text-sm text-muted-foreground hover:text-foreground transition-smooth">
-              Pricing
-            </Link>
-            <Link to="/docs" className="text-sm text-muted-foreground hover:text-foreground transition-smooth">
-              Docs
-            </Link>
-            <Link to="/about" className="text-sm text-muted-foreground hover:text-foreground transition-smooth">
-              About
-            </Link>
-          </nav>
-          <div className="flex items-center gap-3">
-            <Link to="/auth/login">
-              <Button variant="ghost" size="sm">Sign In</Button>
-            </Link>
-            <Link to="/auth/signup">
-              <Button variant="hero" size="sm">Get Started</Button>
-            </Link>
-          </div>
-        </div>
-      </header>
+      <PublicHeader />
 
       {/* Hero Section */}
       <section className="relative overflow-hidden">
@@ -56,7 +25,7 @@ const Index = () => {
               </span>
             </h1>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-              Issue, verify, and manage tamper-proof certificates on Hedera blockchain. 
+              Issue, verify, and manage tamper-proof certificates on Hedera blockchain.
               Instant verification, permanent records, and complete transparency.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
@@ -106,22 +75,22 @@ const Index = () => {
               </div>
               <h3 className="text-2xl font-semibold">Tamper-Proof</h3>
               <p className="text-muted-foreground leading-relaxed">
-                Every certificate is cryptographically signed and stored on Hedera's immutable ledger. 
+                Every certificate is cryptographically signed and stored on Hedera's immutable ledger.
                 Impossible to forge or alter.
               </p>
             </Card>
-            
+
             <Card className="p-8 space-y-4 gradient-card border-border/50 shadow-elevated hover:shadow-glow transition-smooth cert-shine">
               <div className="h-14 w-14 rounded-lg bg-primary/10 flex items-center justify-center">
                 <Zap className="h-7 w-7 text-primary" />
               </div>
               <h3 className="text-2xl font-semibold">Instant Verification</h3>
               <p className="text-muted-foreground leading-relaxed">
-                Verify certificates in seconds with QR codes or certificate IDs. 
+                Verify certificates in seconds with QR codes or certificate IDs.
                 Real-time blockchain validation.
               </p>
             </Card>
-            
+
             <Card className="p-8 space-y-4 gradient-card border-border/50 shadow-elevated hover:shadow-glow transition-smooth cert-shine">
               <div className="h-14 w-14 rounded-lg bg-primary/10 flex items-center justify-center">
                 <Award className="h-7 w-7 text-primary" />
@@ -211,10 +180,11 @@ const Index = () => {
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold mb-4">Legal</h4>
+              <h4 className="font-semibold mb-4">Resources</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link to="/settings/privacy" className="hover:text-foreground transition-smooth">Privacy</Link></li>
-                <li><Link to="/settings/security" className="hover:text-foreground transition-smooth">Security</Link></li>
+                <li><a href="https://hedera.com" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-smooth">Hedera Network</a></li>
+                <li><a href="https://docs.hedera.com" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-smooth">Hedera Docs</a></li>
+                <li><Link to="/docs" className="hover:text-foreground transition-smooth">API Reference</Link></li>
               </ul>
             </div>
           </div>

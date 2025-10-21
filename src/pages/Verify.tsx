@@ -3,13 +3,32 @@ import { Shield, Search, ScanLine, CheckCircle2, XCircle, Clock } from "lucide-r
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { PublicHeader } from "@/components/PublicHeader";
+import { supabase } from "@/integrations/supabase/client";
+import { hederaService } from "@/lib/hedera";
+
+interface VerificationResult {
+  valid: boolean;
+  certificate?: {
+    id: string;
+    recipientName: string;
+    courseName: string;
+    institution: string;
+    issuedDate: string;
+    serialNumber: string;
+    ipfsCid: string;
+    issuerDid: string;
+  };
+  error?: string;
+}
 
 const Verify = () => {
   const [certificateId, setCertificateId] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
-  const [verificationResult, setVerificationResult] = useState<any>(null);
+  const [verificationResult, setVerificationResult] = useState<VerificationResult | null>(null);
+  const navigate = useNavigate();
 
   const handleVerify = async () => {
     if (!certificateId.trim()) {
@@ -18,44 +37,71 @@ const Verify = () => {
     }
 
     setIsVerifying(true);
-    
-    // Simulate verification - In production, this calls Hedera + IPFS
-    setTimeout(() => {
-      // Mock verification result
-      setVerificationResult({
-        valid: true,
-        certificate: {
-          id: certificateId,
-          recipientName: "John Doe",
-          courseName: "Advanced Blockchain Development",
-          institution: "Hedera Institute of Technology",
-          issuedDate: "2025-01-15",
-          serialNumber: "0.0.123456:7890",
-          ipfsCid: "QmX7J9K2L3M4N5O6P7Q8R9S0T1U2V3W4X5Y6Z7A8B9C0D1",
-          issuerDid: "did:hedera:testnet:z6Mk...",
+    setVerificationResult(null);
+
+    try {
+      // Parse certificate ID (format: tokenId:serialNumber or just certificateId)
+      let tokenId: string;
+      let serialNumber: string;
+
+      if (certificateId.includes(':')) {
+        [tokenId, serialNumber] = certificateId.split(':');
+      } else {
+        // Try to find in database first
+        const { data: cert, error } = await supabase
+          .from('certificate_cache')
+          .select('token_id, serial_number')
+          .eq('certificate_id', certificateId)
+          .single();
+
+        if (error || !cert) {
+          throw new Error('Certificate not found. Please use format: tokenId:serialNumber (e.g., 0.0.123456:1)');
         }
+
+        tokenId = cert.token_id;
+        serialNumber = String(cert.serial_number);
+      }
+
+      // Verify certificate using Hedera service
+      const result = await hederaService.verifyCertificate(`${tokenId}:${serialNumber}`);
+
+      if (result.verified) {
+        setVerificationResult({
+          valid: true,
+          certificate: {
+            id: certificateId,
+            recipientName: result.metadata?.recipientName || 'Unknown',
+            courseName: result.metadata?.courseName || 'Unknown Course',
+            institution: result.metadata?.institutionName || 'Unknown Institution',
+            issuedDate: result.issuedAt || new Date().toISOString().split('T')[0],
+            serialNumber: `${tokenId}:${serialNumber}`,
+            ipfsCid: result.certificateId || '',
+            issuerDid: result.issuedBy || '',
+          }
+        });
+        toast.success("Certificate verified successfully!");
+      } else {
+        setVerificationResult({
+          valid: false,
+          error: result.revokedAt ? 'Certificate has been revoked' : 'Certificate not found or invalid'
+        });
+        toast.error("Certificate verification failed");
+      }
+    } catch (error) {
+      console.error('Verification error:', error);
+      setVerificationResult({
+        valid: false,
+        error: error instanceof Error ? error.message : 'Failed to verify certificate'
       });
+      toast.error(error instanceof Error ? error.message : 'Verification failed');
+    } finally {
       setIsVerifying(false);
-      toast.success("Certificate verified successfully!");
-    }, 2000);
+    }
   };
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border/40 backdrop-blur-sm sticky top-0 z-50 bg-background/80">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
-            <Shield className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              CertChain
-            </span>
-          </Link>
-          <Link to="/">
-            <Button variant="ghost" size="sm">Back to Home</Button>
-          </Link>
-        </div>
-      </header>
+      <PublicHeader />
 
       {/* Verify Section */}
       <section className="py-16">
@@ -81,8 +127,8 @@ const Verify = () => {
                   onKeyDown={(e) => e.key === 'Enter' && handleVerify()}
                   className="flex-1"
                 />
-                <Button 
-                  variant="hero" 
+                <Button
+                  variant="hero"
                   onClick={handleVerify}
                   disabled={isVerifying}
                 >
@@ -168,7 +214,7 @@ const Verify = () => {
                       <p className="font-mono text-sm truncate">{verificationResult.certificate.ipfsCid}</p>
                     </div>
                   </div>
-                  
+
                   <div className="pt-4">
                     <Link to={`/verify/${verificationResult.certificate.id}`}>
                       <Button variant="outline" className="w-full">

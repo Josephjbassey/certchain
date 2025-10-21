@@ -1,56 +1,219 @@
+import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Shield, CheckCircle2, Calendar, User, Building, FileText, Download, Share2, ExternalLink } from "lucide-react";
+import { Shield, CheckCircle2, Calendar, User, Building, FileText, Download, Share2, ExternalLink, XCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { PublicHeader } from "@/components/PublicHeader";
+import { hederaService } from "@/lib/hedera";
+import { ipfsService } from "@/lib/ipfs";
+import { toast } from "sonner";
+import { getHederaConfig } from "@/lib/hedera/config";
+
+interface CertificateData {
+  id: string;
+  recipientName?: string;
+  recipientDid?: string;
+  courseName: string;
+  institution: string;
+  institutionDid?: string;
+  issuedDate: string;
+  expiresAt?: string | null;
+  serialNumber: string;
+  tokenId: string;
+  ipfsCid: string;
+  transactionId?: string;
+  status: 'valid' | 'revoked' | 'invalid';
+  skills?: string[];
+  grade?: string;
+}
 
 const VerifyDetail = () => {
   const { certificateId } = useParams();
+  const [certificate, setCertificate] = useState<CertificateData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Mock certificate data - in production, fetch from Hedera
-  const certificate = {
-    id: certificateId,
-    recipientName: "John Doe",
-    recipientDid: "did:hedera:testnet:z6Mk...",
-    courseName: "Advanced Blockchain Development",
-    institution: "Hedera Institute of Technology",
-    institutionDid: "did:hedera:testnet:z8Hs...",
-    issuedDate: "2025-01-15T10:30:00Z",
-    expiresAt: null,
-    serialNumber: "0.0.123456:7890",
-    tokenId: "0.0.123456",
-    ipfsCid: "QmX7J9K2L3M4N5O6P7Q8R9S0T1U2V3W4X5Y6Z7A8B9C0D1",
-    transactionId: "0.0.123456@1705315800.123456789",
-    status: "valid",
-    skills: ["Smart Contracts", "Hedera SDK", "DApp Development"],
+  useEffect(() => {
+    const fetchCertificate = async () => {
+      if (!certificateId) return;
+      
+      setIsLoading(true);
+      setError(null);
+      
+      try {
+        // Verify the certificate
+        const result = await hederaService.verifyCertificate(certificateId);
+        
+        if (!result.verified) {
+          setError(result.revokedAt ? 'Certificate has been revoked' : 'Certificate not found or invalid');
+          setCertificate({
+            id: certificateId,
+            courseName: 'Unknown',
+            institution: 'Unknown',
+            issuedDate: '',
+            serialNumber: certificateId,
+            tokenId: '',
+            ipfsCid: '',
+            status: result.revokedAt ? 'revoked' : 'invalid'
+          });
+          return;
+        }
+
+        // Fetch metadata from IPFS if available
+        let metadata = result.metadata;
+        if (result.certificateId && !metadata) {
+          try {
+            const ipfsData = await ipfsService.fetchFromIPFS(result.certificateId);
+            metadata = ipfsData as any;
+          } catch (err) {
+            console.warn('Failed to fetch IPFS metadata:', err);
+          }
+        }
+
+        const config = getHederaConfig();
+        const [tokenId, serialNumber] = certificateId.includes(':') 
+          ? certificateId.split(':') 
+          : [result.tokenId || '', String(result.serialNumber || '')];
+
+        setCertificate({
+          id: certificateId,
+          recipientName: metadata?.recipientName,
+          recipientDid: result.issuedTo,
+          courseName: metadata?.courseName || 'Unknown Course',
+          institution: metadata?.institutionName || 'Unknown Institution',
+          institutionDid: result.issuedBy,
+          issuedDate: result.issuedAt || new Date().toISOString(),
+          expiresAt: metadata?.expiresAt,
+          serialNumber: `${tokenId}:${serialNumber}`,
+          tokenId: tokenId,
+          ipfsCid: result.certificateId || '',
+          transactionId: config.network === 'mainnet' 
+            ? `${tokenId}@${Date.now()}`
+            : `${tokenId}@${Date.now()}`,
+          status: result.revokedAt ? 'revoked' : 'valid',
+          skills: metadata?.skills,
+          grade: metadata?.grade
+        });
+
+      } catch (err) {
+        console.error('Error fetching certificate:', err);
+        setError(err instanceof Error ? err.message : 'Failed to fetch certificate details');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCertificate();
+  }, [certificateId]);
+
+  const handleDownload = async () => {
+    if (!certificate) return;
+    toast.info("Certificate download feature coming soon!");
+    // TODO: Implement PDF generation and download
   };
+
+  const handleShare = async () => {
+    if (!certificate) return;
+    const url = window.location.href;
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `${certificate.courseName} Certificate`,
+          text: `Verify ${certificate.recipientName}'s certificate`,
+          url: url
+        });
+      } catch (err) {
+        if ((err as Error).name !== 'AbortError') {
+          navigator.clipboard.writeText(url);
+          toast.success("Link copied to clipboard!");
+        }
+      }
+    } else {
+      navigator.clipboard.writeText(url);
+      toast.success("Link copied to clipboard!");
+    }
+  };
+
+  const handleViewIPFS = () => {
+    if (!certificate?.ipfsCid) return;
+    const gatewayUrl = `https://gateway.pinata.cloud/ipfs/${certificate.ipfsCid}`;
+    window.open(gatewayUrl, '_blank');
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <PublicHeader />
+        <div className="container mx-auto px-4 py-12 max-w-4xl">
+          <Card className="p-12 text-center">
+            <Loader2 className="h-12 w-12 text-primary mx-auto animate-spin mb-4" />
+            <p className="text-muted-foreground">Verifying certificate...</p>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !certificate) {
+    return (
+      <div className="min-h-screen bg-background">
+        <PublicHeader />
+        <div className="container mx-auto px-4 py-12 max-w-4xl">
+          <Card className="p-6 mb-8 gradient-card border-destructive/20 shadow-elevated">
+            <div className="flex items-center gap-4">
+              <div className="h-16 w-16 rounded-full bg-destructive/10 flex items-center justify-center">
+                <XCircle className="h-8 w-8 text-destructive" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold mb-1">Certificate Not Found</h1>
+                <p className="text-muted-foreground">{error || 'Unable to verify this certificate'}</p>
+              </div>
+            </div>
+          </Card>
+          <div className="text-center">
+            <Link to="/verify">
+              <Button variant="outline">Back to Verify</Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const isValid = certificate.status === 'valid';
+  const isRevoked = certificate.status === 'revoked';
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border/40 backdrop-blur-sm sticky top-0 z-50 bg-background/80">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
-            <Shield className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              CertChain
-            </span>
-          </Link>
-          <Link to="/verify">
-            <Button variant="ghost" size="sm">Back to Verify</Button>
-          </Link>
-        </div>
-      </header>
+      <PublicHeader />
 
       <div className="container mx-auto px-4 py-12 max-w-4xl">
         {/* Status Banner */}
-        <Card className="p-6 mb-8 gradient-card border-primary/20 shadow-elevated">
+        <Card className={`p-6 mb-8 gradient-card shadow-elevated ${
+          isValid ? 'border-primary/20' : 'border-destructive/20'
+        }`}>
           <div className="flex items-center gap-4">
-            <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-              <CheckCircle2 className="h-8 w-8 text-primary" />
+            <div className={`h-16 w-16 rounded-full flex items-center justify-center ${
+              isValid ? 'bg-primary/10' : 'bg-destructive/10'
+            }`}>
+              {isValid ? (
+                <CheckCircle2 className="h-8 w-8 text-primary" />
+              ) : (
+                <XCircle className="h-8 w-8 text-destructive" />
+              )}
             </div>
             <div>
-              <h1 className="text-2xl font-bold mb-1">Certificate Verified</h1>
-              <p className="text-muted-foreground">This certificate is valid and has been verified on Hedera blockchain</p>
+              <h1 className="text-2xl font-bold mb-1">
+                {isValid ? 'Certificate Verified' : isRevoked ? 'Certificate Revoked' : 'Certificate Invalid'}
+              </h1>
+              <p className="text-muted-foreground">
+                {isValid 
+                  ? 'This certificate is valid and has been verified on Hedera blockchain'
+                  : isRevoked
+                  ? 'This certificate has been revoked and is no longer valid'
+                  : 'This certificate could not be verified'}
+              </p>
             </div>
           </div>
         </Card>
@@ -68,8 +231,10 @@ const VerifyDetail = () => {
                 <User className="h-4 w-4" />
                 <span>Recipient</span>
               </div>
-              <p className="font-medium text-lg">{certificate.recipientName}</p>
-              <p className="text-sm font-mono text-muted-foreground">{certificate.recipientDid}</p>
+              <p className="font-medium text-lg">{certificate.recipientName || 'Not specified'}</p>
+              {certificate.recipientDid && (
+                <p className="text-sm font-mono text-muted-foreground">{certificate.recipientDid}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -78,7 +243,9 @@ const VerifyDetail = () => {
                 <span>Issued By</span>
               </div>
               <p className="font-medium text-lg">{certificate.institution}</p>
-              <p className="text-sm font-mono text-muted-foreground">{certificate.institutionDid}</p>
+              {certificate.institutionDid && (
+                <p className="text-sm font-mono text-muted-foreground">{certificate.institutionDid}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -128,26 +295,32 @@ const VerifyDetail = () => {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Status</p>
-                <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium">
-                  Valid
+                <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                  isValid 
+                    ? 'bg-primary/10 text-primary'
+                    : 'bg-destructive/10 text-destructive'
+                }`}>
+                  {isValid ? 'Valid' : isRevoked ? 'Revoked' : 'Invalid'}
                 </span>
               </div>
             </div>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3 pt-4">
-            <Button variant="hero" className="flex-1">
+            <Button variant="hero" className="flex-1" onClick={handleDownload} disabled={!isValid}>
               <Download className="h-4 w-4" />
               <span className="ml-2">Download Certificate</span>
             </Button>
-            <Button variant="outline" className="flex-1">
+            <Button variant="outline" className="flex-1" onClick={handleShare}>
               <Share2 className="h-4 w-4" />
               <span className="ml-2">Share</span>
             </Button>
-            <Button variant="outline">
-              <ExternalLink className="h-4 w-4" />
-              <span className="ml-2">View on IPFS</span>
-            </Button>
+            {certificate.ipfsCid && (
+              <Button variant="outline" onClick={handleViewIPFS}>
+                <ExternalLink className="h-4 w-4" />
+                <span className="ml-2">View on IPFS</span>
+              </Button>
+            )}
           </div>
         </Card>
       </div>

@@ -1,5 +1,11 @@
 # Database Schema Requirements
 
+If you're starting fresh and want a complete, paste-and-run schema for Supabase, use `COMPLETE_DATABASE_SCHEMA.sql` in the project root. Open Supabase SQL editor, paste the entire file, run it, then regenerate local types:
+
+```bash
+supabase gen types typescript --local > src/integrations/supabase/types.ts
+```
+
 ## Required Tables for Production
 
 The following tables need to be created in your Supabase database for full functionality:
@@ -189,4 +195,34 @@ supabase gen types typescript --local > src/integrations/supabase/types.ts
 
 ## Note
 
-The current TypeScript errors are expected and will be resolved once these database tables are created in Supabase. The frontend code is complete and production-ready - it just needs the backend database schema to match.
+This file documents the required database schema for the production frontend you now have. Create these tables, columns and policies in Supabase, then regenerate types to resolve the TypeScript errors noted in the code.
+
+### How to combine with your existing schema
+
+You shared a prior schema that already defines core tables like `profiles`, `user_roles`, `institutions`, `certificate_cache`, `claim_tokens`, `instructor_candidates`, `user_scopes`, `audit_logs`, `hcs_events`, and `webhooks`. The new UI additionally expects:
+
+- `user_dids`
+- `api_keys`
+- `user_wallets`
+- `application_logs`
+- `webhooks` columns: `is_active`, `failure_count`
+- a `certificates` relation (we provide a view mapped to `certificate_cache`)
+
+To safely merge both worlds, a ready-to-run idempotent migration has been added here:
+
+`supabase/migrations/20251021000000_merge_certchain_schema.sql`
+
+Run this SQL in the Supabase SQL editor (or via CLI). It will:
+
+- Create the missing tables if they don't exist
+- Add missing columns to `webhooks` and migrate data from `active` → `is_active`
+- Create a `certificates` view compatible with the frontend by selecting from `certificate_cache`
+- Enable RLS and add minimal policies for the new tables
+
+After applying, regenerate your generated types so the frontend compiles cleanly:
+
+```
+supabase gen types typescript --local > src/integrations/supabase/types.ts
+```
+
+If you keep using the prior schema alongside this one, you don't need to duplicate data: `certificates` is a view over `certificate_cache` and keeps everything in sync automatically.

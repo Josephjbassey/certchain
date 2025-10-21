@@ -2,6 +2,7 @@ import { Shield, Check, Zap, Building, Rocket } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Link } from "react-router-dom";
+import { PublicHeader } from "@/components/PublicHeader";
 
 const Pricing = () => {
   const plans = [
@@ -54,19 +55,7 @@ const Pricing = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border/40 backdrop-blur-sm sticky top-0 z-50 bg-background/80">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2">
-            <Shield className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              CertChain
-            </span>
-          </Link>
-          <Link to="/auth/signup">
-            <Button variant="hero" size="sm">Get Started</Button>
-          </Link>
-        </div>
-      </header>
+      <PublicHeader />
 
       <div className="container mx-auto px-4 py-16">
         <div className="text-center mb-16 max-w-3xl mx-auto">
@@ -86,7 +75,7 @@ const Pricing = () => {
                   </span>
                 </div>
               )}
-              
+
               <div className="space-y-4">
                 <div className="h-14 w-14 rounded-lg bg-primary/10 flex items-center justify-center">
                   <plan.icon className="h-7 w-7 text-primary" />
@@ -117,8 +106,8 @@ const Pricing = () => {
               </ul>
 
               <Link to="/auth/signup">
-                <Button 
-                  variant={plan.popular ? "hero" : "outline"} 
+                <Button
+                  variant={plan.popular ? "hero" : "outline"}
                   className="w-full"
                   size="lg"
                 >

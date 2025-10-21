@@ -4,19 +4,22 @@
 -- This schema can be used to recreate the entire database
 -- in a new Supabase instance or other PostgreSQL database
 
+-- Required for gen_random_uuid()
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 -- ================================================
 -- 1. ENUMS
 -- ================================================
 
-CREATE TYPE public.app_role AS ENUM ('admin', 'moderator', 'user', 'super_admin', 'institution_admin', 'instructor', 'issuer', 'candidate');
+CREATE TYPE public.app_role AS ENUM ('super_admin', 'institution_admin', 'instructor', 'candidate');
 
 -- ================================================
 -- 2. TABLES
 -- ================================================
 
 -- Profiles Table
-CREATE TABLE public.profiles (
-    id UUID NOT NULL PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS public.profiles (
+  id UUID NOT NULL PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     email TEXT,
     display_name TEXT,
     institution_id UUID,
@@ -27,7 +30,7 @@ CREATE TABLE public.profiles (
 );
 
 -- User Roles Table
-CREATE TABLE public.user_roles (
+CREATE TABLE IF NOT EXISTS public.user_roles (
     id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id UUID NOT NULL,
     role public.app_role NOT NULL,
@@ -36,7 +39,7 @@ CREATE TABLE public.user_roles (
 );
 
 -- Institutions Table
-CREATE TABLE public.institutions (
+CREATE TABLE IF NOT EXISTS public.institutions (
     id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
     name TEXT NOT NULL,
     domain TEXT,
@@ -55,7 +58,7 @@ CREATE TABLE public.institutions (
 );
 
 -- Certificate Cache Table
-CREATE TABLE public.certificate_cache (
+CREATE TABLE IF NOT EXISTS public.certificate_cache (
     id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
     certificate_id TEXT NOT NULL,
     token_id TEXT NOT NULL,
@@ -78,7 +81,7 @@ CREATE TABLE public.certificate_cache (
 );
 
 -- Claim Tokens Table
-CREATE TABLE public.claim_tokens (
+CREATE TABLE IF NOT EXISTS public.claim_tokens (
     id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
     token TEXT NOT NULL,
     nonce UUID DEFAULT gen_random_uuid(),
@@ -92,7 +95,7 @@ CREATE TABLE public.claim_tokens (
 );
 
 -- Instructor Candidates Table
-CREATE TABLE public.instructor_candidates (
+CREATE TABLE IF NOT EXISTS public.instructor_candidates (
     id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
     instructor_id UUID NOT NULL,
     candidate_id UUID NOT NULL,
@@ -103,7 +106,7 @@ CREATE TABLE public.instructor_candidates (
 );
 
 -- User Scopes Table
-CREATE TABLE public.user_scopes (
+CREATE TABLE IF NOT EXISTS public.user_scopes (
     id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id UUID NOT NULL,
     institution_id UUID,
@@ -116,7 +119,7 @@ CREATE TABLE public.user_scopes (
 );
 
 -- Audit Logs Table
-CREATE TABLE public.audit_logs (
+CREATE TABLE IF NOT EXISTS public.audit_logs (
     id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id UUID,
     action TEXT NOT NULL,
@@ -128,7 +131,7 @@ CREATE TABLE public.audit_logs (
 );
 
 -- HCS Events Table
-CREATE TABLE public.hcs_events (
+CREATE TABLE IF NOT EXISTS public.hcs_events (
     id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
     topic_id TEXT NOT NULL,
     sequence_number BIGINT NOT NULL,
@@ -141,14 +144,66 @@ CREATE TABLE public.hcs_events (
 );
 
 -- Webhooks Table
-CREATE TABLE public.webhooks (
-    id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
-    url TEXT NOT NULL,
-    secret TEXT NOT NULL,
-    events TEXT[] NOT NULL,
-    institution_id UUID,
-    active BOOLEAN DEFAULT true,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+CREATE TABLE IF NOT EXISTS public.webhooks (
+  id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  url TEXT NOT NULL,
+  secret TEXT NOT NULL,
+  events TEXT[] NOT NULL,
+  institution_id UUID,
+  is_active BOOLEAN DEFAULT true,
+  failure_count INTEGER DEFAULT 0,
+  last_triggered_at TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- User DIDs Table (account <-> DID mapping)
+CREATE TABLE IF NOT EXISTS public.user_dids (
+  id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  account_id TEXT NOT NULL,
+  did TEXT NOT NULL,
+  network TEXT NOT NULL DEFAULT 'testnet',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(account_id, network)
+);
+
+-- API Keys Table (hashed storage)
+CREATE TABLE IF NOT EXISTS public.api_keys (
+  id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  key_hash TEXT NOT NULL UNIQUE,
+  key_prefix TEXT NOT NULL,
+  scopes TEXT[] NOT NULL DEFAULT '{}',
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  last_used_at TIMESTAMP WITH TIME ZONE,
+  expires_at TIMESTAMP WITH TIME ZONE
+);
+
+-- Connected Wallets Table
+CREATE TABLE IF NOT EXISTS public.user_wallets (
+  id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  account_id TEXT NOT NULL,
+  wallet_type TEXT NOT NULL,
+  is_primary BOOLEAN DEFAULT false,
+  connected_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  last_used_at TIMESTAMP WITH TIME ZONE,
+  UNIQUE(user_id, account_id)
+);
+
+-- Application Logs Table (structured logs)
+CREATE TABLE IF NOT EXISTS public.application_logs (
+  id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+  level TEXT NOT NULL CHECK (level IN ('debug', 'info', 'warn', 'error', 'critical')),
+  message TEXT NOT NULL,
+  context JSONB,
+  timestamp TIMESTAMP WITH TIME ZONE NOT NULL,
+  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  session_id TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- ================================================
@@ -173,6 +228,17 @@ CREATE INDEX idx_audit_logs_institution_id ON public.audit_logs(institution_id);
 CREATE INDEX idx_audit_logs_created_at ON public.audit_logs(created_at DESC);
 CREATE INDEX idx_hcs_events_topic_id ON public.hcs_events(topic_id);
 CREATE INDEX idx_hcs_events_processed ON public.hcs_events(processed);
+CREATE INDEX IF NOT EXISTS idx_webhooks_user_id ON public.webhooks(user_id);
+CREATE INDEX IF NOT EXISTS idx_webhooks_is_active ON public.webhooks(is_active);
+CREATE INDEX IF NOT EXISTS idx_user_dids_account_id ON public.user_dids(account_id);
+CREATE INDEX IF NOT EXISTS idx_user_dids_user_id ON public.user_dids(user_id);
+CREATE INDEX IF NOT EXISTS idx_api_keys_user_id ON public.api_keys(user_id);
+CREATE INDEX IF NOT EXISTS idx_api_keys_key_hash ON public.api_keys(key_hash);
+CREATE INDEX IF NOT EXISTS idx_user_wallets_user_id ON public.user_wallets(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_wallets_account_id ON public.user_wallets(account_id);
+CREATE INDEX IF NOT EXISTS idx_application_logs_level ON public.application_logs(level);
+CREATE INDEX IF NOT EXISTS idx_application_logs_user_id ON public.application_logs(user_id);
+CREATE INDEX IF NOT EXISTS idx_application_logs_timestamp ON public.application_logs(timestamp DESC);
 
 -- ================================================
 -- 4. FUNCTIONS
@@ -317,7 +383,7 @@ SET search_path TO 'public'
 AS $$
 BEGIN
   INSERT INTO public.user_roles (user_id, role)
-  VALUES (NEW.id, 'user');
+  VALUES (NEW.id, 'candidate');
   RETURN NEW;
 END;
 $$;
@@ -363,6 +429,28 @@ CREATE TRIGGER update_institutions_updated_at
   FOR EACH ROW
   EXECUTE FUNCTION public.update_updated_at();
 
+  -- Certificates compatibility view (optional)
+  CREATE OR REPLACE VIEW public.certificates AS
+  SELECT
+    cc.certificate_id AS id,
+    cc.token_id,
+    cc.serial_number,
+    cc.issuer_did,
+    cc.recipient_did,
+    cc.recipient_account_id,
+    cc.recipient_email,
+    cc.course_name,
+    cc.institution_id,
+    cc.issued_by_user_id,
+    cc.ipfs_cid,
+    cc.metadata,
+    cc.hedera_tx_id,
+    cc.issued_at,
+    cc.expires_at,
+    cc.revoked_at,
+    cc.created_at
+  FROM public.certificate_cache cc;
+
 -- ================================================
 -- 6. ROW LEVEL SECURITY (RLS)
 -- ================================================
@@ -378,6 +466,10 @@ ALTER TABLE public.user_scopes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.hcs_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.webhooks ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE public.user_dids ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE public.api_keys ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE public.user_wallets ENABLE ROW LEVEL SECURITY;
+  ALTER TABLE public.application_logs ENABLE ROW LEVEL SECURITY;
 
 -- ================================================
 -- PROFILES POLICIES
@@ -391,13 +483,13 @@ CREATE POLICY "Users can update their own profile"
 ON public.profiles FOR UPDATE
 USING (auth.uid() = id);
 
-CREATE POLICY "Admins can view all profiles"
+CREATE POLICY "Super admins can view all profiles"
 ON public.profiles FOR SELECT
-USING (has_role(auth.uid(), 'admin'));
+USING (is_super_admin(auth.uid()));
 
-CREATE POLICY "Admins can update all profiles"
+CREATE POLICY "Super admins can update all profiles"
 ON public.profiles FOR UPDATE
-USING (has_role(auth.uid(), 'admin'));
+USING (is_super_admin(auth.uid()));
 
 CREATE POLICY "Institution admins can view profiles in their institution"
 ON public.profiles FOR SELECT
@@ -423,9 +515,9 @@ CREATE POLICY "Users can view their own roles"
 ON public.user_roles FOR SELECT
 USING (auth.uid() = user_id);
 
-CREATE POLICY "Admins can manage roles"
+CREATE POLICY "Super admins can manage roles"
 ON public.user_roles FOR ALL
-USING (has_role(auth.uid(), 'admin'));
+USING (is_super_admin(auth.uid()));
 
 -- ================================================
 -- INSTITUTIONS POLICIES
@@ -474,9 +566,7 @@ WITH CHECK (
   AND (has_role(auth.uid(), 'instructor') OR has_role(auth.uid(), 'institution_admin'))
 );
 
-CREATE POLICY "Issuers can insert certificates"
-ON public.certificate_cache FOR INSERT
-WITH CHECK (has_role(auth.uid(), 'issuer') OR has_role(auth.uid(), 'admin'));
+-- Note: No separate 'issuer' role; insert permission covered by instructor/institution_admin and super_admin policies
 
 CREATE POLICY "Institution admins can view certificates in their institution"
 ON public.certificate_cache FOR SELECT
@@ -584,17 +674,77 @@ USING (is_super_admin(auth.uid()));
 -- HCS_EVENTS POLICIES
 -- ================================================
 
-CREATE POLICY "Admins can manage HCS events"
+CREATE POLICY "Super admins can manage HCS events"
 ON public.hcs_events FOR ALL
-USING (has_role(auth.uid(), 'admin'));
+USING (is_super_admin(auth.uid()));
 
 -- ================================================
 -- WEBHOOKS POLICIES
 -- ================================================
 
-CREATE POLICY "Admins can manage webhooks"
+CREATE POLICY "Users can manage own webhooks"
 ON public.webhooks FOR ALL
-USING (has_role(auth.uid(), 'admin'));
+USING (auth.uid() = user_id)
+WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Super admins can manage webhooks"
+ON public.webhooks FOR ALL
+USING (is_super_admin(auth.uid()));
+
+-- ================================================
+-- USER_DIDS POLICIES
+-- ================================================
+
+CREATE POLICY "Users can view own DIDs"
+ON public.user_dids FOR SELECT
+USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can manage own DIDs"
+ON public.user_dids FOR ALL
+USING (auth.uid() = user_id)
+WITH CHECK (auth.uid() = user_id);
+
+-- ================================================
+-- API_KEYS POLICIES
+-- ================================================
+
+CREATE POLICY "Users can view own API keys"
+ON public.api_keys FOR SELECT
+USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can manage own API keys"
+ON public.api_keys FOR ALL
+USING (auth.uid() = user_id)
+WITH CHECK (auth.uid() = user_id);
+
+-- ================================================
+-- USER_WALLETS POLICIES
+-- ================================================
+
+CREATE POLICY "Users can view own wallets"
+ON public.user_wallets FOR SELECT
+USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can manage own wallets"
+ON public.user_wallets FOR ALL
+USING (auth.uid() = user_id)
+WITH CHECK (auth.uid() = user_id);
+
+-- ================================================
+-- APPLICATION_LOGS POLICIES
+-- ================================================
+
+CREATE POLICY "Users can insert own logs"
+ON public.application_logs FOR INSERT
+WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can view own logs"
+ON public.application_logs FOR SELECT
+USING (auth.uid() = user_id OR user_id IS NULL);
+
+CREATE POLICY "Super admins can view all logs"
+ON public.application_logs FOR SELECT
+USING (is_super_admin(auth.uid()));
 
 -- ================================================
 -- NOTES
@@ -614,5 +764,8 @@ USING (has_role(auth.uid(), 'admin'));
 -- - SUPABASE_URL
 -- - SUPABASE_ANON_KEY
 -- - SUPABASE_SERVICE_ROLE_KEY
+--
+-- After applying, regenerate client types locally:
+-- supabase gen types typescript --local > src/integrations/supabase/types.ts
 --
 -- ================================================
