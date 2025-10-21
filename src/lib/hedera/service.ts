@@ -149,18 +149,18 @@ export class HederaService {
         try {
             const { network } = getHederaConfig();
 
-            // Check if DID exists in database first
-            const { data: existingDID } = await supabase
-                .from('user_dids')
-                .select('did, account_id, network')
-                .eq('account_id', accountId)
-                .single();
+            // Check if DID exists in profile
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('did, hedera_account_id')
+                .eq('hedera_account_id', accountId)
+                .maybeSingle();
 
-            if (existingDID) {
+            if (profile?.did) {
                 return {
-                    did: existingDID.did,
-                    accountId: existingDID.account_id,
-                    network: existingDID.network as any,
+                    did: profile.did,
+                    accountId: accountId,
+                    network: getHederaConfig().network as any,
                 };
             }
 
@@ -168,12 +168,13 @@ export class HederaService {
             const response = await this.createDID({ userAccountId: accountId });
 
             if (response.success) {
-                // Store in database
-                await supabase.from('user_dids').insert({
-                    account_id: accountId,
-                    did: response.did,
-                    network: response.network,
-                });
+                // Store in profile
+                await supabase.from('profiles')
+                    .update({
+                        did: response.did,
+                        hedera_account_id: accountId,
+                    })
+                    .eq('hedera_account_id', accountId);
 
                 return {
                     did: response.did,
@@ -196,10 +197,10 @@ export class HederaService {
         try {
             // Get certificate from database
             const { data: cert, error } = await supabase
-                .from('certificates')
+                .from('certificate_cache')
                 .select('*')
-                .eq('id', certificateId)
-                .single();
+                .eq('certificate_id', certificateId)
+                .maybeSingle();
 
             if (error || !cert) {
                 return {
@@ -237,7 +238,7 @@ export class HederaService {
 
             return {
                 verified: true,
-                certificateId: cert.id,
+                certificateId: cert.certificate_id,
                 tokenId: cert.token_id,
                 serialNumber: cert.serial_number,
                 issuedBy: cert.issuer_did,
@@ -259,7 +260,7 @@ export class HederaService {
     async getCertificatesForAccount(accountId: string) {
         try {
             const { data, error } = await supabase
-                .from('certificates')
+                .from('certificate_cache')
                 .select('*')
                 .eq('recipient_account_id', accountId)
                 .order('issued_at', { ascending: false });

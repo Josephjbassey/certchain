@@ -41,13 +41,6 @@ const Login = () => {
         return '/instructor/dashboard';
       case 'candidate':
         return '/candidate/dashboard';
-      // Backward compatibility
-      case 'admin':
-        return '/admin/dashboard';
-      case 'issuer':
-        return '/instructor/dashboard';
-      case 'user':
-        return '/candidate/dashboard';
       default:
         return '/candidate/dashboard';
     }

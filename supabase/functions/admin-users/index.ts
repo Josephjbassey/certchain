@@ -79,18 +79,19 @@ serve(async (req) => {
 
     const requesterId = userData.user.id;
 
-    const { data: profile, error: profileErr } = await supabaseAdmin
-      .from("profiles")
-      .select("id, role")
-      .eq("id", requesterId)
-      .maybeSingle();
+    // Check if user has super_admin role
+    const { data: roles, error: roleErr } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", requesterId);
 
-    if (profileErr) {
-      throw profileErr;
+    if (roleErr) {
+      throw roleErr;
     }
 
-    if (!profile || !["super_admin", "admin"].includes(profile.role)) {
-      return json({ success: false, error: "Forbidden: admin only" }, 403);
+    const userRoles = roles?.map(r => r.role) || [];
+    if (!userRoles.includes('super_admin')) {
+      return json({ success: false, error: "Forbidden: super admin only" }, 403);
     }
 
     // Parse payload
@@ -120,7 +121,7 @@ serve(async (req) => {
   }
 });
 
-async function handleList(payload: z.infer<typeof ListSchema>, supabaseAdmin: ReturnType<typeof createClient>) {
+async function handleList(payload: z.infer<typeof ListSchema>, supabaseAdmin: any) {
   const { page, perPage, search } = payload;
 
   // Supabase admin list users (auth table)
@@ -131,36 +132,43 @@ async function handleList(payload: z.infer<typeof ListSchema>, supabaseAdmin: Re
   const users = data?.users || [];
   const userIds = users.map((u: any) => u.id);
 
-  // Fetch profiles for role and institution
+  // Fetch profiles and roles
   const { data: profiles, error: profErr } = await supabaseAdmin
     .from("profiles")
-    .select("id, role, institution_id, disabled")
+    .select("id, institution_id")
     .in("id", userIds);
 
   if (profErr) return json({ success: false, error: profErr.message }, 500);
 
+  const { data: userRoles, error: roleErr } = await supabaseAdmin
+    .from("user_roles")
+    .select("user_id, role")
+    .in("user_id", userIds);
+
+  if (roleErr) return json({ success: false, error: roleErr.message }, 500);
+
   const profileMap = new Map(profiles?.map((p: any) => [p.id, p]));
+  const roleMap = new Map(userRoles?.map((r: any) => [r.user_id, r.role]));
 
   let result = users.map((u: any) => ({
     id: u.id,
     email: u.email,
     created_at: u.created_at,
     last_sign_in_at: u.last_sign_in_at,
-    role: profileMap.get(u.id)?.role || null,
-    institution_id: profileMap.get(u.id)?.institution_id || null,
-    disabled: profileMap.get(u.id)?.disabled ?? false,
+    role: roleMap.get(u.id) || 'candidate',
+    institution_id: (profileMap.get(u.id) as any)?.institution_id || null,
   }));
 
   // Optional simple search by email
   if (search && search.trim().length > 0) {
     const s = search.toLowerCase();
-    result = result.filter((u) => String(u.email || "").toLowerCase().includes(s));
+    result = result.filter((u: any) => String(u.email || "").toLowerCase().includes(s));
   }
 
   return json({ success: true, page, perPage, count: result.length, users: result });
 }
 
-async function handleCreate(payload: z.infer<typeof CreateSchema>, supabaseAdmin: ReturnType<typeof createClient>) {
+async function handleCreate(payload: z.infer<typeof CreateSchema>, supabaseAdmin: any) {
   const { email, role, institutionId } = payload;
 
   // Create auth user (send invite email automatically by default)
@@ -180,38 +188,54 @@ async function handleCreate(payload: z.infer<typeof CreateSchema>, supabaseAdmin
     .insert({
       id: user.id,
       email,
-      role,
       institution_id: institutionId ?? null,
-      disabled: false,
     });
   if (profErr) return json({ success: false, error: profErr.message }, 500);
+
+  // Insert role
+  const { error: roleErr } = await supabaseAdmin
+    .from("user_roles")
+    .insert({
+      user_id: user.id,
+      role,
+    });
+  if (roleErr) return json({ success: false, error: roleErr.message }, 500);
 
   return json({ success: true, userId: user.id, email, role, institutionId: institutionId ?? null });
 }
 
-async function handleUpdate(payload: z.infer<typeof UpdateSchema>, supabaseAdmin: ReturnType<typeof createClient>) {
+async function handleUpdate(payload: z.infer<typeof UpdateSchema>, supabaseAdmin: any) {
   const { userId, role, disabled, institutionId } = payload;
 
-  const patch: Record<string, unknown> = {};
-  if (role) patch.role = role;
-  if (typeof disabled === "boolean") patch.disabled = disabled;
-  if (typeof institutionId !== "undefined") patch.institution_id = institutionId;
+  const profilePatch: Record<string, unknown> = {};
+  if (typeof institutionId !== "undefined") profilePatch.institution_id = institutionId;
 
-  if (Object.keys(patch).length === 0) {
-    return json({ success: false, error: "No fields to update" }, 400);
+  if (Object.keys(profilePatch).length > 0) {
+    const { error } = await supabaseAdmin
+      .from("profiles")
+      .update(profilePatch)
+      .eq("id", userId);
+
+    if (error) return json({ success: false, error: error.message }, 500);
   }
 
-  const { error } = await supabaseAdmin
-    .from("profiles")
-    .update(patch)
-    .eq("id", userId);
+  // Update role if specified
+  if (role) {
+    // Delete existing roles
+    await supabaseAdmin.from("user_roles").delete().eq("user_id", userId);
+    
+    // Insert new role
+    const { error: roleErr } = await supabaseAdmin
+      .from("user_roles")
+      .insert({ user_id: userId, role });
+    
+    if (roleErr) return json({ success: false, error: roleErr.message }, 500);
+  }
 
-  if (error) return json({ success: false, error: error.message }, 500);
-
-  return json({ success: true, userId, updated: patch });
+  return json({ success: true, userId, updated: { role, ...profilePatch } });
 }
 
-async function handleDelete(payload: z.infer<typeof DeleteSchema>, supabaseAdmin: ReturnType<typeof createClient>) {
+async function handleDelete(payload: z.infer<typeof DeleteSchema>, supabaseAdmin: any) {
   const { userId } = payload;
 
   // Delete auth user first

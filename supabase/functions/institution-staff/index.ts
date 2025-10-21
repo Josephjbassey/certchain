@@ -70,15 +70,28 @@ serve(async (req) => {
 
     const requesterId = userData.user.id;
 
-    // Load requester profile and role/institution
+    // Load requester profile and roles
     const { data: requesterProfile, error: profErr } = await supabaseAdmin
       .from("profiles")
-      .select("id, role, institution_id")
+      .select("id, institution_id")
       .eq("id", requesterId)
       .maybeSingle();
 
     if (profErr) throw profErr;
     if (!requesterProfile) return json({ success: false, error: "Profile not found" }, 403);
+
+    const { data: roles, error: roleErr } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", requesterId);
+
+    if (roleErr) throw roleErr;
+
+    const userRoles = roles?.map(r => r.role) || [];
+    const role = userRoles.includes('super_admin') ? 'super_admin' : 
+                 userRoles.includes('institution_admin') ? 'institution_admin' : 'candidate';
+
+    const profileWithRole = { ...requesterProfile, role };
 
     // Parse payload
     const raw = await req.json();
@@ -88,15 +101,15 @@ serve(async (req) => {
     switch (action) {
       case "list":
         payload = ListSchema.parse(raw);
-        await authorizeInstitutionAccess(requesterProfile, payload.institutionId);
+        await authorizeInstitutionAccess(profileWithRole, payload.institutionId);
         return await handleList(payload, supabaseAdmin);
       case "add":
         payload = AddSchema.parse(raw);
-        await authorizeInstitutionAccess(requesterProfile, payload.institutionId);
+        await authorizeInstitutionAccess(profileWithRole, payload.institutionId);
         return await handleAdd(payload, supabaseAdmin);
       case "remove":
         payload = RemoveSchema.parse(raw);
-        await authorizeInstitutionAccess(requesterProfile, payload.institutionId);
+        await authorizeInstitutionAccess(profileWithRole, payload.institutionId);
         return await handleRemove(payload, supabaseAdmin);
       default:
         return json({ success: false, error: "Invalid action" }, 400);
@@ -111,8 +124,8 @@ async function authorizeInstitutionAccess(
   requester: { role: string; institution_id: string | null },
   targetInstitutionId: string,
 ) {
-  // super_admin/admin can manage any institution
-  if (requester.role === "super_admin" || requester.role === "admin") return;
+  // super_admin can manage any institution
+  if (requester.role === "super_admin") return;
 
   // institution_admin can manage their own institution
   if (requester.role === "institution_admin" && requester.institution_id === targetInstitutionId) return;
@@ -120,25 +133,41 @@ async function authorizeInstitutionAccess(
   throw new Error("Forbidden: not allowed to manage this institution");
 }
 
-async function handleList(payload: z.infer<typeof ListSchema>, supabaseAdmin: ReturnType<typeof createClient>) {
+async function handleList(payload: z.infer<typeof ListSchema>, supabaseAdmin: any) {
   const { institutionId, search } = payload;
 
-  // Join institution_staff with profiles to present staff details
+  // Get instructor-candidate relationships for this institution
   const { data, error } = await supabaseAdmin
-    .from("institution_staff")
-    .select(
-      `user_id, institution_id, profiles:profiles!institution_staff_user_id_fkey(id, email, role, disabled)`,
-    )
+    .from("instructor_candidates")
+    .select("instructor_id, candidate_id")
     .eq("institution_id", institutionId);
 
   if (error) return json({ success: false, error: error.message }, 500);
 
-  let staff = (data || []).map((row: any) => ({
-    userId: row.user_id,
-    institutionId: row.institution_id,
-    email: row.profiles?.email ?? null,
-    role: row.profiles?.role ?? null,
-    disabled: row.profiles?.disabled ?? false,
+  const userIds = [...new Set([
+    ...data.map((r: any) => r.instructor_id),
+    ...data.map((r: any) => r.candidate_id)
+  ])];
+
+  // Fetch profiles and roles for these users
+  const { data: profiles } = await supabaseAdmin
+    .from("profiles")
+    .select("id, email")
+    .in("id", userIds);
+
+  const { data: roles } = await supabaseAdmin
+    .from("user_roles")
+    .select("user_id, role")
+    .in("user_id", userIds);
+
+  const profileMap = new Map(profiles?.map((p: any) => [p.id, p]));
+  const roleMap = new Map(roles?.map((r: any) => [r.user_id, r.role]));
+
+  let staff = userIds.map(userId => ({
+    userId,
+    institutionId,
+    email: (profileMap.get(userId) as any)?.email ?? null,
+    role: roleMap.get(userId) ?? 'candidate',
   }));
 
   if (search && search.trim().length > 0) {
@@ -149,7 +178,7 @@ async function handleList(payload: z.infer<typeof ListSchema>, supabaseAdmin: Re
   return json({ success: true, institutionId, count: staff.length, staff });
 }
 
-async function handleAdd(payload: z.infer<typeof AddSchema>, supabaseAdmin: ReturnType<typeof createClient>) {
+async function handleAdd(payload: z.infer<typeof AddSchema>, supabaseAdmin: any) {
   const { institutionId, userId, email } = payload;
 
   let targetUserId = userId || null;
@@ -165,44 +194,52 @@ async function handleAdd(payload: z.infer<typeof AddSchema>, supabaseAdmin: Retu
     targetUserId = created?.user?.id || null;
     if (!targetUserId) return json({ success: false, error: "Failed to create user" }, 500);
 
-    // Insert/update profile with role=instructor and institution
+    // Insert/update profile with institution
     const { error: profErr } = await supabaseAdmin
       .from("profiles")
-      .upsert({ id: targetUserId, email, role: "instructor", institution_id: institutionId, disabled: false }, {
+      .upsert({ id: targetUserId, email, institution_id: institutionId }, {
         onConflict: "id",
       });
     if (profErr) return json({ success: false, error: profErr.message }, 500);
+
+    // Insert instructor role
+    await supabaseAdmin.from("user_roles").delete().eq("user_id", targetUserId);
+    const { error: roleErr } = await supabaseAdmin
+      .from("user_roles")
+      .insert({ user_id: targetUserId, role: "instructor" });
+    if (roleErr) return json({ success: false, error: roleErr.message }, 500);
   } else {
-    // Existing user: attach to institution and set role to instructor if not already
+    // Existing user: attach to institution and set role to instructor
     const { error: profUpdErr } = await supabaseAdmin
       .from("profiles")
-      .update({ institution_id: institutionId, role: "instructor" })
+      .update({ institution_id: institutionId })
       .eq("id", targetUserId);
     if (profUpdErr) return json({ success: false, error: profUpdErr.message }, 500);
-  }
 
-  // Upsert into institution_staff
-  const { error: linkErr } = await supabaseAdmin
-    .from("institution_staff")
-    .upsert({ institution_id: institutionId, user_id: targetUserId! }, { onConflict: "institution_id,user_id" });
-  if (linkErr) return json({ success: false, error: linkErr.message }, 500);
+    // Update role to instructor
+    await supabaseAdmin.from("user_roles").delete().eq("user_id", targetUserId);
+    const { error: roleErr } = await supabaseAdmin
+      .from("user_roles")
+      .insert({ user_id: targetUserId, role: "instructor" });
+    if (roleErr) return json({ success: false, error: roleErr.message }, 500);
+  }
 
   return json({ success: true, institutionId, userId: targetUserId });
 }
 
-async function handleRemove(payload: z.infer<typeof RemoveSchema>, supabaseAdmin: ReturnType<typeof createClient>) {
+async function handleRemove(payload: z.infer<typeof RemoveSchema>, supabaseAdmin: any) {
   const { institutionId, userId } = payload;
 
-  // Remove link from institution_staff
+  // Remove instructor-candidate relationships
   const { error: delErr } = await supabaseAdmin
-    .from("institution_staff")
+    .from("instructor_candidates")
     .delete()
-    .eq("institution_id", institutionId)
-    .eq("user_id", userId);
+    .or(`instructor_id.eq.${userId},candidate_id.eq.${userId}`)
+    .eq("institution_id", institutionId);
 
   if (delErr) return json({ success: false, error: delErr.message }, 500);
 
-  // Disassociate institution on profile (role unchanged; adjust from admin panel if needed)
+  // Disassociate institution on profile
   const { error: profErr } = await supabaseAdmin
     .from("profiles")
     .update({ institution_id: null })

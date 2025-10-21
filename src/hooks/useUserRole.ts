@@ -6,10 +6,7 @@ export type UserRole =
   | 'super_admin' 
   | 'institution_admin' 
   | 'instructor' 
-  | 'candidate' 
-  | 'admin' // Legacy
-  | 'issuer' // Legacy
-  | 'user'; // Legacy
+  | 'candidate';
 
 export const useUserRole = () => {
   const { user } = useAuth();
@@ -36,12 +33,9 @@ export const useUserRole = () => {
       // Determine the highest-level role from the roles array
       const roles = data.map(r => r.role);
       if (roles.includes('super_admin')) return 'super_admin' as UserRole;
-      if (roles.includes('admin')) return 'admin' as UserRole; // Legacy admin
       if (roles.includes('institution_admin')) return 'institution_admin' as UserRole;
       if (roles.includes('instructor')) return 'instructor' as UserRole;
-      if (roles.includes('issuer')) return 'issuer' as UserRole; // Legacy issuer
       if (roles.includes('candidate')) return 'candidate' as UserRole;
-      if (roles.includes('user')) return 'user' as UserRole; // Legacy user
 
       return 'candidate' as UserRole; // Default fallback
     },
@@ -67,8 +61,6 @@ export const useHasRole = (requiredRole: UserRole) => {
     
     // Super admin has access to everything
     if (role === 'super_admin') return true;
-    // Legacy admin is treated like super_admin
-    if (role === 'admin') return true;
     
     // Institution admin has access to institution features and below
     if (required === 'institution_admin') 
@@ -76,15 +68,10 @@ export const useHasRole = (requiredRole: UserRole) => {
     
     // Instructor has access to instructor and candidate features
     if (required === 'instructor') 
-      return ['instructor', 'institution_admin', 'super_admin', 'admin', 'issuer'].includes(role);
+      return ['instructor', 'institution_admin', 'super_admin'].includes(role);
     
     // Candidate only has access to candidate features
     if (required === 'candidate') return true;
-    
-    // Backward compatibility for old roles
-    if (required === 'admin') return ['super_admin', 'admin'].includes(role);
-    if (required === 'issuer') return ['super_admin', 'institution_admin', 'instructor', 'admin', 'issuer'].includes(role);
-    if (required === 'user') return true;
     
     return role === required;
   };
