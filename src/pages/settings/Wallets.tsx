@@ -38,25 +38,30 @@ const Wallets = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      const { data, error } = await supabase
-        .from('user_wallets')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('connected_at', { ascending: false });
+      // TODO: Re-enable when user_wallets table is created
+      // const { data, error } = await supabase
+      //   .from('user_wallets')
+      //   .select('*')
+      //   .eq('user_id', user.id)
+      //   .order('connected_at', { ascending: false });
 
-      if (error) throw error;
-      return data as ConnectedWallet[];
+      // if (error) throw error;
+      // return data as ConnectedWallet[];
+      return [] as ConnectedWallet[];
     }
   });
 
   const disconnectMutation = useMutation({
     mutationFn: async (walletId: string) => {
-      const { error } = await supabase
-        .from('user_wallets')
-        .delete()
-        .eq('id', walletId);
+      // TODO: Re-enable when user_wallets table is created
+      throw new Error('Wallet management not yet available - database table not created');
+      
+      // const { error } = await supabase
+      //   .from('user_wallets')
+      //   .delete()
+      //   .eq('id', walletId);
 
-      if (error) throw error;
+      // if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['connected-wallets'] });
@@ -70,22 +75,25 @@ const Wallets = () => {
 
   const setPrimaryMutation = useMutation({
     mutationFn: async (walletId: string) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      // TODO: Re-enable when user_wallets table is created
+      throw new Error('Wallet management not yet available - database table not created');
+      
+      // const { data: { user } } = await supabase.auth.getUser();
+      // if (!user) throw new Error('Not authenticated');
 
-      // First, unset all primary wallets
-      await supabase
-        .from('user_wallets')
-        .update({ is_primary: false })
-        .eq('user_id', user.id);
+      // // First, unset all primary wallets
+      // await supabase
+      //   .from('user_wallets')
+      //   .update({ is_primary: false })
+      //   .eq('user_id', user.id);
 
-      // Then set the selected wallet as primary
-      const { error } = await supabase
-        .from('user_wallets')
-        .update({ is_primary: true })
-        .eq('id', walletId);
+      // // Then set the selected wallet as primary
+      // const { error } = await supabase
+      //   .from('user_wallets')
+      //   .update({ is_primary: true })
+      //   .eq('id', walletId);
 
-      if (error) throw error;
+      // if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['connected-wallets'] });

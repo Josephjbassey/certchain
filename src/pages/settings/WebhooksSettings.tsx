@@ -45,10 +45,9 @@ interface WebhookConfig {
   url: string;
   events: string[];
   secret: string;
-  is_active: boolean;
+  active: boolean;
   created_at: string;
-  last_triggered_at?: string;
-  failure_count: number;
+  institution_id: string;
 }
 
 const WebhooksSettings = () => {
@@ -66,14 +65,23 @@ const WebhooksSettings = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
+      // Get user's profile to find institution_id
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('institution_id')
+        .eq('id', user.id)
+        .single();
+
+      if (!profile?.institution_id) return [];
+
       const { data, error } = await supabase
         .from('webhooks')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('institution_id', profile.institution_id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as WebhookConfig[];
+      return (data || []) as WebhookConfig[];
     }
   });
 
@@ -82,18 +90,26 @@ const WebhooksSettings = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
+      // Get user's profile to find institution_id
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('institution_id')
+        .eq('id', user.id)
+        .single();
+
+      if (!profile?.institution_id) throw new Error('Institution ID not found');
+
       // Generate webhook secret
       const secret = `whsec_${crypto.randomUUID().replace(/-/g, '')}`;
 
       const { data, error } = await supabase
         .from('webhooks')
         .insert({
-          user_id: user.id,
+          institution_id: profile.institution_id,
           url: webhookUrl,
           events: selectedEvents,
           secret,
-          is_active: true,
-          failure_count: 0,
+          active: true,
         })
         .select()
         .single();
@@ -117,7 +133,7 @@ const WebhooksSettings = () => {
     mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
       const { error } = await supabase
         .from('webhooks')
-        .update({ is_active: !isActive })
+        .update({ active: !isActive })
         .eq('id', id);
 
       if (error) throw error;
@@ -257,16 +273,13 @@ const WebhooksSettings = () => {
                             >
                               <ExternalLink className="h-3.5 w-3.5" />
                             </Button>
-                            {webhook.is_active ? (
+                            {webhook.active ? (
                               <Badge className="gap-1">
                                 <CheckCircle2 className="h-3 w-3" />
                                 Active
                               </Badge>
                             ) : (
                               <Badge variant="secondary">Inactive</Badge>
-                            )}
-                            {webhook.failure_count > 0 && (
-                              <Badge variant="destructive">{webhook.failure_count} failures</Badge>
                             )}
                           </div>
                           <div className="flex flex-wrap gap-1">
@@ -278,18 +291,15 @@ const WebhooksSettings = () => {
                           </div>
                           <div className="text-sm text-muted-foreground">
                             Created {new Date(webhook.created_at).toLocaleDateString()}
-                            {webhook.last_triggered_at && (
-                              <> • Last triggered {new Date(webhook.last_triggered_at).toLocaleDateString()}</>
-                            )}
                           </div>
                         </div>
                         <div className="flex gap-2">
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => toggleWebhookMutation.mutate({ id: webhook.id, isActive: webhook.is_active })}
+                            onClick={() => toggleWebhookMutation.mutate({ id: webhook.id, isActive: webhook.active })}
                           >
-                            {webhook.is_active ? (
+                            {webhook.active ? (
                               <PowerOff className="h-4 w-4" />
                             ) : (
                               <Power className="h-4 w-4" />

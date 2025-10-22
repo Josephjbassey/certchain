@@ -167,21 +167,22 @@ export class LoggerService {
         this.logQueue = [];
 
         try {
-            // Store logs in database
-            const { error: dbError } = await supabase
-                .from('application_logs')
-                .insert(logsToSend.map(log => ({
-                    level: log.level,
-                    message: log.message,
-                    context: log.context,
-                    timestamp: log.timestamp,
-                    user_id: log.userId,
-                    session_id: log.sessionId,
-                })));
+            // TODO: Re-enable when application_logs table is created
+            // const { error: dbError } = await supabase
+            //     .from('application_logs')
+            //     .insert(logsToSend.map(log => ({
+            //         level: log.level,
+            //         message: log.message,
+            //         context: log.context,
+            //         timestamp: log.timestamp,
+            //         user_id: log.userId,
+            //         session_id: log.sessionId,
+            //     })));
 
-            if (dbError) {
-                console.error('Failed to store logs in database:', dbError);
-            }
+            // if (dbError) {
+            //     console.error('Failed to store logs in database:', dbError);
+            // }
+            console.log('Logs queued:', logsToSend.length);
 
             // Log critical errors to HCS for immutable audit trail
             const criticalLogs = logsToSend.filter(log => log.level === LogLevel.CRITICAL);
