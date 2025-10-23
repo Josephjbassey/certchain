@@ -12,9 +12,23 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
-# Load environment variables
-if [ -f .env ]; then
-    export $(grep -v '^#' .env | grep VITE_SUPABASE_ANON_KEY | xargs)
+# Locate .env (check script dir and parents) and load only the needed env var(s)
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+env_candidates=("${script_dir}/.env" "${script_dir}/../.env" "${script_dir}/../../.env")
+ENV_FILE=""
+for p in "${env_candidates[@]}"; do
+  if [ -f "$p" ]; then
+    ENV_FILE="$p"
+    break
+  fi
+done
+
+if [ -n "$ENV_FILE" ]; then
+  # Read VITE_SUPABASE_ANON_KEY without evaluating the file
+  VITE_SUPABASE_ANON_KEY=$(awk -F'=' '/^VITE_SUPABASE_ANON_KEY=/ {print substr($0, index($0,$2)) ; exit}' "$ENV_FILE" )
+  # Trim possible surrounding quotes (single or double)
+  VITE_SUPABASE_ANON_KEY=$(echo "$VITE_SUPABASE_ANON_KEY" | sed "s/^['\"]\{0,1\}//; s/['\"]\{0,1\}\$//")
+  export VITE_SUPABASE_ANON_KEY
 fi
 
 PROJECT_REF="asxskeceekllmzxatlvn"
@@ -35,10 +49,13 @@ echo -e "${BLUE}1. Testing hedera-create-did...${NC}"
 RESPONSE=$(curl -s -X POST "${BASE_URL}/hedera-create-did" \
   -H "Authorization: Bearer ${ANON_KEY}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "userAccountId": "0.0.123456",
-    "network": "testnet"
-  }')
+  -d @- <<'JSON'
+{
+  "userAccountId": "0.0.123456",
+  "network": "testnet"
+}
+JSON
+)
 
 if echo "$RESPONSE" | grep -q "success.*true"; then
     echo -e "${GREEN}✅ hedera-create-did: PASS${NC}"
@@ -54,13 +71,16 @@ echo -e "${BLUE}2. Testing pinata-upload...${NC}"
 RESPONSE=$(curl -s -X POST "${BASE_URL}/pinata-upload" \
   -H "Authorization: Bearer ${ANON_KEY}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "data": {
-      "name": "Test Certificate",
-      "description": "This is a test certificate"
-    },
-    "name": "test-certificate.json"
-  }')
+  -d @- <<'JSON'
+{
+  "data": {
+    "name": "Test Certificate",
+    "description": "This is a test certificate"
+  },
+  "name": "test-certificate.json"
+}
+JSON
+)
 
 if echo "$RESPONSE" | grep -q "success\|IpfsHash"; then
     echo -e "${GREEN}✅ pinata-upload: PASS${NC}"
@@ -76,11 +96,14 @@ echo -e "${BLUE}3. Testing hedera-hcs-log...${NC}"
 RESPONSE=$(curl -s -X POST "${BASE_URL}/hedera-hcs-log" \
   -H "Authorization: Bearer ${ANON_KEY}" \
   -H "Content-Type: application/json" \
-  -d '{
-    "topicId": "0.0.123456",
-    "message": "Test log message",
-    "eventType": "test_event"
-  }')
+  -d @- <<'JSON'
+{
+  "topicId": "0.0.123456",
+  "message": "Test log message",
+  "eventType": "test_event"
+}
+JSON
+)
 
 if echo "$RESPONSE" | grep -q "success"; then
     echo -e "${GREEN}✅ hedera-hcs-log: PASS${NC}"
