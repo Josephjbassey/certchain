@@ -54,7 +54,7 @@ echo ""
 # Deploy each function
 for func in "${FUNCTIONS[@]}"; do
     echo -e "${BLUE}Deploying ${func}...${NC}"
-    if npx supabase functions deploy $func --project-ref $PROJECT_REF --no-verify-jwt; then
+    if npx supabase functions deploy $func --project-ref $PROJECT_REF --no-verify-jwt --debug; then
         echo -e "${GREEN}✅ ${func} deployed successfully${NC}"
     else
         echo -e "${RED}❌ Failed to deploy ${func}${NC}"

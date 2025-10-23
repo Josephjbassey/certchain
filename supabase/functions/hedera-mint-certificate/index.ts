@@ -1,4 +1,6 @@
+/// <reference lib="deno.worker" />
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+// Use ESM build from esm.sh to avoid bundling the entire npm tree (smaller deploy size)
 import {
   Client,
   PrivateKey,
@@ -8,14 +10,14 @@ import {
   TokenSupplyType,
   TokenMintTransaction,
   TransferTransaction,
-} from "npm:@hashgraph/sdk@^2.49.0";
+} from "https://esm.sh/@hashgraph/sdk@2.49.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-serve(async (req) => {
+serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }

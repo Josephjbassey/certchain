@@ -1,0 +1,7 @@
+{
+  "imports": {
+    "@hashgraph/sdk": "https://esm.sh/@hashgraph/sdk@2.75.0"
+  },
+  "tasks": {},
+  "unstable": true
+}
