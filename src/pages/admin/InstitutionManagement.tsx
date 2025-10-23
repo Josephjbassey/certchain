@@ -5,14 +5,24 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Building2, CheckCircle, XCircle, Search, Shield } from "lucide-react";
+import { Building2, CheckCircle, XCircle, Search, Shield, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 const InstitutionManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedInstitution, setSelectedInstitution] = useState<any>(null);
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [newInstitution, setNewInstitution] = useState({
+    name: "",
+    domain: "",
+    description: "",
+    hedera_account_id: "",
+    admin_email: ""
+  });
   const queryClient = useQueryClient();
 
   const { data: institutions, isLoading } = useQuery({
@@ -61,6 +71,69 @@ const InstitutionManagement = () => {
     }
   });
 
+  const addInstitutionMutation = useMutation({
+    mutationFn: async (data: typeof newInstitution) => {
+      // Step 1: Create institution
+      const { data: institution, error: instError } = await (supabase as any)
+        .from('institutions')
+        .insert({
+          name: data.name,
+          domain: data.domain,
+          description: data.description,
+          hedera_account_id: data.hedera_account_id,
+          verified: false // Super admin must manually verify
+        })
+        .select()
+        .single();
+      
+      if (instError) throw instError;
+
+      // Step 2: If admin email provided, create/find user and assign institution_admin role
+      if (data.admin_email && data.admin_email.trim()) {
+        // Find user by email
+        const { data: users } = await (supabase as any)
+          .from('profiles')
+          .select('id')
+          .eq('email', data.admin_email.trim())
+          .limit(1);
+
+        if (users && users.length > 0) {
+          const userId = users[0].id;
+          
+          // Assign institution_admin role
+          await (supabase as any)
+            .from('user_roles')
+            .insert({
+              user_id: userId,
+              role: 'institution_admin',
+              institution_id: institution.id
+            });
+          
+          toast.success(`Institution created and ${data.admin_email} assigned as admin`);
+        } else {
+          toast.warning(`Institution created, but user ${data.admin_email} not found. They must sign up first.`);
+        }
+      }
+
+      return institution;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-institutions'] });
+      setIsAddDialogOpen(false);
+      setNewInstitution({
+        name: "",
+        domain: "",
+        description: "",
+        hedera_account_id: "",
+        admin_email: ""
+      });
+      toast.success("Institution onboarded successfully");
+    },
+    onError: (error: any) => {
+      toast.error(`Failed to onboard institution: ${error.message}`);
+    }
+  });
+
   const filteredInstitutions = institutions?.filter((inst: any) =>
     inst.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     inst.domain?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -81,14 +154,108 @@ const InstitutionManagement = () => {
               <Building2 className="h-5 w-5" />
               All Institutions
             </CardTitle>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search institutions..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 w-64"
-              />
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search institutions..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 w-64"
+                />
+              </div>
+              <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Institution
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <Building2 className="h-5 w-5" />
+                      Onboard New Institution
+                    </DialogTitle>
+                    <DialogDescription>
+                      Add a new institution to the platform. You can assign an admin after creation.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="name">Institution Name *</Label>
+                      <Input
+                        id="name"
+                        placeholder="e.g., Harvard University"
+                        value={newInstitution.name}
+                        onChange={(e) => setNewInstitution(prev => ({ ...prev, name: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="domain">Domain</Label>
+                      <Input
+                        id="domain"
+                        placeholder="e.g., harvard.edu"
+                        value={newInstitution.domain}
+                        onChange={(e) => setNewInstitution(prev => ({ ...prev, domain: e.target.value }))}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Used to validate institution admins and instructors
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="description">Description</Label>
+                      <Textarea
+                        id="description"
+                        placeholder="Brief description of the institution"
+                        value={newInstitution.description}
+                        onChange={(e) => setNewInstitution(prev => ({ ...prev, description: e.target.value }))}
+                        rows={3}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="hedera_account">Hedera Account ID</Label>
+                      <Input
+                        id="hedera_account"
+                        placeholder="e.g., 0.0.123456"
+                        value={newInstitution.hedera_account_id}
+                        onChange={(e) => setNewInstitution(prev => ({ ...prev, hedera_account_id: e.target.value }))}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        The institution's Hedera account for issuing certificates
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="admin_email">Institution Admin Email (Optional)</Label>
+                      <Input
+                        id="admin_email"
+                        type="email"
+                        placeholder="admin@institution.edu"
+                        value={newInstitution.admin_email}
+                        onChange={(e) => setNewInstitution(prev => ({ ...prev, admin_email: e.target.value }))}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        If provided, this user will be assigned as institution admin (they must sign up first)
+                      </p>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button
+                      variant="outline"
+                      onClick={() => setIsAddDialogOpen(false)}
+                      disabled={addInstitutionMutation.isPending}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={() => addInstitutionMutation.mutate(newInstitution)}
+                      disabled={!newInstitution.name.trim() || addInstitutionMutation.isPending}
+                    >
+                      {addInstitutionMutation.isPending ? "Creating..." : "Create Institution"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
         </CardHeader>

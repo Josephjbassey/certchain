@@ -7,26 +7,30 @@ Since super admins are the top-level platform administrators who enroll institut
 ### Option 1: Promote an Existing User (Recommended)
 
 1. **First, sign up a regular user account** at `/auth/signup`
-2. **Open your Lovable Cloud backend**
-3. **Go to the SQL Editor**
-4. **Run this SQL command** (replace the email with your actual email):
+2. **Open your Supabase Dashboard** → Go to **SQL Editor**
+3. **Copy and run** the SQL script from `scripts/promote-super-admin.sql`
+   - Replace `'your-email@example.com'` with the actual email
+   - Replace `'USER_ID_HERE'` with the UUID from step 1 of the script
+4. **Verify the promotion** - Run step 4 of the script to confirm
+5. **Log out and log back in** - You'll be redirected to `/admin/dashboard`
+
+Quick copy-paste version:
 
 ```sql
--- Find your user ID
+-- Step 1: Find user ID
 SELECT id, email FROM auth.users WHERE email = 'your-email@example.com';
 
--- Update the user's role to super_admin (replace the UUID with your user ID)
-UPDATE user_roles 
-SET role = 'super_admin' 
-WHERE user_id = 'YOUR-USER-ID-HERE';
-
--- If no role exists, insert one
+-- Step 2: Promote to super_admin (replace USER_ID_HERE)
 INSERT INTO user_roles (user_id, role)
-VALUES ('YOUR-USER-ID-HERE', 'super_admin')
-ON CONFLICT (user_id, role) DO NOTHING;
-```
+VALUES ('USER_ID_HERE', 'super_admin')
+ON CONFLICT (user_id, role) DO UPDATE SET updated_at = now();
 
-5. **Log out and log back in** - The system will detect your new role
+-- Step 3: Verify
+SELECT ur.role, u.email, is_super_admin(ur.user_id) as verified
+FROM user_roles ur
+JOIN auth.users u ON u.id = ur.user_id
+WHERE u.email = 'your-email@example.com';
+```
 
 ### Option 2: Create Super Admin During Signup
 
@@ -45,7 +49,7 @@ DECLARE
 BEGIN
   -- Check if this is the first user
   SELECT COUNT(*) INTO user_count FROM auth.users;
-  
+
   -- If first user, make them super_admin, otherwise candidate
   IF user_count = 1 THEN
     INSERT INTO public.user_roles (user_id, role)
@@ -54,7 +58,7 @@ BEGIN
     INSERT INTO public.user_roles (user_id, role)
     VALUES (NEW.id, 'candidate');
   END IF;
-  
+
   RETURN NEW;
 END;
 $$;
