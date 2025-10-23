@@ -12,47 +12,63 @@ serve(async (req) => {
 
   try {
     const pinataJwt = Deno.env.get('PINATA_JWT');
-    
+
     if (!pinataJwt) {
       throw new Error('PINATA_JWT not configured');
     }
 
-    const { certificateData, type = 'metadata' } = await req.json();
-
-    if (!certificateData) {
-      throw new Error('certificateData is required');
-    }
+    const { certificateData, fileData, type = 'metadata', data, name } = await req.json();
 
     console.log('Uploading to Pinata/IPFS:', type);
 
     let result;
 
     if (type === 'metadata') {
-      // Upload JSON metadata
-      const metadata = {
-        name: certificateData.courseName || 'Certificate',
-        description: `Certificate issued to ${certificateData.recipientEmail}`,
-        image: certificateData.imageUrl || '',
-        attributes: [
-          { trait_type: 'Recipient', value: certificateData.recipientEmail },
-          { trait_type: 'Course', value: certificateData.courseName },
-          { trait_type: 'Issuer DID', value: certificateData.issuerDid },
-          { trait_type: 'Recipient DID', value: certificateData.recipientDid || 'N/A' },
-          { trait_type: 'Issued At', value: new Date(certificateData.issuedAt).toISOString() },
-          {
-            trait_type: 'Expires At',
-            value: certificateData.expiresAt
-              ? new Date(certificateData.expiresAt).toISOString()
-              : 'Never',
+      // Support both old 'data' field and new 'certificateData' field for backward compatibility
+      const metadataToUpload = certificateData || data;
+
+      if (!metadataToUpload) {
+        throw new Error('certificateData or data is required for metadata upload');
+      }
+
+      // If it's already a complete metadata object, use it directly
+      let metadata;
+      if (metadataToUpload.attributes || metadataToUpload.properties) {
+        // Already formatted metadata
+        metadata = metadataToUpload;
+      } else if (metadataToUpload.certificateId) {
+        // Certificate data format - convert to NFT metadata
+        metadata = {
+          name: metadataToUpload.courseName || 'Certificate',
+          description: metadataToUpload.recipientEmail
+            ? `Certificate issued to ${metadataToUpload.recipientEmail}`
+            : `Certificate issued by ${metadataToUpload.institutionName || 'Institution'}`,
+          image: metadataToUpload.imageUrl || '',
+          attributes: [
+            { trait_type: 'Recipient', value: metadataToUpload.recipientEmail || metadataToUpload.recipientName || 'N/A' },
+            { trait_type: 'Course', value: metadataToUpload.courseName },
+            { trait_type: 'Institution', value: metadataToUpload.institutionName || 'N/A' },
+            { trait_type: 'Issuer DID', value: metadataToUpload.issuerDid },
+            { trait_type: 'Recipient DID', value: metadataToUpload.recipientDid || 'N/A' },
+            { trait_type: 'Issued At', value: new Date(metadataToUpload.issuedAt).toISOString() },
+            {
+              trait_type: 'Expires At',
+              value: metadataToUpload.expiresAt
+                ? new Date(metadataToUpload.expiresAt).toISOString()
+                : 'Never',
+            },
+          ],
+          properties: {
+            certificateId: metadataToUpload.certificateId,
+            institutionId: metadataToUpload.institutionId,
+            courseName: metadataToUpload.courseName,
+            skills: metadataToUpload.skills || [],
           },
-        ],
-        properties: {
-          certificateId: certificateData.certificateId,
-          institutionId: certificateData.institutionId,
-          courseName: certificateData.courseName,
-          skills: certificateData.skills || [],
-        },
-      };
+        };
+      } else {
+        // Simple data object - upload as-is
+        metadata = metadataToUpload;
+      }
 
       // Use Pinata API directly
       const response = await fetch('https://api.pinata.cloud/pinning/pinJSONToIPFS', {
@@ -72,10 +88,29 @@ serve(async (req) => {
       result = await response.json();
       console.log('Metadata uploaded to IPFS:', result.IpfsHash);
     } else if (type === 'file') {
+      if (!fileData) {
+        throw new Error('fileData is required for file upload');
+      }
+
       // Upload file using multipart form data
       const formData = new FormData();
-      const blob = new Blob([certificateData.fileBuffer], { type: certificateData.mimeType });
-      formData.append('file', blob, certificateData.fileName);
+
+      // Decode base64 content if needed
+      let fileContent;
+      if (typeof fileData.content === 'string') {
+        // Assume base64 encoded
+        const binaryString = atob(fileData.content);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        fileContent = bytes;
+      } else {
+        fileContent = fileData.content;
+      }
+
+      const blob = new Blob([fileContent], { type: fileData.mimetype || 'application/octet-stream' });
+      formData.append('file', blob, fileData.filename);
       
       const response = await fetch('https://api.pinata.cloud/pinning/pinFileToIPFS', {
         method: 'POST',
