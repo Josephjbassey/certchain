@@ -1,11 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { z } from "https://esm.sh/zod@3.22.4";
+// Use pinned Skypack ESM build to avoid bundling the npm package
 import {
   Client,
   PrivateKey,
   AccountId,
   TransferTransaction,
-} from "npm:@hashgraph/sdk@^2.49.0";
+} from "https://esm.sh/@hashgraph/sdk@2.75.0/es2022/sdk.mjs";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 
 const corsHeaders = {
