@@ -1,7 +1,10 @@
 {
   "imports": {
-    "@hashgraph/sdk": "https://esm.sh/@hashgraph/sdk@2.75.0"
+    "@hashgraph/sdk": "https://cdn.skypack.dev/pin/@hashgraph/sdk@v2.75.0-Eb6kMqKSHEGRj8RngoyB/mode=imports/optimized/@hashgraph/sdk.js"
   },
   "tasks": {},
-  "unstable": true
+  "unstable": true,
+  "compilerOptions": {
+    "lib": ["deno.window", "deno.worker", "es2021"]
+  }
 }

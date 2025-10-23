@@ -1,6 +1,7 @@
-/// <reference lib="deno.worker" />
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 // Use ESM build from esm.sh to avoid bundling the entire npm tree (smaller deploy size)
+// Import Hedera SDK from the pinned Skypack production URL to reduce bundle size
+// (pinned and optimized for production as provided by the user)
 import {
   Client,
   PrivateKey,
@@ -10,7 +11,7 @@ import {
   TokenSupplyType,
   TokenMintTransaction,
   TransferTransaction,
-} from "https://esm.sh/@hashgraph/sdk@2.49.0";
+} from "https://cdn.skypack.dev/pin/@hashgraph/sdk@v2.75.0-Eb6kMqKSHEGRj8RngoyB/mode=imports/optimized/@hashgraph/sdk.js";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
