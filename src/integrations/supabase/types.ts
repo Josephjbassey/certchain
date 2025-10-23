@@ -445,31 +445,40 @@ export type Database = {
       }
       webhooks: {
         Row: {
-          active: boolean | null
           created_at: string | null
           events: string[]
+          failure_count: number | null
           id: string
           institution_id: string | null
+          is_active: boolean | null
+          last_triggered_at: string | null
           secret: string
           url: string
+          user_id: string | null
         }
         Insert: {
-          active?: boolean | null
           created_at?: string | null
           events: string[]
+          failure_count?: number | null
           id?: string
           institution_id?: string | null
+          is_active?: boolean | null
+          last_triggered_at?: string | null
           secret: string
           url: string
+          user_id?: string | null
         }
         Update: {
-          active?: boolean | null
           created_at?: string | null
           events?: string[]
+          failure_count?: number | null
           id?: string
           institution_id?: string | null
+          is_active?: boolean | null
+          last_triggered_at?: string | null
           secret?: string
           url?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -477,6 +486,174 @@ export type Database = {
             columns: ["institution_id"]
             isOneToOne: false
             referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "webhooks_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_dids: {
+        Row: {
+          account_id: string
+          created_at: string | null
+          did: string
+          id: string
+          network: string
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          created_at?: string | null
+          did: string
+          id?: string
+          network?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          created_at?: string | null
+          did?: string
+          id?: string
+          network?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_dids_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      api_keys: {
+        Row: {
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          key_hash: string
+          key_prefix: string
+          last_used_at: string | null
+          name: string
+          scopes: string[]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          key_hash: string
+          key_prefix: string
+          last_used_at?: string | null
+          name: string
+          scopes?: string[]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          key_hash?: string
+          key_prefix?: string
+          last_used_at?: string | null
+          name?: string
+          scopes?: string[]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_keys_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_wallets: {
+        Row: {
+          account_id: string
+          connected_at: string | null
+          id: string
+          is_primary: boolean | null
+          last_used_at: string | null
+          user_id: string
+          wallet_type: string
+        }
+        Insert: {
+          account_id: string
+          connected_at?: string | null
+          id?: string
+          is_primary?: boolean | null
+          last_used_at?: string | null
+          user_id: string
+          wallet_type: string
+        }
+        Update: {
+          account_id?: string
+          connected_at?: string | null
+          id?: string
+          is_primary?: boolean | null
+          last_used_at?: string | null
+          user_id?: string
+          wallet_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_wallets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      application_logs: {
+        Row: {
+          context: Json | null
+          created_at: string | null
+          id: string
+          level: string
+          message: string
+          session_id: string | null
+          timestamp: string
+          user_id: string | null
+        }
+        Insert: {
+          context?: Json | null
+          created_at?: string | null
+          id?: string
+          level: string
+          message: string
+          session_id?: string | null
+          timestamp: string
+          user_id?: string | null
+        }
+        Update: {
+          context?: Json | null
+          created_at?: string | null
+          id?: string
+          level?: string
+          message?: string
+          session_id?: string | null
+          timestamp?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "application_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]

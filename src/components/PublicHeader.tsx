@@ -11,6 +11,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export const PublicHeader = () => {
     const { user, signOut } = useAuth();
@@ -62,6 +63,7 @@ export const PublicHeader = () => {
 
                 {/* Desktop Auth Buttons */}
                 <div className="hidden md:flex items-center gap-3">
+                    <ThemeToggle />
                     {user ? (
                         <>
                             <Link to={getDashboardPath(userRole)}>
@@ -147,6 +149,10 @@ export const PublicHeader = () => {
                         </Link>
 
                         <div className="pt-4 border-t border-border/40 flex flex-col gap-3">
+                            <div className="flex items-center justify-between">
+                                <span className="text-sm text-muted-foreground">Theme</span>
+                                <ThemeToggle />
+                            </div>
                             {user ? (
                                 <>
                                     <Link to={getDashboardPath(userRole)} onClick={() => setMobileMenuOpen(false)}>

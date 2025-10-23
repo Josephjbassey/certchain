@@ -63,7 +63,7 @@ const queryClient = new QueryClient();
 const App = () => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="dark">
+      <ThemeProvider defaultTheme="system" storageKey="certchain-theme">
         <TooltipProvider>
           <Toaster />
           <Sonner />

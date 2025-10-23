@@ -35,9 +35,11 @@ import {
   SidebarMenuItem,
   SidebarTrigger,
   useSidebar,
+  SidebarFooter,
 } from "@/components/ui/sidebar";
 import { useUserRole } from "@/hooks/useUserRole";
 import type { UserRole } from "@/hooks/useUserRole";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 // Helper to get role prefix for paths
 const getRolePrefix = (role: UserRole | null | undefined): string => {
@@ -244,6 +246,18 @@ export function DashboardSidebar() {
           </SidebarGroup>
         )}
       </SidebarContent>
+
+      {/* Theme Toggle in Footer */}
+      <SidebarFooter>
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <div className={`flex ${collapsed ? 'justify-center' : 'justify-between'} items-center px-2 py-2`}>
+              {!collapsed && <span className="text-sm text-muted-foreground">Theme</span>}
+              <ThemeToggle />
+            </div>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarFooter>
     </Sidebar>
   );
 }
