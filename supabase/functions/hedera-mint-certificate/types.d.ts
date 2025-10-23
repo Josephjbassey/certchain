@@ -10,7 +10,8 @@ declare module "https://cdn.skypack.dev/pin/@hashgraph/sdk@v2.75.0-Eb6kMqKSHEGRj
   export const TokenSupplyType: any;
   export const TokenMintTransaction: any;
   export const TransferTransaction: any;
-  export default any;
+  const _default: any;
+  export default _default;
 }
 
 declare module "https://deno.land/std@0.168.0/http/server.ts" {

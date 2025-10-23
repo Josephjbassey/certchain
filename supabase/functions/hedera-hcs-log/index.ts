@@ -1,11 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+// Use a pinned Skypack ESM build to avoid bundling the npm package (smaller deploy size)
 import {
   Client,
   PrivateKey,
   AccountId,
   TopicCreateTransaction,
   TopicMessageSubmitTransaction,
-} from "npm:@hashgraph/sdk@^2.49.0";
+} from "https://cdn.skypack.dev/pin/@hashgraph/sdk@v2.75.0-Eb6kMqKSHEGRj8RngoyB/mode=imports/optimized/@hashgraph/sdk.js";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',

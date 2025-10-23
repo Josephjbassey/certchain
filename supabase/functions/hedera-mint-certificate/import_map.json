@@ -1,0 +1,5 @@
+{
+  "imports": {
+    "@hashgraph/sdk": "https://cdn.skypack.dev/pin/@hashgraph/sdk@v2.75.0-Eb6kMqKSHEGRj8RngoyB/mode=imports/optimized/@hashgraph/sdk.js"
+  }
+}
