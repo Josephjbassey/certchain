@@ -1,4 +1,4 @@
-declare module "https://cdn.skypack.dev/pin/@hashgraph/sdk@v2.75.0-Eb6kMqKSHEGRj8RngoyB/mode=imports/optimized/@hashgraph/sdk.js" {
+declare module "https://esm.sh/@hashgraph/sdk@2.75.0/es2022/sdk.mjs" {
   export const Client: any;
   export const PrivateKey: any;
   export const AccountId: any;

@@ -6,7 +6,7 @@ import {
   AccountId,
   TopicCreateTransaction,
   TopicMessageSubmitTransaction,
-} from "https://cdn.skypack.dev/pin/@hashgraph/sdk@v2.75.0-Eb6kMqKSHEGRj8RngoyB/mode=imports/optimized/@hashgraph/sdk.js";
+} from "https://esm.sh/@hashgraph/sdk@2.75.0/es2022/sdk.mjs";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
