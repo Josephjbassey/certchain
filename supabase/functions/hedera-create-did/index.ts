@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { Client, PrivateKey, AccountId } from "npm:@hashgraph/sdk@^2.49.0";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -20,22 +19,10 @@ serve(async (req) => {
 
     console.log('Creating DID for account:', userAccountId);
 
-    // Initialize Hedera client
-    const operatorId = Deno.env.get('HEDERA_OPERATOR_ID');
-    const operatorKey = Deno.env.get('HEDERA_OPERATOR_KEY');
-
-    if (!operatorId || !operatorKey) {
-      throw new Error('Hedera credentials not configured');
+    // Validate Hedera account ID format (0.0.xxxxx)
+    if (!/^\d+\.\d+\.\d+$/.test(userAccountId)) {
+      throw new Error('Invalid Hedera account ID format. Expected: 0.0.xxxxx');
     }
-
-    const client = network === 'mainnet'
-      ? Client.forMainnet()
-      : Client.forTestnet();
-
-    client.setOperator(
-      AccountId.fromString(operatorId),
-      PrivateKey.fromStringDer(operatorKey)
-    );
 
     // Create DID using Hedera DID method
     // Format: did:hedera:<network>:<accountId>
