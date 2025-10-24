@@ -1,14 +1,17 @@
 # Legal Pages Documentation
 
 ## Overview
+
 This document describes the newly added Terms of Service and Privacy Policy pages for CertChain.
 
 ## Files Created
 
 ### 1. Terms of Service (`src/pages/TermsOfService.tsx`)
+
 Comprehensive legal terms covering:
 
 **14 Main Sections:**
+
 1. **Acceptance of Terms** - Agreement to use the platform
 2. **Description of Service** - What CertChain offers (NFT certificates, IPFS storage, DIDs)
 3. **User Accounts and Roles** - Four roles: super_admin, institution_admin, instructor, candidate
@@ -25,6 +28,7 @@ Comprehensive legal terms covering:
 14. **Contact Information** - Legal contact details
 
 **Key Features:**
+
 - Blockchain-specific clauses (irreversible transactions, wallet security)
 - Role-based user responsibilities
 - Clear certificate ownership and revocation rights
@@ -32,9 +36,11 @@ Comprehensive legal terms covering:
 - IPFS permanence notices
 
 ### 2. Privacy Policy (`src/pages/PrivacyPolicy.tsx`)
+
 GDPR and CCPA compliant privacy policy covering:
 
 **13 Main Sections:**
+
 1. **Introduction** - Overview of data practices
 2. **Information We Collect** - User data, device data, blockchain data
 3. **How We Use Your Information** - Service delivery, improvement, security
@@ -50,6 +56,7 @@ GDPR and CCPA compliant privacy policy covering:
 13. **Regional-Specific Information** - CCPA (California) and GDPR (EU) rights
 
 **Key Features:**
+
 - Blockchain transparency notices (public, immutable data)
 - Detailed third-party service providers (Supabase, Hedera, Pinata)
 - User privacy controls from settings page
@@ -61,6 +68,7 @@ GDPR and CCPA compliant privacy policy covering:
 ## Design Features
 
 Both pages include:
+
 - ✅ Consistent header with logo and home button
 - ✅ Professional layout with proper typography
 - ✅ Icon-enhanced headings for visual hierarchy
@@ -75,19 +83,23 @@ Both pages include:
 ## Routing
 
 ### Routes Added to `App.tsx`:
+
 ```tsx
 <Route path="/terms-of-service" element={<TermsOfService />} />
 <Route path="/privacy-policy" element={<PrivacyPolicy />} />
 ```
 
 ### Footer Links Added to `Index.tsx`:
+
 Under the "Company" section:
+
 - Terms of Service
 - Privacy Policy
 
 ## Access Points
 
 Users can access these pages from:
+
 1. **Homepage footer** - Company section links
 2. **Direct URLs**:
    - `/terms-of-service`
@@ -103,12 +115,14 @@ Users can access these pages from:
 Before deploying to production, update the following placeholders:
 
 ### Terms of Service:
+
 - `[Your Jurisdiction]` (Section 12) - Replace with actual legal jurisdiction
 - `[Your Business Address]` (Section 14) - Add actual business address
 - `legal@certchain.io` - Verify email address is active
 - Contact form link validation
 
 ### Privacy Policy:
+
 - `[Your Business Address]` (Section 12) - Add actual mailing address
 - `[City, State, ZIP Code]` (Section 12) - Complete address details
 - `[Country]` (Section 12) - Add country
@@ -146,6 +160,7 @@ To test the new pages:
 ## Future Enhancements
 
 Consider adding:
+
 - [ ] Acceptance tracking (log when users accept ToS)
 - [ ] Version history (track policy changes over time)
 - [ ] PDF download option for both documents
@@ -160,6 +175,7 @@ Consider adding:
 ## Maintenance
 
 Keep policies updated when:
+
 - Adding new features or services
 - Changing data collection practices
 - Integrating new third-party services

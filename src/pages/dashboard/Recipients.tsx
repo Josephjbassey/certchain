@@ -1,17 +1,113 @@
-import { Shield, Users } from "lucide-react";
+import { Users, UserPlus, Search, Mail } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Link } from "react-router-dom";
+import { Input } from "@/components/ui/input";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { useState } from "react";
 
-const Recipients = () => (
-  <div className="min-h-screen bg-background">
-    <header className="border-b border-border/40 backdrop-blur-sm sticky top-0 z-50 bg-background/80">
-      <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-        <Link to="/dashboard" className="flex items-center gap-2"><Shield className="h-8 w-8 text-primary" /><span className="text-2xl font-bold">CertChain</span></Link>
-        <Link to="/dashboard"><Button variant="ghost" size="sm">Back</Button></Link>
+const Recipients = () => {
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const exampleRecipients = [
+    { id: 1, name: "John Doe", email: "john@example.com", certificates: 3, lastIssued: "2024-10-20" },
+    { id: 2, name: "Jane Smith", email: "jane@example.com", certificates: 5, lastIssued: "2024-10-18" },
+    { id: 3, name: "Bob Johnson", email: "bob@example.com", certificates: 2, lastIssued: "2024-10-15" }
+  ];
+
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">Recipients Management</h1>
+          <p className="text-muted-foreground">Manage certificate recipients and their credentials</p>
+        </div>
+        <Button>
+          <UserPlus className="h-4 w-4 mr-2" />
+          Add Recipient
+        </Button>
       </div>
-    </header>
-    <div className="container mx-auto px-4 py-8"><h1 className="text-3xl font-bold mb-8">Recipients Management</h1><Card className="p-6 text-center"><Users className="h-12 w-12 text-primary mx-auto mb-3" /><p>Manage certificate recipients</p></Card></div>
-  </div>
-);
+
+      <Card className="mb-6">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>All Recipients</CardTitle>
+            <div className="relative w-64">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search recipients..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-8"
+              />
+            </div>
+          </div>
+          <CardDescription>
+            {exampleRecipients.length} recipients total
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Certificates</TableHead>
+                <TableHead>Last Issued</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {exampleRecipients.map((recipient) => (
+                <TableRow key={recipient.id}>
+                  <TableCell className="font-medium">{recipient.name}</TableCell>
+                  <TableCell>{recipient.email}</TableCell>
+                  <TableCell>
+                    <Badge variant="secondary">{recipient.certificates}</Badge>
+                  </TableCell>
+                  <TableCell>{recipient.lastIssued}</TableCell>
+                  <TableCell>
+                    <Button variant="ghost" size="sm">
+                      <Mail className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-6 md:grid-cols-3">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-medium">Total Recipients</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{exampleRecipients.length}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-medium">Certificates Issued</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {exampleRecipients.reduce((sum, r) => sum + r.certificates, 0)}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-medium">This Month</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">0</div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
 export default Recipients;

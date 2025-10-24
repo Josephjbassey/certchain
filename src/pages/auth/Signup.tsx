@@ -8,10 +8,12 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
 import { useAuth } from "@/lib/auth-context";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useQuery } from "@tanstack/react-query";
 
 const signupSchema = z.object({
   name: z.string().trim().min(2, "Name must be at least 2 characters").max(100, "Name too long"),
-  institution: z.string().trim().min(2, "Institution name required").max(200, "Institution name too long"),
+  institutionId: z.string().uuid("Please select an institution"),
   email: z.string().trim().email("Invalid email address").max(255, "Email too long"),
   password: z.string().min(8, "Password must be at least 8 characters"),
   confirmPassword: z.string(),
@@ -23,7 +25,7 @@ const signupSchema = z.object({
 const Signup = () => {
   const [formData, setFormData] = useState({
     name: "",
-    institution: "",
+    institutionId: "",
     email: "",
     password: "",
     confirmPassword: ""
@@ -31,6 +33,22 @@ const Signup = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth();
+
+  // Fetch verified institutions for dropdown
+  const { data: institutions, isLoading: isLoadingInstitutions } = useQuery({
+    queryKey: ['verified-institutions'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('institutions')
+        .select('id, name, domain')
+        .eq('verified', true)
+        .eq('status', 'active')
+        .order('name', { ascending: true });
+      
+      if (error) throw error;
+      return data || [];
+    }
+  });
 
   // Redirect if already logged in
   if (user) {
@@ -45,7 +63,7 @@ const Signup = () => {
     try {
       const validated = signupSchema.parse({
         name: formData.name.trim(),
-        institution: formData.institution.trim(),
+        institutionId: formData.institutionId,
         email: formData.email.trim(),
         password: formData.password,
         confirmPassword: formData.confirmPassword,
@@ -60,7 +78,7 @@ const Signup = () => {
           emailRedirectTo: redirectUrl,
           data: {
             display_name: validated.name,
-            institution: validated.institution,
+            institution_id: validated.institutionId,
           },
         },
       });
@@ -120,15 +138,35 @@ const Signup = () => {
             <div className="space-y-2">
               <label className="text-sm font-medium">Institution</label>
               <div className="relative">
-                <Building className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Your Organization"
-                  value={formData.institution}
-                  onChange={(e) => setFormData({ ...formData, institution: e.target.value })}
-                  className="pl-10"
-                  required
-                />
+                <Building className="absolute left-3 top-3 h-4 w-4 text-muted-foreground z-10" />
+                <Select
+                  value={formData.institutionId}
+                  onValueChange={(value) => setFormData({ ...formData, institutionId: value })}
+                  disabled={isLoadingInstitutions}
+                >
+                  <SelectTrigger className="pl-10">
+                    <SelectValue placeholder={isLoadingInstitutions ? "Loading institutions..." : "Select your institution"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {institutions && institutions.length > 0 ? (
+                      institutions.map((inst) => (
+                        <SelectItem key={inst.id} value={inst.id}>
+                          {inst.name} {inst.domain && `(${inst.domain})`}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                        No institutions available
+                      </div>
+                    )}
+                  </SelectContent>
+                </Select>
               </div>
+              {institutions && institutions.length === 0 && !isLoadingInstitutions && (
+                <p className="text-xs text-muted-foreground">
+                  Your institution is not listed? Contact support to get your institution verified.
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -190,7 +228,7 @@ const Signup = () => {
               </label>
             </div>
 
-            <Button type="submit" variant="hero" size="lg" className="w-full" disabled={isLoading}>
+            <Button type="submit" variant="hero" size="lg" className="w-full" disabled={isLoading || isLoadingInstitutions}>
               <UserPlus className="h-4 w-4" />
               <span className="ml-2">{isLoading ? "Creating account..." : "Create Account"}</span>
             </Button>
