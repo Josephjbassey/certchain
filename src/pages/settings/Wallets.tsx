@@ -96,9 +96,87 @@ const Wallets = () => {
     }
   });
 
-  const handleConnectWallet = () => {
-    toast.info("Wallet connection coming soon with Hedera Wallet Connect integration");
-    // TODO: Implement Hedera Wallet Connect with @hashgraph/hedera-wallet-connect
+  const handleConnectWallet = async () => {
+    try {
+      // Check if HashPack is available
+      if ((window as any).hashpack) {
+        toast.info("Opening HashPack wallet...");
+        const hashpack = (window as any).hashpack;
+        
+        // Initialize HashPack pairing
+        const appMetadata = {
+          name: "CertChain",
+          description: "Blockchain Certificate Management",
+          icon: window.location.origin + "/logo.png"
+        };
+        
+        const pairing = await hashpack.pairingData;
+        if (!pairing) {
+          await hashpack.connectToLocalWallet();
+        }
+        
+        const accountIds = await hashpack.getAccountIds();
+        if (accountIds && accountIds.length > 0) {
+          const accountId = accountIds[0];
+          
+          // Save to database
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            const { error } = await supabase
+              .from('user_wallets')
+              .insert({
+                user_id: user.id,
+                account_id: accountId,
+                wallet_type: 'hashpack',
+                is_primary: wallets?.length === 0 // Make first wallet primary
+              });
+            
+            if (error) throw error;
+            
+            queryClient.invalidateQueries({ queryKey: ['connected-wallets'] });
+            toast.success(`HashPack wallet connected: ${accountId}`);
+          }
+        }
+      } else if ((window as any).bladeSdk) {
+        toast.info("Opening Blade wallet...");
+        const blade = (window as any).bladeSdk;
+        
+        const accountInfo = await blade.getAccountInfo();
+        if (accountInfo && accountInfo.accountId) {
+          // Save to database
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            const { error } = await supabase
+              .from('user_wallets')
+              .insert({
+                user_id: user.id,
+                account_id: accountInfo.accountId,
+                wallet_type: 'blade',
+                is_primary: wallets?.length === 0
+              });
+            
+            if (error) throw error;
+            
+            queryClient.invalidateQueries({ queryKey: ['connected-wallets'] });
+            toast.success(`Blade wallet connected: ${accountInfo.accountId}`);
+          }
+        }
+      } else {
+        // No wallet extension detected - show instructions
+        toast.error("No Hedera wallet detected", {
+          description: "Please install HashPack or Blade wallet extension first",
+          action: {
+            label: "Get HashPack",
+            onClick: () => window.open("https://www.hashpack.app/", "_blank")
+          }
+        });
+      }
+    } catch (error: any) {
+      console.error("Wallet connection error:", error);
+      toast.error("Failed to connect wallet", {
+        description: error.message || "Please try again"
+      });
+    }
   };
 
   const getWalletIcon = (walletType: string) => {
