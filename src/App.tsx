@@ -57,6 +57,8 @@ import Claim from "./pages/Claim";
 import Credentials from "./pages/Credentials";
 import DidSetup from "./pages/DidSetup";
 import AiConsole from "./pages/AiConsole";
+import TermsOfService from "./pages/TermsOfService";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 import { DashboardLayout } from "./components/DashboardLayout";
 
 const queryClient = new QueryClient();
@@ -81,6 +83,8 @@ const App = () => (
                 <Route path="/about" element={<About />} />
                 <Route path="/docs" element={<Docs />} />
                 <Route path="/contact" element={<Contact />} />
+                <Route path="/terms-of-service" element={<TermsOfService />} />
+                <Route path="/privacy-policy" element={<PrivacyPolicy />} />
 
                 {/* Auth Pages */}
                 <Route path="/auth/login" element={<Login />} />
