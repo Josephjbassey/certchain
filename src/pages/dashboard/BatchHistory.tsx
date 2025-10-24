@@ -3,37 +3,60 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth-context";
 
 const BatchHistory = () => {
-  const batches = [
-    {
-      id: 1,
-      filename: "graduates_2024.csv",
-      uploadedAt: "2024-10-20 14:30",
-      status: "completed",
-      total: 50,
-      successful: 50,
-      failed: 0
+  const { user } = useAuth();
+
+  const { data: profile } = useQuery({
+    queryKey: ['profile', user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('institution_id')
+        .eq('id', user?.id)
+        .single();
+      return data;
     },
-    {
-      id: 2,
-      filename: "summer_course_batch.csv",
-      uploadedAt: "2024-10-15 09:15",
-      status: "completed",
-      total: 30,
-      successful: 28,
-      failed: 2
+    enabled: !!user
+  });
+
+  const { data: batches, isLoading } = useQuery({
+    queryKey: ['batch-history', profile?.institution_id],
+    queryFn: async () => {
+      if (!profile?.institution_id) return [];
+      
+      const { data: logs } = await supabase
+        .from('audit_logs')
+        .select('id, action, created_at, metadata, user_id')
+        .eq('institution_id', profile.institution_id)
+        .eq('action', 'batch_upload')
+        .order('created_at', { ascending: false })
+        .limit(50);
+      
+      return logs?.map(log => {
+        const metadata = log.metadata as any || {};
+        return {
+          id: log.id,
+          filename: metadata.filename || 'batch_upload.csv',
+          uploadedAt: new Date(log.created_at || '').toLocaleString('en-US', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+          }),
+          status: metadata.status || 'completed',
+          total: metadata.total || 0,
+          successful: metadata.successful || 0,
+          failed: metadata.failed || 0
+        };
+      }) || [];
     },
-    {
-      id: 3,
-      filename: "certificates_batch_oct.csv",
-      uploadedAt: "2024-10-10 16:45",
-      status: "completed",
-      total: 75,
-      successful: 75,
-      failed: 0
-    }
-  ];
+    enabled: !!profile?.institution_id
+  });
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -46,6 +69,13 @@ const BatchHistory = () => {
       default:
         return <Badge>{status}</Badge>;
     }
+  };
+
+  const stats = {
+    totalBatches: batches?.length || 0,
+    totalCertificates: batches?.reduce((sum, b) => sum + b.total, 0) || 0,
+    successful: batches?.reduce((sum, b) => sum + b.successful, 0) || 0,
+    failed: batches?.reduce((sum, b) => sum + b.failed, 0) || 0
   };
 
   return (
@@ -68,7 +98,7 @@ const BatchHistory = () => {
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{batches.length}</div>
+            <div className="text-2xl font-bold">{stats.totalBatches}</div>
           </CardContent>
         </Card>
 
@@ -78,9 +108,7 @@ const BatchHistory = () => {
             <CheckCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {batches.reduce((sum, b) => sum + b.total, 0)}
-            </div>
+            <div className="text-2xl font-bold">{stats.totalCertificates}</div>
           </CardContent>
         </Card>
 
@@ -90,9 +118,7 @@ const BatchHistory = () => {
             <CheckCircle className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {batches.reduce((sum, b) => sum + b.successful, 0)}
-            </div>
+            <div className="text-2xl font-bold text-green-600">{stats.successful}</div>
           </CardContent>
         </Card>
 
@@ -102,9 +128,7 @@ const BatchHistory = () => {
             <AlertCircle className="h-4 w-4 text-red-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">
-              {batches.reduce((sum, b) => sum + b.failed, 0)}
-            </div>
+            <div className="text-2xl font-bold text-red-600">{stats.failed}</div>
           </CardContent>
         </Card>
       </div>
@@ -115,34 +139,50 @@ const BatchHistory = () => {
           <CardDescription>Recent batch uploads and their status</CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>File Name</TableHead>
-                <TableHead>Uploaded At</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Total</TableHead>
-                <TableHead>Success</TableHead>
-                <TableHead>Failed</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {batches.map((batch) => (
-                <TableRow key={batch.id}>
-                  <TableCell className="font-medium">{batch.filename}</TableCell>
-                  <TableCell>{batch.uploadedAt}</TableCell>
-                  <TableCell>{getStatusBadge(batch.status)}</TableCell>
-                  <TableCell>{batch.total}</TableCell>
-                  <TableCell className="text-green-600">{batch.successful}</TableCell>
-                  <TableCell className="text-red-600">{batch.failed}</TableCell>
-                  <TableCell>
-                    <Button variant="ghost" size="sm">View Details</Button>
-                  </TableCell>
+          {isLoading ? (
+            <div className="text-center py-8 text-muted-foreground">Loading batch history...</div>
+          ) : batches && batches.length > 0 ? (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>File Name</TableHead>
+                  <TableHead>Uploaded At</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Total</TableHead>
+                  <TableHead>Success</TableHead>
+                  <TableHead>Failed</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {batches.map((batch) => (
+                  <TableRow key={batch.id}>
+                    <TableCell className="font-medium">{batch.filename}</TableCell>
+                    <TableCell>{batch.uploadedAt}</TableCell>
+                    <TableCell>{getStatusBadge(batch.status)}</TableCell>
+                    <TableCell>{batch.total}</TableCell>
+                    <TableCell className="text-green-600">{batch.successful}</TableCell>
+                    <TableCell className="text-red-600">{batch.failed}</TableCell>
+                    <TableCell>
+                      <Button variant="ghost" size="sm">View Details</Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          ) : (
+            <div className="text-center py-12">
+              <Upload className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-lg font-semibold mb-2">No batch uploads yet</h3>
+              <p className="text-muted-foreground mb-4">
+                Upload your first CSV file to issue certificates in bulk
+              </p>
+              <Button>
+                <Upload className="h-4 w-4 mr-2" />
+                Upload Batch
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 

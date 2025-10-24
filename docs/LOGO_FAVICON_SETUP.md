@@ -5,6 +5,7 @@ This guide explains how to add your custom logo and favicon to the CertChain app
 ## Overview
 
 The application currently uses placeholder branding with:
+
 - **Logo**: Shield icon with "CertChain" text gradient
 - **Favicon**: Default Vite/React favicon
 
@@ -15,15 +16,18 @@ You'll need to replace these with your custom branding assets.
 ## Required Files
 
 ### Logo Files
+
 Prepare the following logo variations:
 
 1. **Full Logo (Horizontal)**
+
    - Format: SVG (preferred) or PNG
    - Dimensions: ~200x50px (4:1 ratio)
    - Use: Main navigation, landing page header
    - File name: `logo.svg` or `logo.png`
 
 2. **Logo Icon (Square)**
+
    - Format: SVG (preferred) or PNG
    - Dimensions: 32x32px or 64x64px
    - Use: Dashboard sidebar, mobile navigation
@@ -36,6 +40,7 @@ Prepare the following logo variations:
    - File name: `logo-dark.svg` or `logo-dark.png`
 
 ### Favicon Files
+
 Generate a complete favicon set using a tool like [favicon.io](https://favicon.io):
 
 1. **favicon.ico** - 32x32px, multi-resolution ICO file
@@ -52,6 +57,7 @@ Generate a complete favicon set using a tool like [favicon.io](https://favicon.i
 ### Step 1: Add Logo Files
 
 1. Create an `images` directory in the `public` folder (if it doesn't exist):
+
    ```bash
    mkdir -p public/images
    ```
@@ -79,11 +85,11 @@ Edit `index.html` to reference the new favicons:
 
 ```html
 <!-- In the <head> section, replace existing favicon references with: -->
-<link rel="icon" type="image/x-icon" href="/favicon.ico">
-<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-<link rel="manifest" href="/site.webmanifest">
+<link rel="icon" type="image/x-icon" href="/favicon.ico" />
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+<link rel="manifest" href="/site.webmanifest" />
 ```
 
 ### Step 4: Create Web App Manifest
@@ -162,6 +168,7 @@ Edit `src/pages/auth/Login.tsx` and `src/pages/auth/Signup.tsx`:
 #### D. Empty Dashboard Pages
 
 The following pages have headers with the Shield icon:
+
 - Already fixed! All pages now use the DashboardLayout component
 
 ---
@@ -170,17 +177,17 @@ The following pages have headers with the Shield icon:
 
 Files that currently use the Shield icon logo:
 
-| Component | File Path | Line Numbers (approx) |
-|-----------|-----------|----------------------|
-| Dashboard Layout | `src/components/DashboardLayout.tsx` | ~23 |
-| Landing Page | `src/pages/Index.tsx` | ~25, ~140 |
-| Login Page | `src/pages/auth/Login.tsx` | ~50 |
-| Signup Page | `src/pages/auth/Signup.tsx` | ~100 |
-| Forgot Password | `src/pages/auth/ForgotPassword.tsx` | ~40 |
-| About Page | `src/pages/About.tsx` | ~15 |
-| Pricing Page | `src/pages/Pricing.tsx` | ~15 |
-| Contact Page | `src/pages/Contact.tsx` | ~15 |
-| Dashboard Sidebar | `src/components/DashboardSidebar.tsx` | ~140 |
+| Component         | File Path                             | Line Numbers (approx) |
+| ----------------- | ------------------------------------- | --------------------- |
+| Dashboard Layout  | `src/components/DashboardLayout.tsx`  | ~23                   |
+| Landing Page      | `src/pages/Index.tsx`                 | ~25, ~140             |
+| Login Page        | `src/pages/auth/Login.tsx`            | ~50                   |
+| Signup Page       | `src/pages/auth/Signup.tsx`           | ~100                  |
+| Forgot Password   | `src/pages/auth/ForgotPassword.tsx`   | ~40                   |
+| About Page        | `src/pages/About.tsx`                 | ~15                   |
+| Pricing Page      | `src/pages/Pricing.tsx`               | ~15                   |
+| Contact Page      | `src/pages/Contact.tsx`               | ~15                   |
+| Dashboard Sidebar | `src/components/DashboardSidebar.tsx` | ~140                  |
 
 ---
 
@@ -193,8 +200,9 @@ import { useTheme } from "@/lib/theme-provider";
 
 const LogoComponent = () => {
   const { theme } = useTheme();
-  const logoSrc = theme === 'dark' ? '/images/logo-dark.svg' : '/images/logo.svg';
-  
+  const logoSrc =
+    theme === "dark" ? "/images/logo-dark.svg" : "/images/logo.svg";
+
   return <img src={logoSrc} alt="CertChain" className="h-8" />;
 };
 ```
@@ -265,6 +273,7 @@ If you encounter issues:
 5. Test in multiple browsers
 
 For SVG issues, ensure:
+
 - SVG has viewBox attribute
 - Width/height are defined
 - No embedded raster images
