@@ -37,6 +37,7 @@ import Billing from "./pages/dashboard/Billing";
 import WebhookLogs from "./pages/dashboard/WebhookLogs";
 import MyCertificates from "./pages/dashboard/MyCertificates";
 import MyCertificateDetail from "./pages/dashboard/MyCertificateDetail";
+import CandidateDashboard from "./pages/dashboard/CandidateDashboard";
 import Profile from "./pages/Profile";
 import AccountSettings from "./pages/settings/AccountSettings";
 import NotificationSettings from "./pages/settings/NotificationSettings";
@@ -96,7 +97,7 @@ const App = () => (
 
                 {/* Candidate Dashboard Routes */}
                 <Route element={<ProtectedRoute requiredRole="candidate"><DashboardLayout /></ProtectedRoute>}>
-                  <Route path="/candidate/dashboard" element={<Dashboard />} />
+                  <Route path="/candidate/dashboard" element={<CandidateDashboard />} />
                   <Route path="/candidate/my-certificates" element={<MyCertificates />} />
                   <Route path="/candidate/my-certificates/:id" element={<MyCertificateDetail />} />
                   <Route path="/candidate/settings/account" element={<AccountSettings />} />
