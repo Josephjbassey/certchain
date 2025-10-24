@@ -6,9 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { useRoleBasedNavigation } from "@/hooks/useRoleBasedNavigation";
 
 const IssueCertificate = () => {
   const navigate = useNavigate();
+  const { dashboardPath, certificatesPath } = useRoleBasedNavigation();
   const [formData, setFormData] = useState({
     recipientName: "",
     recipientEmail: "",
@@ -25,7 +27,7 @@ const IssueCertificate = () => {
     // Mock certificate issuance - in production, call Hedera SDK
     setTimeout(() => {
       toast.success("Certificate issued successfully!");
-      navigate("/dashboard/certificates");
+      navigate(certificatesPath);
       setIsLoading(false);
     }, 2000);
   };
@@ -34,13 +36,13 @@ const IssueCertificate = () => {
     <div className="min-h-screen bg-background">
       <header className="border-b border-border/40 backdrop-blur-sm sticky top-0 z-50 bg-background/80">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link to="/dashboard" className="flex items-center gap-2">
+          <Link to={dashboardPath} className="flex items-center gap-2">
             <Shield className="h-8 w-8 text-primary" />
             <span className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
               CertChain
             </span>
           </Link>
-          <Link to="/dashboard">
+          <Link to={dashboardPath}>
             <Button variant="ghost" size="sm">Back to Dashboard</Button>
           </Link>
         </div>
@@ -134,7 +136,7 @@ const IssueCertificate = () => {
               <Button type="submit" variant="hero" size="lg" className="flex-1" disabled={isLoading}>
                 {isLoading ? "Issuing Certificate..." : "Issue Certificate"}
               </Button>
-              <Link to="/dashboard" className="flex-1">
+              <Link to={dashboardPath} className="flex-1">
                 <Button type="button" variant="outline" size="lg" className="w-full">
                   Cancel
                 </Button>

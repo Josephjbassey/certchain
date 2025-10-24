@@ -5,10 +5,12 @@ import { Card } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { useRoleBasedNavigation } from "@/hooks/useRoleBasedNavigation";
 
 const CertificateDetail = () => {
   const { id } = useParams();
   const { user } = useAuth();
+  const { dashboardPath, certificatesPath } = useRoleBasedNavigation();
 
   const { data: certificate, isLoading } = useQuery({
     queryKey: ['certificate', id],
@@ -23,18 +25,25 @@ const CertificateDetail = () => {
       
       if (data) {
         const metadata = data.metadata as any || {};
+        // Extract recipient name from metadata or email
+        const recipientName = metadata.recipient_name || 
+                            (data.recipient_email ? data.recipient_email.split('@')[0] : 'N/A');
+        
+        // Determine status based on revoked_at
+        const status = data.revoked_at ? 'revoked' : 'active';
+        
         return {
           id: data.id,
-          recipientName: data.recipient_name || 'N/A',
+          recipientName,
           recipientEmail: data.recipient_email || 'N/A',
           recipientDid: data.recipient_did || 'Not available',
           courseName: data.course_name || 'Unknown Course',
-          issuedDate: data.minted_at || data.created_at,
+          issuedDate: data.issued_at || data.created_at,
           serialNumber: `${data.token_id || '0.0.0'}:${data.serial_number || '0'}`,
           tokenId: data.token_id || 'Not minted',
           ipfsCid: data.ipfs_cid || 'Not uploaded',
-          transactionId: data.transaction_id || 'Pending',
-          status: data.status || 'pending',
+          transactionId: data.hedera_tx_id || 'Pending',
+          status,
           skills: metadata.skills || [],
         };
       }
@@ -63,7 +72,7 @@ const CertificateDetail = () => {
           <p className="text-muted-foreground mb-6">
             The certificate with ID {id} could not be found.
           </p>
-          <Link to="/dashboard/certificates">
+          <Link to={certificatesPath}>
             <Button>Back to Certificates</Button>
           </Link>
         </div>
@@ -75,13 +84,13 @@ const CertificateDetail = () => {
     <div className="min-h-screen bg-background">
       <header className="border-b border-border/40 backdrop-blur-sm sticky top-0 z-50 bg-background/80">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link to="/dashboard" className="flex items-center gap-2">
+          <Link to={dashboardPath} className="flex items-center gap-2">
             <Shield className="h-8 w-8 text-primary" />
             <span className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
               CertChain
             </span>
           </Link>
-          <Link to="/dashboard/certificates">
+          <Link to={certificatesPath}>
             <Button variant="ghost" size="sm">Back to Certificates</Button>
           </Link>
         </div>

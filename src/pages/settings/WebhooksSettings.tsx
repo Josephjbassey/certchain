@@ -28,6 +28,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { useRoleBasedNavigation } from "@/hooks/useRoleBasedNavigation";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -45,12 +46,12 @@ interface WebhookConfig {
   url: string;
   events: string[];
   secret: string;
-  active: boolean;
+  is_active: boolean;
   created_at: string;
-  institution_id: string;
 }
 
 const WebhooksSettings = () => {
+  const { getPath } = useRoleBasedNavigation();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [webhookUrl, setWebhookUrl] = useState("");
   const [selectedEvents, setSelectedEvents] = useState<string[]>(["certificate.issued"]);
@@ -133,7 +134,7 @@ const WebhooksSettings = () => {
     mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
       const { error } = await supabase
         .from('webhooks')
-        .update({ active: !isActive })
+        .update({ is_active: !isActive })
         .eq('id', id);
 
       if (error) throw error;
@@ -273,7 +274,7 @@ const WebhooksSettings = () => {
                             >
                               <ExternalLink className="h-3.5 w-3.5" />
                             </Button>
-                            {webhook.active ? (
+                            {webhook.is_active ? (
                               <Badge className="gap-1">
                                 <CheckCircle2 className="h-3 w-3" />
                                 Active
@@ -297,9 +298,9 @@ const WebhooksSettings = () => {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => toggleWebhookMutation.mutate({ id: webhook.id, isActive: webhook.active })}
+                            onClick={() => toggleWebhookMutation.mutate({ id: webhook.id, isActive: webhook.is_active })}
                           >
-                            {webhook.active ? (
+                            {webhook.is_active ? (
                               <PowerOff className="h-4 w-4" />
                             ) : (
                               <Power className="h-4 w-4" />
@@ -332,7 +333,7 @@ const WebhooksSettings = () => {
 
         {/* View Webhook Logs Link */}
         <div className="mt-6 text-center">
-          <Link to="/dashboard/webhooks/logs">
+          <Link to={getPath("webhooks/logs")}>
             <Button variant="outline" className="gap-2">
               <ExternalLink className="h-4 w-4" />
               View Webhook Logs
