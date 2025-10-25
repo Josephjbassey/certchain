@@ -5,12 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Building2, CheckCircle, XCircle, Search, Shield, Plus } from "lucide-react";
+import { Building2, CheckCircle, XCircle, Search, Shield, Plus, Info } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const InstitutionManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -19,8 +20,6 @@ const InstitutionManagement = () => {
   const [newInstitution, setNewInstitution] = useState({
     name: "",
     domain: "",
-    description: "",
-    hedera_account_id: "",
     admin_email: ""
   });
   const queryClient = useQueryClient();
@@ -73,14 +72,37 @@ const InstitutionManagement = () => {
 
   const addInstitutionMutation = useMutation({
     mutationFn: async (data: typeof newInstitution) => {
-      // Step 1: Create institution
+      // Step 1: Find user by admin email to get their wallet and DID
+      if (!data.admin_email || !data.admin_email.trim()) {
+        throw new Error('Admin email is required to create institution');
+      }
+
+      // Find user by email and get their profile with DID and Hedera account
+      const { data: users } = await (supabase as any)
+        .from('profiles')
+        .select('id, hedera_account_id, did')
+        .eq('email', data.admin_email.trim())
+        .limit(1);
+
+      if (!users || users.length === 0) {
+        throw new Error(`User ${data.admin_email} not found. They must sign up and setup their DID first.`);
+      }
+
+      const user = users[0];
+
+      if (!user.hedera_account_id || !user.did) {
+        throw new Error(`User ${data.admin_email} must connect their wallet and create a DID first. Please ask them to visit /identity/did-setup`);
+      }
+
+      // Step 2: Create institution with auto-populated DID and Hedera account from user's profile
       const { data: institution, error: instError } = await (supabase as any)
         .from('institutions')
         .insert({
           name: data.name,
           domain: data.domain,
-          description: data.description,
-          hedera_account_id: data.hedera_account_id,
+          hedera_account_id: user.hedera_account_id, // Auto-populated from user's wallet
+          did: user.did, // Auto-populated from user's DID
+          admin_user_id: user.id,
           verified: false // Super admin must manually verify
         })
         .select()
@@ -88,32 +110,20 @@ const InstitutionManagement = () => {
       
       if (instError) throw instError;
 
-      // Step 2: If admin email provided, create/find user and assign institution_admin role
-      if (data.admin_email && data.admin_email.trim()) {
-        // Find user by email
-        const { data: users } = await (supabase as any)
-          .from('profiles')
-          .select('id')
-          .eq('email', data.admin_email.trim())
-          .limit(1);
+      // Step 3: Assign institution_admin role to the user
+      await (supabase as any)
+        .from('user_roles')
+        .insert({
+          user_id: user.id,
+          role: 'institution_admin',
+          institution_id: institution.id
+        });
 
-        if (users && users.length > 0) {
-          const userId = users[0].id;
-          
-          // Assign institution_admin role
-          await (supabase as any)
-            .from('user_roles')
-            .insert({
-              user_id: userId,
-              role: 'institution_admin',
-              institution_id: institution.id
-            });
-          
-          toast.success(`Institution created and ${data.admin_email} assigned as admin`);
-        } else {
-          toast.warning(`Institution created, but user ${data.admin_email} not found. They must sign up first.`);
-        }
-      }
+      // Step 4: Update user's profile with institution_id
+      await (supabase as any)
+        .from('profiles')
+        .update({ institution_id: institution.id })
+        .eq('id', user.id);
 
       return institution;
     },
@@ -123,11 +133,9 @@ const InstitutionManagement = () => {
       setNewInstitution({
         name: "",
         domain: "",
-        description: "",
-        hedera_account_id: "",
         admin_email: ""
       });
-      toast.success("Institution onboarded successfully");
+      toast.success("Institution onboarded successfully with admin's wallet and DID");
     },
     onError: (error: any) => {
       toast.error(`Failed to onboard institution: ${error.message}`);
@@ -178,10 +186,22 @@ const InstitutionManagement = () => {
                       Onboard New Institution
                     </DialogTitle>
                     <DialogDescription>
-                      Add a new institution to the platform. You can assign an admin after creation.
+                      Add a new institution using an existing user's wallet and DID. The admin must have already signed up and completed DID setup.
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4 py-4">
+                    <Alert>
+                      <Info className="h-4 w-4" />
+                      <AlertTitle>Automatic Wallet & DID Integration</AlertTitle>
+                      <AlertDescription>
+                        The institution will automatically use the admin's Hedera account and DID. Make sure the admin has:
+                        <ul className="list-disc list-inside mt-2 text-sm space-y-1">
+                          <li>Signed up for an account</li>
+                          <li>Connected their HashPack/Blade wallet in Settings → Wallets</li>
+                          <li>Created their DID at /identity/did-setup</li>
+                        </ul>
+                      </AlertDescription>
+                    </Alert>
                     <div className="space-y-2">
                       <Label htmlFor="name">Institution Name *</Label>
                       <Input
@@ -204,29 +224,7 @@ const InstitutionManagement = () => {
                       </p>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="description">Description</Label>
-                      <Textarea
-                        id="description"
-                        placeholder="Brief description of the institution"
-                        value={newInstitution.description}
-                        onChange={(e) => setNewInstitution(prev => ({ ...prev, description: e.target.value }))}
-                        rows={3}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="hedera_account">Hedera Account ID</Label>
-                      <Input
-                        id="hedera_account"
-                        placeholder="e.g., 0.0.123456"
-                        value={newInstitution.hedera_account_id}
-                        onChange={(e) => setNewInstitution(prev => ({ ...prev, hedera_account_id: e.target.value }))}
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        The institution's Hedera account for issuing certificates
-                      </p>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="admin_email">Institution Admin Email (Optional)</Label>
+                      <Label htmlFor="admin_email">Institution Admin Email *</Label>
                       <Input
                         id="admin_email"
                         type="email"
@@ -235,7 +233,7 @@ const InstitutionManagement = () => {
                         onChange={(e) => setNewInstitution(prev => ({ ...prev, admin_email: e.target.value }))}
                       />
                       <p className="text-xs text-muted-foreground">
-                        If provided, this user will be assigned as institution admin (they must sign up first)
+                        This user must have already signed up and completed wallet connection + DID setup. Their wallet and DID will be used for the institution.
                       </p>
                     </div>
                   </div>
@@ -249,7 +247,7 @@ const InstitutionManagement = () => {
                     </Button>
                     <Button
                       onClick={() => addInstitutionMutation.mutate(newInstitution)}
-                      disabled={!newInstitution.name.trim() || addInstitutionMutation.isPending}
+                      disabled={!newInstitution.name.trim() || !newInstitution.admin_email.trim() || addInstitutionMutation.isPending}
                     >
                       {addInstitutionMutation.isPending ? "Creating..." : "Create Institution"}
                     </Button>

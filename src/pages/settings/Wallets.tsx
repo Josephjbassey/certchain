@@ -98,26 +98,28 @@ const Wallets = () => {
 
   const handleConnectWallet = async () => {
     try {
-      // Check if HashPack is available
-      if ((window as any).hashpack) {
-        toast.info("Opening HashPack wallet...");
-        const hashpack = (window as any).hashpack;
+      // Check if HashPack extension is installed
+      const hashconnect = (window as any).hashconnect;
+      
+      if (hashconnect) {
+        toast.info("Connecting to HashPack...");
         
-        // Initialize HashPack pairing
+        // Request pairing with HashPack
         const appMetadata = {
           name: "CertChain",
-          description: "Blockchain Certificate Management",
-          icon: window.location.origin + "/logo.png"
+          description: "Blockchain Certificate Management Platform",
+          icons: [window.location.origin + "/logo.png"],
+          url: window.location.origin
         };
+
+        // Initialize connection
+        await hashconnect.init(appMetadata);
         
-        const pairing = await hashpack.pairingData;
-        if (!pairing) {
-          await hashpack.connectToLocalWallet();
-        }
+        // Request pairing
+        const pairingData = await hashconnect.connectToLocalWallet();
         
-        const accountIds = await hashpack.getAccountIds();
-        if (accountIds && accountIds.length > 0) {
-          const accountId = accountIds[0];
+        if (pairingData && pairingData.accountIds && pairingData.accountIds.length > 0) {
+          const accountId = pairingData.accountIds[0];
           
           // Save to database
           const { data: { user } } = await supabase.auth.getUser();
@@ -131,17 +133,29 @@ const Wallets = () => {
                 is_primary: wallets?.length === 0 // Make first wallet primary
               });
             
-            if (error) throw error;
+            if (error) {
+              // Check if wallet already connected
+              if (error.code === '23505') {
+                toast.error("This wallet is already connected");
+                return;
+              }
+              throw error;
+            }
             
             queryClient.invalidateQueries({ queryKey: ['connected-wallets'] });
             toast.success(`HashPack wallet connected: ${accountId}`);
           }
+        } else {
+          toast.error("No accounts found in HashPack wallet");
         }
       } else if ((window as any).bladeSdk) {
-        toast.info("Opening Blade wallet...");
+        toast.info("Connecting to Blade wallet...");
         const blade = (window as any).bladeSdk;
         
+        // Initialize Blade
+        await blade.createSession();
         const accountInfo = await blade.getAccountInfo();
+        
         if (accountInfo && accountInfo.accountId) {
           // Save to database
           const { data: { user } } = await supabase.auth.getUser();
@@ -155,7 +169,13 @@ const Wallets = () => {
                 is_primary: wallets?.length === 0
               });
             
-            if (error) throw error;
+            if (error) {
+              if (error.code === '23505') {
+                toast.error("This wallet is already connected");
+                return;
+              }
+              throw error;
+            }
             
             queryClient.invalidateQueries({ queryKey: ['connected-wallets'] });
             toast.success(`Blade wallet connected: ${accountInfo.accountId}`);
@@ -167,14 +187,24 @@ const Wallets = () => {
           description: "Please install HashPack or Blade wallet extension first",
           action: {
             label: "Get HashPack",
-            onClick: () => window.open("https://www.hashpack.app/", "_blank")
+            onClick: () => window.open("https://www.hashpack.app/download", "_blank")
           }
         });
       }
     } catch (error: any) {
       console.error("Wallet connection error:", error);
+      
+      // Provide more specific error messages
+      let errorMessage = error.message || "Please try again";
+      
+      if (error.message?.includes("User rejected")) {
+        errorMessage = "Connection cancelled by user";
+      } else if (error.message?.includes("already connected")) {
+        errorMessage = "Wallet is already connected";
+      }
+      
       toast.error("Failed to connect wallet", {
-        description: error.message || "Please try again"
+        description: errorMessage
       });
     }
   };

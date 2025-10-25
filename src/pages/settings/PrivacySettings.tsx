@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Select,
   SelectContent,
@@ -33,20 +34,65 @@ const PrivacySettings = () => {
   const [dataCollection, setDataCollection] = useState(true);
 
   const handleSavePrivacy = () => {
-    // TODO: Save to database/user preferences
-    toast.success("Privacy settings updated");
+    // Store in localStorage until we add privacy_settings column to database
+    const settings = {
+      profile_visibility: profileVisibility,
+      show_email: showEmail,
+      show_certificates: showCertificates,
+      allow_search: allowSearch,
+      data_collection: dataCollection
+    };
+    localStorage.setItem('privacy_settings', JSON.stringify(settings));
+    toast.success("Privacy settings saved locally");
   };
 
-  const handleExportData = () => {
-    toast.info("Preparing your data export...", {
-      description: "You'll receive an email with a download link shortly"
-    });
+  const handleExportData = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      // Export user data
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      const { data: certificates } = await supabase
+        .from('certificate_cache')
+        .select('*')
+        .eq('recipient_email', user.email);
+
+      const exportData = {
+        profile: profileData,
+        certificates: certificates,
+        exported_at: new Date().toISOString()
+      };
+
+      // Create download
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `certchain-data-export-${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+
+      toast.success("Data exported successfully");
+    } catch (error: any) {
+      toast.error(`Export failed: ${error.message}`);
+    }
   };
 
-  const handleDeleteAccount = () => {
-    toast.error("Account deletion initiated", {
-      description: "Your account and all data will be permanently deleted in 30 days"
-    });
+  const handleDeleteAccount = async () => {
+    try {
+      // This would typically involve calling an edge function to handle account deletion
+      // For now, just show a warning that they need to contact support
+      toast.error("Account deletion requires admin approval", {
+        description: "Please contact support to delete your account"
+      });
+    } catch (error: any) {
+      toast.error(`Deletion failed: ${error.message}`);
+    }
   };
 
   return (

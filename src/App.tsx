@@ -165,6 +165,9 @@ const App = () => (
                   <Route path="/admin/users" element={<UserManagement />} />
                   <Route path="/admin/institutions" element={<InstitutionManagement />} />
                   <Route path="/admin/settings" element={<SystemSettings />} />
+                  <Route path="/admin/settings/integrations" element={<Integrations />} />
+                  <Route path="/admin/settings/webhooks" element={<WebhooksSettings />} />
+                  <Route path="/admin/settings/api-keys" element={<ApiKeys />} />
                   <Route path="/admin/logs" element={<AdminLogs />} />
                   <Route path="/admin/certificates" element={<Certificates />} />
                   <Route path="/admin/certificates/:id" element={<CertificateDetail />} />

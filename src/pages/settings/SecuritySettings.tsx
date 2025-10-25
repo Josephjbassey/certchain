@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
   DialogContent,
@@ -25,8 +26,9 @@ const SecuritySettings = () => {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
-  const handleChangePassword = () => {
+  const handleChangePassword = async () => {
     if (!currentPassword || !newPassword || !confirmPassword) {
       toast.error("Please fill in all password fields");
       return;
@@ -42,29 +44,49 @@ const SecuritySettings = () => {
       return;
     }
 
-    // TODO: Implement actual password change with Supabase
-    toast.success("Password changed successfully");
-    setIsChangePasswordOpen(false);
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
+    try {
+      setIsChangingPassword(true);
+
+      // Update password with Supabase Auth
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (error) throw error;
+
+      toast.success("Password changed successfully");
+      setIsChangePasswordOpen(false);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (error: any) {
+      toast.error(`Failed to change password: ${error.message}`);
+    } finally {
+      setIsChangingPassword(false);
+    }
   };
 
   const handleEnable2FA = () => {
     if (!twoFactorEnabled) {
-      toast.info("Setting up 2FA...", {
-        description: "Scan the QR code with your authenticator app"
+      toast.info("2FA Setup Coming Soon", {
+        description: "Two-factor authentication will be available in the next update"
       });
-      // TODO: Generate and show QR code
-      setTwoFactorEnabled(true);
+      // TODO: Implement 2FA with Supabase MFA
+      // setTwoFactorEnabled(true);
     } else {
       toast.success("Two-factor authentication disabled");
       setTwoFactorEnabled(false);
     }
   };
 
-  const handleRevokeSessions = () => {
-    toast.success("All other sessions have been revoked");
+  const handleRevokeSessions = async () => {
+    try {
+      // Sign out from all other sessions
+      await supabase.auth.signOut({ scope: 'others' });
+      toast.success("All other sessions have been revoked");
+    } catch (error: any) {
+      toast.error(`Failed to revoke sessions: ${error.message}`);
+    }
   };
 
   // Mock active sessions data
@@ -171,11 +193,18 @@ const SecuritySettings = () => {
                       </div>
                     </div>
                     <DialogFooter>
-                      <Button variant="outline" onClick={() => setIsChangePasswordOpen(false)}>
+                      <Button 
+                        variant="outline" 
+                        onClick={() => setIsChangePasswordOpen(false)}
+                        disabled={isChangingPassword}
+                      >
                         Cancel
                       </Button>
-                      <Button onClick={handleChangePassword}>
-                        Change Password
+                      <Button 
+                        onClick={handleChangePassword}
+                        disabled={isChangingPassword}
+                      >
+                        {isChangingPassword ? "Changing..." : "Change Password"}
                       </Button>
                     </DialogFooter>
                   </DialogContent>
