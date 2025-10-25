@@ -110,7 +110,7 @@ const WebhooksSettings = () => {
           url: webhookUrl,
           events: selectedEvents,
           secret,
-          active: true,
+          is_active: true,
         })
         .select()
         .single();
