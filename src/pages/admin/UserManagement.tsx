@@ -31,7 +31,7 @@ const UserManagement = () => {
       await supabase.from('user_roles').delete().eq('user_id', userId);
       // @ts-ignore
       const { error } = await supabase.from('user_roles').insert({ user_id: userId, role: newRole });
-      
+
       if (error) throw error;
     },
     onSuccess: () => {
@@ -50,8 +50,8 @@ const UserManagement = () => {
 
   const getRoleBadge = (roles: any[]) => {
     if (!roles || roles.length === 0) return <Badge variant="secondary">user</Badge>;
-    const role = roles[0].role;
-    const variant = role === 'admin' ? 'destructive' : role === 'issuer' ? 'default' : 'secondary';
+    const role = roles[0].role; // Assumes one role per user for simplicity
+    const variant = role === 'super_admin' ? 'destructive' : role === 'institution_admin' ? 'default' : 'secondary';
     return <Badge variant={variant}>{role}</Badge>;
   };
 
@@ -109,9 +109,10 @@ const UserManagement = () => {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="user">User</SelectItem>
-                          <SelectItem value="issuer">Issuer</SelectItem>
-                          <SelectItem value="admin">Admin</SelectItem>
+                          <SelectItem value="candidate">Candidate</SelectItem>
+                          <SelectItem value="instructor">Instructor</SelectItem>
+                          <SelectItem value="institution_admin">Institution Admin</SelectItem>
+                          <SelectItem value="super_admin">Super Admin</SelectItem>
                         </SelectContent>
                       </Select>
                     </TableCell>

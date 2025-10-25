@@ -44,7 +44,7 @@ const Signup = () => {
         .eq('verified', true)
         .eq('status', 'active')
         .order('name', { ascending: true });
-      
+
       if (error) throw error;
       return data || [];
     }
@@ -71,7 +71,7 @@ const Signup = () => {
 
       const redirectUrl = `${window.location.origin}/dashboard`;
 
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email: validated.email,
         password: validated.password,
         options: {
@@ -92,8 +92,12 @@ const Signup = () => {
         return;
       }
 
-      toast.success("Account created successfully!");
-      navigate("/dashboard");
+      if (data.session) {
+        toast.success("Account created successfully!");
+        navigate("/dashboard"); // Should redirect to role-based dashboard
+      } else {
+        navigate("/auth/verify-email", { state: { email: validated.email } });
+      }
     } catch (error) {
       if (error instanceof z.ZodError) {
         toast.error(error.errors[0].message);
@@ -110,10 +114,7 @@ const Signup = () => {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2 mb-8">
-            <Shield className="h-10 w-10 text-primary" />
-            <span className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              CertChain
-            </span>
+            <img src="/images/logo.png" alt="CertChain" className="h-20" />
           </Link>
           <h1 className="text-3xl font-bold mb-2">Create Account</h1>
           <p className="text-muted-foreground">Start issuing blockchain certificates</p>

@@ -40,10 +40,7 @@ const ResetPassword = () => {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2 mb-8">
-            <Shield className="h-10 w-10 text-primary" />
-            <span className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              CertChain
-            </span>
+            <img src="/images/logo.png" alt="CertChain" className="h-20" />
           </Link>
           <h1 className="text-3xl font-bold mb-2">Set New Password</h1>
           <p className="text-muted-foreground">Choose a strong password for your account</p>

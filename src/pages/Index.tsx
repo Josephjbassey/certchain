@@ -156,9 +156,10 @@ const Index = () => {
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-4 gap-8">
             <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <Shield className="h-6 w-6 text-primary" />
-                <span className="text-lg font-bold">CertChain</span>
+              <div className="flex items-center">
+                <Link to="/" className="inline-flex items-center gap-2 mb-8">
+                  <img src="/images/logo.png" alt="CertChain" className="h-20" />
+                </Link>
               </div>
               <p className="text-sm text-muted-foreground">
                 Decentralized certificate verification powered by Hedera.

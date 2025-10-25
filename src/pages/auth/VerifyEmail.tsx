@@ -1,12 +1,21 @@
 import { Shield, Mail, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const VerifyEmail = () => {
-  const handleResend = () => {
-    toast.success("Verification email resent!");
+  const location = useLocation();
+  const email = location.state?.email;
+
+  const handleResend = async () => {
+    if (!email) {
+      toast.error("Email not found. Please go back to signup.");
+      return;
+    }
+    await supabase.auth.resend({ type: 'signup', email });
+    toast.success(`Verification email resent to ${email}!`);
   };
 
   return (
@@ -14,10 +23,7 @@ const VerifyEmail = () => {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2 mb-8">
-            <Shield className="h-10 w-10 text-primary" />
-            <span className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              CertChain
-            </span>
+            <img src="/images/logo.png" alt="CertChain" className="h-20" />
           </Link>
           <h1 className="text-3xl font-bold mb-2">Verify Your Email</h1>
           <p className="text-muted-foreground">We've sent a verification link to your email</p>
@@ -32,7 +38,9 @@ const VerifyEmail = () => {
             <h3 className="font-semibold text-lg">Check your inbox</h3>
             <p className="text-sm text-muted-foreground">
               We've sent a verification email to <br />
-              <span className="font-medium text-foreground">your@email.com</span>
+              <span className="font-medium text-foreground">
+                {email || "your email address"}
+              </span>
             </p>
           </div>
 
@@ -41,7 +49,7 @@ const VerifyEmail = () => {
               Click the link in the email to verify your account and get started with CertChain.
             </p>
 
-            <Button variant="outline" onClick={handleResend} className="w-full">
+            <Button variant="outline" onClick={handleResend} className="w-full" disabled={!email}>
               <RefreshCw className="h-4 w-4" />
               <span className="ml-2">Resend Verification Email</span>
             </Button>

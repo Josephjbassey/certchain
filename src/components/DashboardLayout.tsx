@@ -12,18 +12,15 @@ export function DashboardLayout() {
     <SidebarProvider defaultOpen>
       <div className="min-h-screen flex w-full bg-background">
         <DashboardSidebar />
-        
+
         <SidebarInset className="flex-1">
           {/* Header */}
           <header className="border-b border-border/40 backdrop-blur-sm sticky top-0 z-50 bg-background/80">
             <div className="flex items-center justify-between px-4 py-4">
               <div className="flex items-center gap-4">
                 <SidebarTrigger />
-                <Link to="/" className="flex items-center gap-2">
-                  <Shield className="h-6 w-6 text-primary" />
-                  <span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                    CertChain
-                  </span>
+                <Link to="/" className="flex items-center">
+                  <img src="/images/logo.png" alt="CertChain" className="h-8" />
                 </Link>
               </div>
               <div className="flex items-center gap-3">

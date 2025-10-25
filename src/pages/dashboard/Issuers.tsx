@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger
+} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Search, UserCheck, UserPlus, UserMinus } from "lucide-react";
 import { toast } from "sonner";
@@ -14,8 +16,8 @@ import { useAuth } from "@/lib/auth-context";
 
 const Issuers = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [selectedUserId, setSelectedUserId] = useState("");
+  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
   const queryClient = useQueryClient();
   const { user } = useAuth();
 
@@ -39,56 +41,58 @@ const Issuers = () => {
     queryKey: ['institution-users', currentUserProfile?.institution_id],
     queryFn: async () => {
       if (!currentUserProfile || !currentUserProfile.institution_id) return [];
-      
+
       const { data: profiles } = await (supabase as any)
         .from('profiles')
         .select('*, user_roles(role)')
         .eq('institution_id', currentUserProfile.institution_id)
         .order('created_at', { ascending: false });
-      
+
       return profiles || [];
     },
     enabled: !!currentUserProfile?.institution_id,
   });
 
-  // Get all issuers (users with issuer or admin role)
-  const issuers = institutionUsers?.filter((user: any) => 
-    user.user_roles?.some((r: any) => r.role === 'issuer' || r.role === 'admin')
+  // Get all issuers (users with instructor or institution_admin role)
+  const issuers = institutionUsers?.filter((user: any) =>
+    user.user_roles?.some((r: any) => r.role === 'instructor' || r.role === 'institution_admin')
   );
 
-  // Get candidates (users without issuer role in the institution)
-  const candidates = institutionUsers?.filter((user: any) => 
-    !user.user_roles?.some((r: any) => r.role === 'issuer' || r.role === 'admin')
-  );
-
-  const addIssuerMutation = useMutation({
-    mutationFn: async (userId: string) => {
-      // Check if user already has issuer role
-      const { data: existingRole } = await (supabase as any)
-        .from('user_roles')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('role', 'issuer')
-        .maybeSingle();
-
-      if (existingRole) {
-        throw new Error('User is already an issuer');
+  const inviteIssuerMutation = useMutation({
+    mutationFn: async (email: string) => {
+      if (!currentUserProfile?.institution_id) {
+        throw new Error("Current user's institution not found.");
       }
 
-      const { error } = await (supabase as any)
-        .from('user_roles')
-        .insert({ user_id: userId, role: 'issuer' });
-      
+      // Generate an invitation token
+      const invitationToken = crypto.randomUUID();
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+
+      const { error } = await supabase
+        .from('invitations')
+        .insert({
+          institution_id: currentUserProfile.institution_id,
+          email: email,
+          role: 'instructor',
+          token: invitationToken,
+          expires_at: expiresAt.toISOString(),
+          invited_by: user?.id,
+        });
+
       if (error) throw error;
+
+      // Here you would typically send an email with the invitation link
+      // For this example, we'll just show a toast.
+      const invitationLink = `${window.location.origin}/auth/signup?invitationToken=${invitationToken}`;
+      console.log("Invitation Link:", invitationLink); // Log for testing
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['institution-users'] });
-      toast.success("Issuer added successfully");
-      setIsAddDialogOpen(false);
-      setSelectedUserId("");
+      toast.success(`Invitation sent to ${inviteEmail}.`);
+      setIsInviteDialogOpen(false);
+      setInviteEmail("");
     },
     onError: (error: any) => {
-      toast.error(error.message || "Failed to add issuer");
+      toast.error(error.message || "Failed to send invitation.");
     }
   });
 
@@ -98,8 +102,8 @@ const Issuers = () => {
         .from('user_roles')
         .delete()
         .eq('user_id', userId)
-        .eq('role', 'issuer');
-      
+        .eq('role', 'instructor');
+
       if (error) throw error;
     },
     onSuccess: () => {
@@ -118,11 +122,11 @@ const Issuers = () => {
 
   const getRoleBadge = (roles: any[]) => {
     if (!roles || roles.length === 0) return null;
-    const role = roles.find((r: any) => r.role === 'admin' || r.role === 'issuer');
+    const role = roles.find((r: any) => r.role === 'institution_admin' || r.role === 'instructor');
     if (!role) return null;
-    
-    const variant = role.role === 'admin' ? 'destructive' : 'default';
-    return <Badge variant={variant}>{role.role}</Badge>;
+
+    const variant = role.role === 'institution_admin' ? 'default' : 'secondary';
+    return <Badge variant={variant}>{role.role === 'institution_admin' ? 'Admin' : 'Instructor'}</Badge>;
   };
 
   return (
@@ -149,47 +153,35 @@ const Issuers = () => {
                   className="pl-10 w-64"
                 />
               </div>
-              <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
                 <DialogTrigger asChild>
                   <Button>
                     <UserPlus className="h-4 w-4 mr-2" />
-                    Add Issuer
+                    Invite Issuer
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Add Issuer</DialogTitle>
+                    <DialogTitle>Invite New Issuer</DialogTitle>
                     <DialogDescription>
-                      Select a user from your institution to grant issuer permissions
+                      Send an invitation to a new instructor to join your institution. They will be able to issue certificates upon signing up.
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4 py-4">
                     <div className="space-y-2">
-                      <Label htmlFor="user">Select User</Label>
-                      <select
-                        id="user"
-                        className="w-full px-3 py-2 rounded-md border border-border bg-background"
-                        value={selectedUserId}
-                        onChange={(e) => setSelectedUserId(e.target.value)}
-                      >
-                        <option value="">Choose a user...</option>
-                        {candidates?.map((candidate: any) => (
-                          <option key={candidate.id} value={candidate.id}>
-                            {candidate.display_name || candidate.email}
-                          </option>
-                        ))}
-                      </select>
+                      <Label htmlFor="email">Instructor's Email</Label>
+                      <Input id="email" type="email" placeholder="instructor@example.com" value={inviteEmail} onChange={(e) => setInviteEmail(e.target.value)} />
                     </div>
                   </div>
                   <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                    <Button variant="outline" onClick={() => setIsInviteDialogOpen(false)}>
                       Cancel
                     </Button>
-                    <Button 
-                      onClick={() => selectedUserId && addIssuerMutation.mutate(selectedUserId)}
-                      disabled={!selectedUserId || addIssuerMutation.isPending}
+                    <Button
+                      onClick={() => inviteEmail && inviteIssuerMutation.mutate(inviteEmail)}
+                      disabled={!inviteEmail || inviteIssuerMutation.isPending}
                     >
-                      Add Issuer
+                      {inviteIssuerMutation.isPending ? "Sending..." : "Send Invitation"}
                     </Button>
                   </DialogFooter>
                 </DialogContent>
@@ -229,7 +221,7 @@ const Issuers = () => {
                     </TableCell>
                     <TableCell>{new Date(issuer.created_at).toLocaleDateString()}</TableCell>
                     <TableCell className="text-right">
-                      {issuer.user_roles?.some((r: any) => r.role === 'admin') ? (
+                      {issuer.user_roles?.some((r: any) => r.role === 'institution_admin') ? (
                         <Badge variant="secondary">Admin</Badge>
                       ) : (
                         <Button

@@ -5,12 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Building2, CheckCircle, XCircle, Search, Shield, Plus, Info } from "lucide-react";
+import { Building2, CheckCircle, XCircle, Search, Shield, Plus, Info, Copy, Link as LinkIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
+} from "@/components/ui/dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const InstitutionManagement = () => {
@@ -18,10 +20,9 @@ const InstitutionManagement = () => {
   const [selectedInstitution, setSelectedInstitution] = useState<any>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [newInstitution, setNewInstitution] = useState({
-    name: "",
-    domain: "",
-    admin_email: ""
+    name: "", domain: "", admin_email: ""
   });
+  const [invitation, setInvitation] = useState<{ link: string; institutionName: string } | null>(null);
   const queryClient = useQueryClient();
 
   const { data: institutions, isLoading } = useQuery({
@@ -40,7 +41,7 @@ const InstitutionManagement = () => {
         .from('institutions')
         .update({ verified: true })
         .eq('id', institutionId);
-      
+
       if (error) throw error;
     },
     onSuccess: () => {
@@ -58,7 +59,7 @@ const InstitutionManagement = () => {
         .from('institutions')
         .update({ verified: false })
         .eq('id', institutionId);
-      
+
       if (error) throw error;
     },
     onSuccess: () => {
@@ -72,60 +73,41 @@ const InstitutionManagement = () => {
 
   const addInstitutionMutation = useMutation({
     mutationFn: async (data: typeof newInstitution) => {
-      // Step 1: Find user by admin email to get their wallet and DID
-      if (!data.admin_email || !data.admin_email.trim()) {
-        throw new Error('Admin email is required to create institution');
-      }
-
-      // Find user by email and get their profile with DID and Hedera account
-      const { data: users } = await (supabase as any)
-        .from('profiles')
-        .select('id, hedera_account_id, did')
-        .eq('email', data.admin_email.trim())
-        .limit(1);
-
-      if (!users || users.length === 0) {
-        throw new Error(`User ${data.admin_email} not found. They must sign up and setup their DID first.`);
-      }
-
-      const user = users[0];
-
-      if (!user.hedera_account_id || !user.did) {
-        throw new Error(`User ${data.admin_email} must connect their wallet and create a DID first. Please ask them to visit /identity/did-setup`);
-      }
-
-      // Step 2: Create institution with auto-populated DID and Hedera account from user's profile
-      const { data: institution, error: instError } = await (supabase as any)
+      // Step 1: Create the institution record
+      const { data: institution, error: instError } = await supabase
         .from('institutions')
         .insert({
           name: data.name,
           domain: data.domain,
-          hedera_account_id: user.hedera_account_id, // Auto-populated from user's wallet
-          did: user.did, // Auto-populated from user's DID
-          admin_user_id: user.id,
-          verified: false // Super admin must manually verify
+          verified: false, // Super admin must manually verify later
         })
         .select()
         .single();
-      
+
       if (instError) throw instError;
 
-      // Step 3: Assign institution_admin role to the user
-      await (supabase as any)
-        .from('user_roles')
+      // Step 2: Generate an invitation token for the admin
+      const invitationToken = crypto.randomUUID();
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+
+      const { error: tokenError } = await supabase
+        .from('invitations')
         .insert({
-          user_id: user.id,
+          institution_id: institution.id,
+          email: data.admin_email,
           role: 'institution_admin',
-          institution_id: institution.id
+          token: invitationToken,
+          expires_at: expiresAt.toISOString(),
         });
 
-      // Step 4: Update user's profile with institution_id
-      await (supabase as any)
-        .from('profiles')
-        .update({ institution_id: institution.id })
-        .eq('id', user.id);
+      if (tokenError) {
+        // Rollback institution creation if token fails
+        await supabase.from('institutions').delete().eq('id', institution.id);
+        throw tokenError;
+      }
 
-      return institution;
+      const invitationLink = `${window.location.origin}/auth/signup?invitationToken=${invitationToken}`;
+      return { invitationLink, institutionName: institution.name };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-institutions'] });
@@ -135,12 +117,17 @@ const InstitutionManagement = () => {
         domain: "",
         admin_email: ""
       });
-      toast.success("Institution onboarded successfully with admin's wallet and DID");
+      toast.success("Institution created and invitation sent.");
     },
     onError: (error: any) => {
       toast.error(`Failed to onboard institution: ${error.message}`);
     }
   });
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success("Invitation link copied to clipboard!");
+  };
 
   const filteredInstitutions = institutions?.filter((inst: any) =>
     inst.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -186,20 +173,16 @@ const InstitutionManagement = () => {
                       Onboard New Institution
                     </DialogTitle>
                     <DialogDescription>
-                      Add a new institution using an existing user's wallet and DID. The admin must have already signed up and completed DID setup.
+                      Create a new institution and generate an invitation link for its administrator.
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4 py-4">
                     <Alert>
                       <Info className="h-4 w-4" />
-                      <AlertTitle>Automatic Wallet & DID Integration</AlertTitle>
+                      <AlertTitle>Invitation Process</AlertTitle>
                       <AlertDescription>
-                        The institution will automatically use the admin's Hedera account and DID. Make sure the admin has:
-                        <ul className="list-disc list-inside mt-2 text-sm space-y-1">
-                          <li>Signed up for an account</li>
-                          <li>Connected their HashPack/Blade wallet in Settings → Wallets</li>
-                          <li>Created their DID at /identity/did-setup</li>
-                        </ul>
+                        This will create an institution and generate a unique sign-up link for the admin.
+                        The admin will be prompted to create their account and connect their wallet, which will then be associated with the institution.
                       </AlertDescription>
                     </Alert>
                     <div className="space-y-2">
@@ -233,7 +216,7 @@ const InstitutionManagement = () => {
                         onChange={(e) => setNewInstitution(prev => ({ ...prev, admin_email: e.target.value }))}
                       />
                       <p className="text-xs text-muted-foreground">
-                        This user must have already signed up and completed wallet connection + DID setup. Their wallet and DID will be used for the institution.
+                        An invitation to sign up and become the institution admin will be sent to this email.
                       </p>
                     </div>
                   </div>
@@ -254,6 +237,32 @@ const InstitutionManagement = () => {
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
+              {/* Invitation Link Dialog */}
+              <AlertDialog open={!!invitation} onOpenChange={() => setInvitation(null)}>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Invitation Link for {invitation?.institutionName}</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Share this secure link with the institution administrator. They can use it to sign up and claim their admin role. This link expires in 7 days.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <div className="flex items-center space-x-2 my-4">
+                    <Input
+                      value={invitation?.link || ""}
+                      readOnly
+                      className="font-mono text-sm"
+                    />
+                    <Button variant="outline" size="icon" onClick={() => copyToClipboard(invitation?.link || '')}>
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <AlertDialogFooter>
+                    <AlertDialogAction onClick={() => setInvitation(null)}>
+                      Done
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </div>
         </CardHeader>
@@ -310,8 +319,8 @@ const InstitutionManagement = () => {
                     <TableCell className="text-right space-x-2">
                       <Dialog>
                         <DialogTrigger asChild>
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant="outline"
                             size="sm"
                             onClick={() => setSelectedInstitution(institution)}
                           >
@@ -385,7 +394,7 @@ const InstitutionManagement = () => {
                               <div>
                                 <p className="text-sm font-medium mb-1">Created</p>
                                 <p className="text-sm text-muted-foreground">
-                                  {selectedInstitution?.created_at && 
+                                  {selectedInstitution?.created_at &&
                                     new Date(selectedInstitution.created_at).toLocaleString()}
                                 </p>
                               </div>
