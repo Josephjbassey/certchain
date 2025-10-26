@@ -81,7 +81,7 @@ const InstitutionManagement = () => {
       // 1. Settings → Wallets (connect HashPack/Blade)
       // 2. /identity/did-setup (create DID)
       // 3. Super admin updates institution with admin's wallet/DID details
-      const { data: institution, error: instError } = await (supabase as any)
+      const { data: institution, error: instError } = await supabase
         .from('institutions')
         .insert({
           name: data.name,
@@ -99,7 +99,7 @@ const InstitutionManagement = () => {
       const invitationToken = crypto.randomUUID();
       const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
-      const { error: tokenError } = await (supabase as any)
+      const { error: tokenError } = await supabase
         .from('invitations')
         .insert({
           institution_id: institution.id,
@@ -111,7 +111,7 @@ const InstitutionManagement = () => {
 
       if (tokenError) {
         // Rollback institution creation if token fails
-        await (supabase as any).from('institutions').delete().eq('id', institution.id);
+        await supabase.from('institutions').delete().eq('id', institution.id);
         throw tokenError;
       }
 

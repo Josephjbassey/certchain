@@ -3,6 +3,7 @@
 This document outlines the steps needed to complete the invitation system deployment.
 
 ## ✅ Completed
+
 - Created invitations table migration (`supabase/migrations/20251025025908_create_invitations_table.sql`)
 - Created send-invitation-email Edge Function (`supabase/functions/send-invitation-email/index.ts`)
 - Updated Signup.tsx with invitation validation and consumption logic
@@ -16,6 +17,7 @@ This document outlines the steps needed to complete the invitation system deploy
 You need to apply the invitations table migration to your database. You have two options:
 
 #### Option A: Via Supabase Dashboard (Recommended)
+
 1. Go to https://supabase.com/dashboard/project/asxskeceekllmzxatlvn/editor
 2. Click "SQL Editor" in the left sidebar
 3. Click "New query"
@@ -24,6 +26,7 @@ You need to apply the invitations table migration to your database. You have two
 6. Click "Run" to execute the migration
 
 #### Option B: Via Supabase CLI
+
 ```bash
 # Login to Supabase CLI
 npx supabase login
@@ -58,13 +61,16 @@ npx supabase gen types typescript --project-id asxskeceekllmzxatlvn > src/integr
 ### Step 4: Remove Type Assertions (Optional)
 
 Once types are regenerated, you can remove the `(supabase as any)` type assertions from:
+
 - `src/pages/auth/Signup.tsx` (lines with invitations table queries)
 - `src/pages/admin/InstitutionManagement.tsx` (invitations and institutions table queries)
 
 ## 📋 What Changed
 
 ### Database Schema
+
 - **New Table**: `invitations`
+
   - `id` (uuid, primary key)
   - `institution_id` (uuid, foreign key to institutions)
   - `email` (text)
@@ -80,6 +86,7 @@ Once types are regenerated, you can remove the `(supabase as any)` type assertio
   - These must be updated after admin completes wallet connection and DID setup
 
 ### Edge Function
+
 - **New Function**: `send-invitation-email`
   - Sends invitation emails via Resend API
   - Requires RESEND_API_KEY environment variable
@@ -87,7 +94,9 @@ Once types are regenerated, you can remove the `(supabase as any)` type assertio
   - Has graceful fallback (shows link in dialog if email fails)
 
 ### Frontend Changes
-- **Signup.tsx**: 
+
+- **Signup.tsx**:
+
   - Validates invitation tokens (expiration, single-use, existence)
   - Marks tokens as used after successful signup
   - Pre-fills email from invitation
@@ -101,13 +110,16 @@ Once types are regenerated, you can remove the `(supabase as any)` type assertio
 ## ⚠️ Important Notes
 
 ### Placeholder Values
+
 Institutions are now created with placeholder values for:
+
 - `did`: 'pending'
 - `hedera_account_id`: 'pending'
 
 These must be updated through one of these methods:
 
 1. **Admin completes wallet setup** (Preferred):
+
    - Admin signs up via invitation
    - Goes to Settings → Wallets
    - Connects HashPack or Blade wallet
@@ -119,17 +131,26 @@ These must be updated through one of these methods:
    - Super admin manually updates institution with admin's wallet/DID
 
 ### Certificate Issuance
+
 ⚠️ **Institutions cannot issue certificates until did and hedera_account_id are set to real values** (not 'pending').
 
 The certificate issuance code should validate this:
+
 ```typescript
-if (institution.did === 'pending' || institution.hedera_account_id === 'pending') {
-  throw new Error('Institution must complete wallet connection and DID setup before issuing certificates');
+if (
+  institution.did === "pending" ||
+  institution.hedera_account_id === "pending"
+) {
+  throw new Error(
+    "Institution must complete wallet connection and DID setup before issuing certificates"
+  );
 }
 ```
 
 ### Email Service
+
 The invitation system requires:
+
 - Resend API account (https://resend.com)
 - RESEND_API_KEY secret configured in Supabase
 - If email fails, users can still copy the invitation link manually from the dialog
@@ -155,22 +176,26 @@ After deployment, test the complete flow:
 ## 🔧 Troubleshooting
 
 ### Migration Fails with "already exists" Errors
+
 - This is expected if some tables/policies already exist
 - The migration uses `IF NOT EXISTS` so it's safe to rerun
 - You can also apply just the new parts via SQL Editor
 
 ### Type Errors After Deployment
+
 - Run the TypeScript regeneration command (Step 3)
 - Restart your development server
 - Check that `src/integrations/supabase/types.ts` includes the `invitations` table
 
 ### Emails Not Sending
+
 - Check RESEND_API_KEY is set correctly
 - Verify Resend account is active and verified
 - Check Edge Function logs in Supabase dashboard
 - Use the fallback dialog link if email fails
 
 ### Invitation Link Not Working
+
 - Check token format in URL (should be UUID)
 - Verify token exists in database
 - Check expires_at timestamp

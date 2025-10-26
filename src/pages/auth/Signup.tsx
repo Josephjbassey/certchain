@@ -58,7 +58,7 @@ const Signup = () => {
     if (invitationToken) {
       const validateToken = async () => {
         setIsLoading(true);
-        const { data, error } = await (supabase as any)
+        const { data, error } = await supabase
           .from('invitations')
           .select('email, institution_id, expires_at, used_at, role')
           .eq('token', invitationToken)
@@ -149,7 +149,7 @@ const Signup = () => {
       // Mark invitation as used if signup was via invitation
       if (invitationToken && data.user) {
         try {
-          await (supabase as any)
+          await supabase
             .from('invitations')
             .update({ used_at: new Date().toISOString() })
             .eq('token', invitationToken);

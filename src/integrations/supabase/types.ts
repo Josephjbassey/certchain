@@ -12,8 +12,105 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "13.0.5"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
+      api_keys: {
+        Row: {
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          key_hash: string
+          key_prefix: string
+          last_used_at: string | null
+          name: string
+          scopes: string[]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          key_hash: string
+          key_prefix: string
+          last_used_at?: string | null
+          name: string
+          scopes?: string[]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          key_hash?: string
+          key_prefix?: string
+          last_used_at?: string | null
+          name?: string
+          scopes?: string[]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      application_logs: {
+        Row: {
+          context: Json | null
+          created_at: string | null
+          id: string
+          level: string
+          message: string
+          session_id: string | null
+          timestamp: string
+          user_id: string | null
+        }
+        Insert: {
+          context?: Json | null
+          created_at?: string | null
+          id?: string
+          level: string
+          message: string
+          session_id?: string | null
+          timestamp: string
+          user_id?: string | null
+        }
+        Update: {
+          context?: Json | null
+          created_at?: string | null
+          id?: string
+          level?: string
+          message?: string
+          session_id?: string | null
+          timestamp?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           action: string
@@ -45,22 +142,7 @@ export type Database = {
           target_type?: string | null
           user_id?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "audit_logs_institution_id_fkey"
-            columns: ["institution_id"]
-            isOneToOne: false
-            referencedRelation: "institutions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "audit_logs_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       certificate_cache: {
         Row: {
@@ -126,22 +208,7 @@ export type Database = {
           serial_number?: number
           token_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "certificate_cache_institution_id_fkey"
-            columns: ["institution_id"]
-            isOneToOne: false
-            referencedRelation: "institutions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "certificate_cache_issued_by_user_id_fkey"
-            columns: ["issued_by_user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       claim_tokens: {
         Row: {
@@ -177,15 +244,7 @@ export type Database = {
           nonce?: string | null
           token?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "claim_tokens_certificate_id_fkey"
-            columns: ["certificate_id"]
-            isOneToOne: false
-            referencedRelation: "certificate_cache"
-            referencedColumns: ["certificate_id"]
-          },
-        ]
+        Relationships: []
       }
       hcs_events: {
         Row: {
@@ -272,15 +331,7 @@ export type Database = {
           updated_at?: string | null
           verified?: boolean | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "institutions_admin_user_id_fkey"
-            columns: ["admin_user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       instructor_candidates: {
         Row: {
@@ -307,26 +358,51 @@ export type Database = {
           instructor_id?: string
           status?: string | null
         }
+        Relationships: []
+      }
+      invitations: {
+        Row: {
+          created_at: string | null
+          email: string
+          expires_at: string
+          id: string
+          institution_id: string | null
+          invited_by: string | null
+          role: string
+          token: string
+          updated_at: string | null
+          used_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          expires_at: string
+          id?: string
+          institution_id?: string | null
+          invited_by?: string | null
+          role: string
+          token?: string
+          updated_at?: string | null
+          used_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          expires_at?: string
+          id?: string
+          institution_id?: string | null
+          invited_by?: string | null
+          role?: string
+          token?: string
+          updated_at?: string | null
+          used_at?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "instructor_candidates_candidate_id_fkey"
-            columns: ["candidate_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "instructor_candidates_institution_id_fkey"
+            foreignKeyName: "invitations_institution_id_fkey"
             columns: ["institution_id"]
             isOneToOne: false
             referencedRelation: "institutions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "instructor_candidates_instructor_id_fkey"
-            columns: ["instructor_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -364,23 +440,53 @@ export type Database = {
         }
         Relationships: []
       }
+      user_dids: {
+        Row: {
+          account_id: string
+          created_at: string | null
+          did: string
+          id: string
+          network: string
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          created_at?: string | null
+          did: string
+          id?: string
+          network?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          created_at?: string | null
+          did?: string
+          id?: string
+          network?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null
           id: string
           role: Database["public"]["Enums"]["app_role"]
+          updated_at: string | null
           user_id: string
         }
         Insert: {
           created_at?: string | null
           id?: string
           role: Database["public"]["Enums"]["app_role"]
+          updated_at?: string | null
           user_id: string
         }
         Update: {
           created_at?: string | null
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: []
@@ -419,29 +525,37 @@ export type Database = {
           scope_type?: string | null
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "user_scopes_created_by_fkey"
-            columns: ["created_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_scopes_institution_id_fkey"
-            columns: ["institution_id"]
-            isOneToOne: false
-            referencedRelation: "institutions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_scopes_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
+      }
+      user_wallets: {
+        Row: {
+          account_id: string
+          connected_at: string | null
+          id: string
+          is_primary: boolean | null
+          last_used_at: string | null
+          user_id: string
+          wallet_type: string
+        }
+        Insert: {
+          account_id: string
+          connected_at?: string | null
+          id?: string
+          is_primary?: boolean | null
+          last_used_at?: string | null
+          user_id: string
+          wallet_type: string
+        }
+        Update: {
+          account_id?: string
+          connected_at?: string | null
+          id?: string
+          is_primary?: boolean | null
+          last_used_at?: string | null
+          user_id?: string
+          wallet_type?: string
+        }
+        Relationships: []
       }
       webhooks: {
         Row: {
@@ -480,201 +594,104 @@ export type Database = {
           url?: string
           user_id?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "webhooks_institution_id_fkey"
-            columns: ["institution_id"]
-            isOneToOne: false
-            referencedRelation: "institutions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "webhooks_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      user_dids: {
-        Row: {
-          account_id: string
-          created_at: string | null
-          did: string
-          id: string
-          network: string
-          user_id: string
-        }
-        Insert: {
-          account_id: string
-          created_at?: string | null
-          did: string
-          id?: string
-          network?: string
-          user_id: string
-        }
-        Update: {
-          account_id?: string
-          created_at?: string | null
-          did?: string
-          id?: string
-          network?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_dids_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      api_keys: {
-        Row: {
-          created_at: string | null
-          expires_at: string | null
-          id: string
-          is_active: boolean | null
-          key_hash: string
-          key_prefix: string
-          last_used_at: string | null
-          name: string
-          scopes: string[]
-          user_id: string
-        }
-        Insert: {
-          created_at?: string | null
-          expires_at?: string | null
-          id?: string
-          is_active?: boolean | null
-          key_hash: string
-          key_prefix: string
-          last_used_at?: string | null
-          name: string
-          scopes?: string[]
-          user_id: string
-        }
-        Update: {
-          created_at?: string | null
-          expires_at?: string | null
-          id?: string
-          is_active?: boolean | null
-          key_hash?: string
-          key_prefix?: string
-          last_used_at?: string | null
-          name?: string
-          scopes?: string[]
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "api_keys_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      user_wallets: {
-        Row: {
-          account_id: string
-          connected_at: string | null
-          id: string
-          is_primary: boolean | null
-          last_used_at: string | null
-          user_id: string
-          wallet_type: string
-        }
-        Insert: {
-          account_id: string
-          connected_at?: string | null
-          id?: string
-          is_primary?: boolean | null
-          last_used_at?: string | null
-          user_id: string
-          wallet_type: string
-        }
-        Update: {
-          account_id?: string
-          connected_at?: string | null
-          id?: string
-          is_primary?: boolean | null
-          last_used_at?: string | null
-          user_id?: string
-          wallet_type?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_wallets_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      application_logs: {
-        Row: {
-          context: Json | null
-          created_at: string | null
-          id: string
-          level: string
-          message: string
-          session_id: string | null
-          timestamp: string
-          user_id: string | null
-        }
-        Insert: {
-          context?: Json | null
-          created_at?: string | null
-          id?: string
-          level: string
-          message: string
-          session_id?: string | null
-          timestamp: string
-          user_id?: string | null
-        }
-        Update: {
-          context?: Json | null
-          created_at?: string | null
-          id?: string
-          level?: string
-          message?: string
-          session_id?: string | null
-          timestamp?: string
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "application_logs_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
     }
     Views: {
-      [_ in never]: never
+      certificates: {
+        Row: {
+          course_name: string | null
+          created_at: string | null
+          expires_at: string | null
+          hedera_tx_id: string | null
+          id: string | null
+          institution_id: string | null
+          ipfs_cid: string | null
+          issued_at: string | null
+          issued_by_user_id: string | null
+          issuer_did: string | null
+          metadata: Json | null
+          recipient_account_id: string | null
+          recipient_did: string | null
+          recipient_email: string | null
+          revoked_at: string | null
+          serial_number: number | null
+          token_id: string | null
+        }
+        Insert: {
+          course_name?: string | null
+          created_at?: string | null
+          expires_at?: string | null
+          hedera_tx_id?: string | null
+          id?: string | null
+          institution_id?: string | null
+          ipfs_cid?: string | null
+          issued_at?: string | null
+          issued_by_user_id?: string | null
+          issuer_did?: string | null
+          metadata?: Json | null
+          recipient_account_id?: string | null
+          recipient_did?: string | null
+          recipient_email?: string | null
+          revoked_at?: string | null
+          serial_number?: number | null
+          token_id?: string | null
+        }
+        Update: {
+          course_name?: string | null
+          created_at?: string | null
+          expires_at?: string | null
+          hedera_tx_id?: string | null
+          id?: string | null
+          institution_id?: string | null
+          ipfs_cid?: string | null
+          issued_at?: string | null
+          issued_by_user_id?: string | null
+          issuer_did?: string | null
+          metadata?: Json | null
+          recipient_account_id?: string | null
+          recipient_did?: string | null
+          recipient_email?: string | null
+          revoked_at?: string | null
+          serial_number?: number | null
+          token_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       can_manage_user: {
         Args: { _manager_id: string; _target_user_id: string }
         Returns: boolean
       }
+      clean_expired_invitations: { Args: never; Returns: undefined }
+      get_certificates_secure: {
+        Args: never
+        Returns: {
+          course_name: string
+          created_at: string
+          expires_at: string
+          hedera_tx_id: string
+          id: string
+          institution_id: string
+          ipfs_cid: string
+          issued_at: string
+          issued_by_user_id: string
+          issuer_did: string
+          metadata: Json
+          recipient_account_id: string
+          recipient_did: string
+          recipient_email: string
+          revoked_at: string
+          serial_number: number
+          token_id: string
+        }[]
+      }
       get_instructor_candidates: {
         Args: { _instructor_id: string }
         Returns: string[]
       }
-      get_user_institution: {
-        Args: { _user_id: string }
-        Returns: string
-      }
+      get_user_institution: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -690,17 +707,10 @@ export type Database = {
         Args: { _institution_id: string; _user_id: string }
         Returns: boolean
       }
-      is_super_admin: {
-        Args: { _user_id: string }
-        Returns: boolean
-      }
+      is_super_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      app_role:
-        | "super_admin"
-        | "institution_admin"
-        | "instructor"
-        | "candidate"
+      app_role: "super_admin" | "institution_admin" | "instructor" | "candidate"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -826,14 +836,12 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
-      app_role: [
-        "super_admin",
-        "institution_admin",
-        "instructor",
-        "candidate",
-      ],
+      app_role: ["super_admin", "institution_admin", "instructor", "candidate"],
     },
   },
 } as const
