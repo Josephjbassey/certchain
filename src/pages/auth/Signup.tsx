@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Shield, Mail, Lock, User, Building, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
@@ -13,7 +13,7 @@ import { useQuery } from "@tanstack/react-query";
 
 const signupSchema = z.object({
   name: z.string().trim().min(2, "Name must be at least 2 characters").max(100, "Name too long"),
-  institutionId: z.string().uuid("Please select an institution"),
+  institutionId: z.string().uuid("Please select an institution").optional(),
   email: z.string().trim().email("Invalid email address").max(255, "Email too long"),
   password: z.string().min(8, "Password must be at least 8 characters"),
   confirmPassword: z.string(),
@@ -33,6 +33,9 @@ const Signup = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  const invitationToken = searchParams.get("invitationToken");
+  const [invitationData, setInvitationData] = useState<{ email: string; institution_id: string } | null>(null);
 
   // Fetch verified institutions for dropdown
   const { data: institutions, isLoading: isLoadingInstitutions } = useQuery({
@@ -50,6 +53,50 @@ const Signup = () => {
     }
   });
 
+  // Handle invitation token
+  useEffect(() => {
+    if (invitationToken) {
+      const validateToken = async () => {
+        setIsLoading(true);
+        const { data, error } = await (supabase as any)
+          .from('invitations')
+          .select('email, institution_id, expires_at, used_at, role')
+          .eq('token', invitationToken)
+          .maybeSingle();
+
+        if (error || !data) {
+          toast.error("Invalid invitation link.");
+          navigate("/auth/signup");
+          setIsLoading(false);
+          return;
+        }
+
+        // Check if invitation was already used
+        if (data.used_at) {
+          toast.error("This invitation has already been used.");
+          navigate("/auth/signup");
+          setIsLoading(false);
+          return;
+        }
+
+        // Check if invitation has expired
+        if (new Date(data.expires_at) < new Date()) {
+          toast.error("This invitation has expired. Please request a new one.");
+          navigate("/auth/signup");
+          setIsLoading(false);
+          return;
+        }
+
+        // Valid invitation
+        setInvitationData(data);
+        setFormData(prev => ({ ...prev, email: data.email }));
+        toast.info(`You have been invited to join as ${data.role}. Please complete your registration.`);
+        setIsLoading(false);
+      };
+      validateToken();
+    }
+  }, [invitationToken, navigate]);
+
   // Redirect if already logged in
   if (user) {
     navigate("/dashboard");
@@ -63,7 +110,7 @@ const Signup = () => {
     try {
       const validated = signupSchema.parse({
         name: formData.name.trim(),
-        institutionId: formData.institutionId,
+        institutionId: invitationData ? invitationData.institution_id : formData.institutionId,
         email: formData.email.trim(),
         password: formData.password,
         confirmPassword: formData.confirmPassword,
@@ -71,16 +118,23 @@ const Signup = () => {
 
       const redirectUrl = `${window.location.origin}/dashboard`;
 
+      // Prepare options for Supabase Auth
+      const signUpOptions: any = {
+        emailRedirectTo: redirectUrl,
+        data: {
+          display_name: validated.name,
+          institution_id: validated.institutionId,
+        },
+      };
+
+      if (invitationToken) {
+        signUpOptions.data.invitation_token = invitationToken;
+      }
+
       const { data, error } = await supabase.auth.signUp({
         email: validated.email,
         password: validated.password,
-        options: {
-          emailRedirectTo: redirectUrl,
-          data: {
-            display_name: validated.name,
-            institution_id: validated.institutionId,
-          },
-        },
+        options: signUpOptions,
       });
 
       if (error) {
@@ -90,6 +144,19 @@ const Signup = () => {
           toast.error(error.message);
         }
         return;
+      }
+
+      // Mark invitation as used if signup was via invitation
+      if (invitationToken && data.user) {
+        try {
+          await (supabase as any)
+            .from('invitations')
+            .update({ used_at: new Date().toISOString() })
+            .eq('token', invitationToken);
+        } catch (invError) {
+          console.error("Failed to mark invitation as used:", invError);
+          // Don't block signup if this fails
+        }
       }
 
       if (data.session) {
@@ -136,39 +203,41 @@ const Signup = () => {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Institution</label>
-              <div className="relative">
-                <Building className="absolute left-3 top-3 h-4 w-4 text-muted-foreground z-10" />
-                <Select
-                  value={formData.institutionId}
-                  onValueChange={(value) => setFormData({ ...formData, institutionId: value })}
-                  disabled={isLoadingInstitutions}
-                >
-                  <SelectTrigger className="pl-10">
-                    <SelectValue placeholder={isLoadingInstitutions ? "Loading institutions..." : "Select your institution"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {institutions && institutions.length > 0 ? (
-                      institutions.map((inst) => (
-                        <SelectItem key={inst.id} value={inst.id}>
-                          {inst.name} {inst.domain && `(${inst.domain})`}
-                        </SelectItem>
-                      ))
-                    ) : (
-                      <div className="px-2 py-1.5 text-sm text-muted-foreground">
-                        No institutions available
-                      </div>
-                    )}
-                  </SelectContent>
-                </Select>
+            {!invitationToken && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Institution</label>
+                <div className="relative">
+                  <Building className="absolute left-3 top-3 h-4 w-4 text-muted-foreground z-10" />
+                  <Select
+                    value={formData.institutionId}
+                    onValueChange={(value) => setFormData({ ...formData, institutionId: value })}
+                    disabled={isLoadingInstitutions || !!invitationToken}
+                  >
+                    <SelectTrigger className="pl-10">
+                      <SelectValue placeholder={isLoadingInstitutions ? "Loading institutions..." : "Select your institution"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {institutions && institutions.length > 0 ? (
+                        institutions.map((inst) => (
+                          <SelectItem key={inst.id} value={inst.id}>
+                            {inst.name} {inst.domain && `(${inst.domain})`}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                          No institutions available
+                        </div>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {institutions && institutions.length === 0 && !isLoadingInstitutions && (
+                  <p className="text-xs text-muted-foreground">
+                    Your institution is not listed? Contact support to get your institution verified.
+                  </p>
+                )}
               </div>
-              {institutions && institutions.length === 0 && !isLoadingInstitutions && (
-                <p className="text-xs text-muted-foreground">
-                  Your institution is not listed? Contact support to get your institution verified.
-                </p>
-              )}
-            </div>
+            )}
 
             <div className="space-y-2">
               <label className="text-sm font-medium">Email</label>
@@ -180,6 +249,7 @@ const Signup = () => {
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   className="pl-10"
+                  disabled={!!invitationToken}
                   required
                 />
               </div>

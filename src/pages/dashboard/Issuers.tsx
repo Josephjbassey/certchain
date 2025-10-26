@@ -28,10 +28,10 @@ const Issuers = () => {
       if (!user) return null;
       const { data } = await (supabase as any)
         .from('profiles')
-        .select('institution_id')
+        .select('institution_id, institutions(name)')
         .eq('id', user.id)
         .single();
-      return data as { institution_id: string | null } | null;
+      return { institution_id: data.institution_id, institution_name: data.institutions.name };
     },
     enabled: !!user,
   });

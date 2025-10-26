@@ -10,9 +10,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import {
-  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger
 } from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
+} from "@/components/ui/alert-dialog";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const InstitutionManagement = () => {
@@ -74,11 +76,18 @@ const InstitutionManagement = () => {
   const addInstitutionMutation = useMutation({
     mutationFn: async (data: typeof newInstitution) => {
       // Step 1: Create the institution record
-      const { data: institution, error: instError } = await supabase
+      // Note: Institution is created without hedera_account_id and did initially
+      // Admin must complete wallet connection and DID setup after signup via:
+      // 1. Settings → Wallets (connect HashPack/Blade)
+      // 2. /identity/did-setup (create DID)
+      // 3. Super admin updates institution with admin's wallet/DID details
+      const { data: institution, error: instError } = await (supabase as any)
         .from('institutions')
         .insert({
           name: data.name,
           domain: data.domain,
+          did: 'pending', // Temporary placeholder until admin sets up DID
+          hedera_account_id: 'pending', // Temporary placeholder until admin connects wallet
           verified: false, // Super admin must manually verify later
         })
         .select()
@@ -90,7 +99,7 @@ const InstitutionManagement = () => {
       const invitationToken = crypto.randomUUID();
       const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
-      const { error: tokenError } = await supabase
+      const { error: tokenError } = await (supabase as any)
         .from('invitations')
         .insert({
           institution_id: institution.id,
@@ -102,22 +111,40 @@ const InstitutionManagement = () => {
 
       if (tokenError) {
         // Rollback institution creation if token fails
-        await supabase.from('institutions').delete().eq('id', institution.id);
+        await (supabase as any).from('institutions').delete().eq('id', institution.id);
         throw tokenError;
       }
 
       const invitationLink = `${window.location.origin}/auth/signup?invitationToken=${invitationToken}`;
-      return { invitationLink, institutionName: institution.name };
+      return { link: invitationLink, institutionName: institution.name };
     },
-    onSuccess: () => {
+    onSuccess: async (data) => {
       queryClient.invalidateQueries({ queryKey: ['admin-institutions'] });
       setIsAddDialogOpen(false);
+      setInvitation(data); // Show the invitation link dialog as a fallback
+
+      // Send invitation email
+      try {
+        await supabase.functions.invoke('send-invitation-email', {
+          body: {
+            to: newInstitution.admin_email,
+            subject: `Invitation to become an admin for ${data.institutionName}`,
+            invitationLink: data.link,
+            role: 'Institution Admin',
+            institutionName: data.institutionName,
+          },
+        });
+        toast.success(`Institution created. Invitation email sent to ${newInstitution.admin_email}.`);
+      } catch (emailError) {
+        console.error("Failed to send email:", emailError);
+        toast.warning("Institution created, but failed to send invitation email. Please share the link manually.");
+      }
+
       setNewInstitution({
         name: "",
         domain: "",
         admin_email: ""
       });
-      toast.success("Institution created and invitation sent.");
     },
     onError: (error: any) => {
       toast.error(`Failed to onboard institution: ${error.message}`);
