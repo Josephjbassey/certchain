@@ -48,6 +48,7 @@ export interface HederaNFTMetadata {
 
 export interface MintCertificateRequest {
     recipientAccountId: string;
+    institutionId?: string; // Optional - for validation of institution setup
     institutionTokenId: string;
     metadataCid: string;
     certificateData: {

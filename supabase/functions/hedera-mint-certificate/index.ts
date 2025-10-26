@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 // Use ESM build from esm.sh to avoid bundling the entire npm tree (smaller deploy size)
 // Import Hedera SDK from the pinned Skypack production URL to reduce bundle size
 // (pinned and optimized for production as provided by the user)
@@ -11,7 +12,7 @@ import {
   TokenSupplyType,
   TokenMintTransaction,
   TransferTransaction,
-} from "https://cdn.skypack.dev/pin/@hashgraph/sdk@v2.75.0-Eb6kMqKSHEGRj8RngoyB/mode=imports/optimized/@hashgraph/sdk.js";
+} from "https://esm.sh/@hashgraph/sdk@2.75.0/es2022/sdk.mjs";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -27,6 +28,7 @@ serve(async (req: Request) => {
     const {
       recipientAccountId,
       institutionTokenId,
+      institutionId,
       metadataCid,
       certificateData,
       network = 'testnet',
@@ -34,6 +36,34 @@ serve(async (req: Request) => {
 
     if (!recipientAccountId || !metadataCid) {
       throw new Error('recipientAccountId and metadataCid are required');
+    }
+
+    // Validate institution setup is complete before minting
+    if (institutionId) {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+      const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+      const supabase = createClient(supabaseUrl, supabaseKey);
+
+      const { data: institution, error: instError } = await supabase
+        .from('institutions')
+        .select('did, hedera_account_id')
+        .eq('id', institutionId)
+        .single();
+
+      if (instError) {
+        throw new Error(`Failed to verify institution: ${instError.message}`);
+      }
+
+      if (!institution) {
+        throw new Error('Institution not found');
+      }
+
+      // Check if institution has completed wallet and DID setup
+      if (institution.did === 'pending' || institution.hedera_account_id === 'pending') {
+        throw new Error('Institution setup incomplete. Please connect wallet and create DID first.');
+      }
+
+      console.log('Institution verified:', institutionId);
     }
 
     console.log('Minting certificate NFT for:', recipientAccountId);

@@ -24,7 +24,7 @@ const IssueCertificate = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
+
     try {
       // Get current user and their institution
       const { data: { user } } = await supabase.auth.getUser();
@@ -48,7 +48,7 @@ const IssueCertificate = () => {
 
       // Generate certificate ID
       const certificateId = crypto.randomUUID();
-      
+
       // Prepare certificate metadata
       const certificateData = {
         certificateId,
@@ -90,6 +90,7 @@ const IssueCertificate = () => {
         {
           body: {
             recipientAccountId: null, // Will be set when claimed
+            institutionId: profile.institution_id, // For validation
             institutionTokenId: institution.collection_token_id,
             metadataCid: ipfsCid,
             certificateData,
@@ -134,10 +135,10 @@ const IssueCertificate = () => {
 
       // Step 4: Create claim token and send email (optional)
       // TODO: Implement claim token generation and email sending
-      
+
       toast.success("Certificate issued successfully!");
       navigate(certificatesPath);
-      
+
     } catch (error: any) {
       console.error('Error issuing certificate:', error);
       toast.error(error.message || 'Failed to issue certificate');
@@ -261,7 +262,7 @@ const IssueCertificate = () => {
 
         <Card className="p-6 mt-6 bg-muted/30">
           <p className="text-sm text-muted-foreground">
-            <strong>Note:</strong> Once issued, the certificate will be sent to the recipient's email 
+            <strong>Note:</strong> Once issued, the certificate will be sent to the recipient's email
             with a secure claim link. They can claim it to their Hedera wallet or view it as a verifiable credential.
           </p>
         </Card>
