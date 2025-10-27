@@ -6,6 +6,7 @@ import {
   PrivateKey,
   AccountId,
   TransferTransaction,
+  TokenAssociateTransaction,
 } from "https://esm.sh/@hashgraph/sdk@2.75.0/es2022/sdk.mjs";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 
@@ -92,8 +93,53 @@ serve(async (req) => {
 
     client.setOperator(AccountId.fromString(operatorId), operatorPrivateKey);
 
-    // 5) Attempt transfer from treasury (operator) to recipient
-    // This will fail if recipient has not associated the token
+    // 5) Check if token is associated, if not, associate it
+    console.log('Checking token association for recipient...');
+    const mirrorNodeUrl = network === 'mainnet'
+      ? 'https://mainnet-public.mirrornode.hedera.com'
+      : 'https://testnet.mirrornode.hedera.com';
+
+    let isAssociated = false;
+    try {
+      const accountUrl = `${mirrorNodeUrl}/api/v1/accounts/${recipientAccountId}/tokens?token.id=${tokenId}`;
+      const checkResponse = await fetch(accountUrl);
+      if (checkResponse.ok) {
+        const data = await checkResponse.json();
+        isAssociated = data.tokens && data.tokens.length > 0;
+        console.log('Token association status:', isAssociated ? 'Associated' : 'Not associated');
+      }
+    } catch (error) {
+      console.log('Could not check association status, will attempt transfer');
+    }
+
+    // Associate token if needed (requires recipient's private key)
+    // NOTE: In production, this should be done client-side by the user's wallet
+    // For now, we'll return an error asking the user to associate
+    if (!isAssociated) {
+      console.log('Token not associated. User must associate token first.');
+      return new Response(
+        JSON.stringify({
+          success: false,
+          certificateId: cert.certificate_id,
+          tokenId,
+          serialNumber,
+          needsAssociation: true,
+          error: "Token must be associated with your account before claiming.",
+          help: "Please associate token " + tokenId + " with your Hedera account, then retry the claim.",
+          associationInstructions: {
+            step1: "Open your Hedera wallet (HashPack, Blade, etc.)",
+            step2: "Find 'Token Association' or 'Add Token' option",
+            step3: `Enter token ID: ${tokenId}`,
+            step4: "Confirm the association transaction",
+            step5: "Return here and retry claiming your certificate"
+          }
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    // 6) Attempt transfer from treasury (operator) to recipient
+    console.log('Transferring NFT to recipient...');
     try {
       const transferTx = await new TransferTransaction()
         .addNftTransfer(tokenId, serialNumber, AccountId.fromString(operatorId), AccountId.fromString(recipientAccountId))
@@ -103,13 +149,37 @@ serve(async (req) => {
       const transferSubmit = await transferSign.execute(client);
       const transferRx = await transferSubmit.getReceipt(client);
 
-      // 6) Mark claim as used
+      console.log('NFT transferred successfully:', transferSubmit.transactionId.toString());
+
+      // 7) Mark claim as used
       const { error: updateErr } = await supabase
         .from("claim_tokens")
         .update({ claimed_by: userId, claimed_at: new Date().toISOString() })
         .eq("token", claimToken);
 
       if (updateErr) throw updateErr;
+
+      // 8) Log to HCS for audit trail
+      try {
+        console.log('Logging claim event to HCS...');
+        const hcsMessage = JSON.stringify({
+          event: "certificate_claimed",
+          certificateId: cert.certificate_id,
+          tokenId,
+          serialNumber,
+          claimant: recipientAccountId,
+          claimedBy: userId,
+          transactionId: transferSubmit.transactionId.toString(),
+          timestamp: new Date().toISOString()
+        });
+
+        // Note: This would require importing TopicMessageSubmitTransaction
+        // For now, we'll log to console and can add HCS logging in next iteration
+        console.log('HCS log (to be implemented):', hcsMessage);
+      } catch (hcsError) {
+        console.error('Failed to log to HCS:', hcsError);
+        // Don't fail the claim if HCS logging fails
+      }
 
       return new Response(
         JSON.stringify({

@@ -133,8 +133,65 @@ const IssueCertificate = () => {
         toast.error('Certificate minted but failed to save to database');
       }
 
-      // Step 4: Create claim token and send email (optional)
-      // TODO: Implement claim token generation and email sending
+      // Step 4: Create claim token
+      toast.info("Generating claim link...");
+      const claimToken = crypto.randomUUID();
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 30); // Expires in 30 days
+
+      const { error: claimError } = await supabase
+        .from('claim_tokens')
+        .insert({
+          token: claimToken,
+          certificate_id: certificateId,
+          expires_at: expiresAt.toISOString(),
+        });
+
+      if (claimError) {
+        console.error('Failed to create claim token:', claimError);
+        toast.error('Certificate issued but failed to generate claim link');
+      } else {
+        const claimUrl = `${window.location.origin}/claim/${claimToken}`;
+
+        // Copy claim link to clipboard
+        try {
+          await navigator.clipboard.writeText(claimUrl);
+          toast.success("Claim link copied to clipboard!");
+        } catch (e) {
+          console.error('Failed to copy to clipboard:', e);
+        }
+
+        // Step 5: Send email with claim link (optional - requires send-invitation-email function)
+        // TODO: Update send-invitation-email function to handle certificate claims
+        toast.info("Email notification not yet implemented. Share the claim link manually.");
+
+        console.log('Claim URL:', claimUrl);
+      }
+
+      // Step 6: Log to HCS for audit trail
+      toast.info("Logging to Hedera Consensus Service...");
+      try {
+        await supabase.functions.invoke('hedera-hcs-log', {
+          body: {
+            topicId: '0.0.7115183', // Your HCS topic
+            messageType: 'certificate_issued',
+            message: {
+              certificateId,
+              tokenId: mintResponse.tokenId,
+              serialNumber: mintResponse.serialNumber,
+              institutionId: profile.institution_id,
+              recipientEmail: formData.recipientEmail,
+              courseName: formData.courseName,
+              issuedAt: new Date().toISOString(),
+            },
+            network: 'testnet',
+          }
+        });
+        toast.success("Event logged to HCS!");
+      } catch (hcsError) {
+        console.error('HCS logging failed:', hcsError);
+        // Don't fail the issuance if HCS logging fails
+      }
 
       toast.success("Certificate issued successfully!");
       navigate(certificatesPath);

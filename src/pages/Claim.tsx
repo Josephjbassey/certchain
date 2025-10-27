@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Shield, CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { Shield, CheckCircle, XCircle, Loader2, AlertCircle, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -15,6 +16,8 @@ const Claim = () => {
   const [claiming, setClaiming] = useState(false);
   const [tokenData, setTokenData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [needsAssociation, setNeedsAssociation] = useState(false);
+  const [associationInstructions, setAssociationInstructions] = useState<any>(null);
 
   useEffect(() => {
     if (!claimToken) {
@@ -61,11 +64,24 @@ const Claim = () => {
 
       if (error) throw error;
 
+      // Check if token association is needed
+      if (!data.success && data.needsAssociation) {
+        setNeedsAssociation(true);
+        setAssociationInstructions(data.associationInstructions);
+        setTokenData({ ...tokenData, tokenId: data.tokenId });
+        toast.error("Token association required. Please follow the instructions below.");
+        return;
+      }
+
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to claim certificate');
+      }
+
       toast.success("Certificate claimed successfully!");
       navigate(`/candidate/my-certificates/${data.certificateId}`);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error claiming certificate:", err);
-      toast.error("Failed to claim certificate");
+      toast.error(err.message || "Failed to claim certificate");
     } finally {
       setClaiming(false);
     }
@@ -111,7 +127,49 @@ const Claim = () => {
               <p className="text-sm text-muted-foreground">Certificate ID</p>
               <p className="font-mono text-sm">{tokenData.certificate_id}</p>
             </div>
+
+            {tokenData.tokenId && (
+              <div className="p-4 bg-muted rounded-lg">
+                <p className="text-sm text-muted-foreground">Token ID</p>
+                <p className="font-mono text-sm">{tokenData.tokenId}</p>
+              </div>
+            )}
           </div>
+        )}
+
+        {needsAssociation && associationInstructions && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Token Association Required</AlertTitle>
+            <AlertDescription>
+              <p className="mb-4">Before claiming this certificate, you must associate the token with your Hedera account:</p>
+              <ol className="list-decimal list-inside space-y-2 text-sm">
+                <li>{associationInstructions.step1}</li>
+                <li>{associationInstructions.step2}</li>
+                <li>{associationInstructions.step3}</li>
+                <li>{associationInstructions.step4}</li>
+                <li>{associationInstructions.step5}</li>
+              </ol>
+              <div className="mt-4 flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => window.open('https://www.hashpack.app/', '_blank')}
+                >
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  HashPack Wallet
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => window.open('https://www.bladewallet.io/', '_blank')}
+                >
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  Blade Wallet
+                </Button>
+              </div>
+            </AlertDescription>
+          </Alert>
         )}
 
         <Button
