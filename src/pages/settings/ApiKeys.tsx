@@ -60,46 +60,49 @@ const ApiKeys = () => {
   const { data: apiKeys, isLoading } = useQuery({
     queryKey: ['api-keys'],
     queryFn: async () => {
-      // TODO: Re-enable when api_keys table is created in Supabase
-      // const { data, error } = await supabase
-      //   .from('api_keys')
-      //   .select('*')
-      //   .order('created_at', { ascending: false });
+      const { data, error } = await supabase
+        .from('api_keys')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-      // if (error) throw error;
-      // return data as ApiKey[];
-      return [] as ApiKey[];
+      if (error) throw error;
+      return data as ApiKey[];
     }
   });
 
   const createKeyMutation = useMutation({
     mutationFn: async () => {
-      // TODO: Re-enable when api_keys table is created in Supabase
-      throw new Error('API Keys feature not yet available - please run database migration');
-      
-      // const { data: { user } } = await supabase.auth.getUser();
-      // if (!user) throw new Error('Not authenticated');
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
 
-      // // Generate API key
-      // const key = `ck_${crypto.randomUUID().replace(/-/g, '')}`;
-      // const keyPrefix = key.substring(0, 12);
+      // Generate API key
+      const key = `ck_${crypto.randomUUID().replace(/-/g, '')}`;
+      const keyPrefix = key.substring(0, 12);
 
-      // const { data, error } = await supabase
-      //   .from('api_keys')
-      //   .insert({
-      //     user_id: user.id,
-      //     name: keyName,
-      //     key_hash: await hashKey(key),
-      //     key_prefix: keyPrefix,
-      //     scopes: selectedScopes,
-      //     is_active: true,
-      //   })
-      //   .select()
-      //   .single();
+      // Get user's institution_id if they have one
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('institution_id')
+        .eq('id', user.id)
+        .single();
 
-      // if (error) throw error;
+      const { data, error } = await supabase
+        .from('api_keys')
+        .insert({
+          user_id: user.id,
+          institution_id: profile?.institution_id || null,
+          name: keyName,
+          key_hash: await hashKey(key),
+          key_prefix: keyPrefix,
+          scopes: selectedScopes,
+          is_active: true,
+        })
+        .select()
+        .single();
 
-      // return { apiKey: data, fullKey: key };
+      if (error) throw error;
+
+      return { apiKey: data, fullKey: key };
     },
     onSuccess: ({ fullKey }) => {
       queryClient.invalidateQueries({ queryKey: ['api-keys'] });
@@ -115,15 +118,12 @@ const ApiKeys = () => {
 
   const deleteKeyMutation = useMutation({
     mutationFn: async (keyId: string) => {
-      // TODO: Re-enable when api_keys table is created in Supabase
-      throw new Error('API Keys feature not yet available - please run database migration');
-      
-      // const { error } = await supabase
-      //   .from('api_keys')
-      //   .delete()
-      //   .eq('id', keyId);
+      const { error } = await supabase
+        .from('api_keys')
+        .delete()
+        .eq('id', keyId);
 
-      // if (error) throw error;
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['api-keys'] });
