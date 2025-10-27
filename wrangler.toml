@@ -4,6 +4,9 @@
 name = "certchain"
 compatibility_date = "2024-01-01"
 
+# Build configuration
+pages_build_output_dir = "dist"
+
 # Pages-specific settings (if using Cloudflare Workers alongside Pages)
 [env.production]
 vars = { ENVIRONMENT = "production" }
