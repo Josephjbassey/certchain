@@ -1,0 +1,12 @@
+# Cloudflare Pages Configuration
+# This file is optional but useful for advanced configuration
+
+name = "certchain"
+compatibility_date = "2024-01-01"
+
+# Pages-specific settings (if using Cloudflare Workers alongside Pages)
+[env.production]
+vars = { ENVIRONMENT = "production" }
+
+[env.preview]
+vars = { ENVIRONMENT = "preview" }
