@@ -3,6 +3,7 @@
 ## Step 1: Apply Database Migrations (5 minutes)
 
 ### Option A: Via Supabase Dashboard (Recommended)
+
 1. Open https://supabase.com/dashboard/project/asxskeceekllmzxatlvn/sql/new
 2. Copy ALL contents from `apply_migrations_complete.sql`
 3. Paste into SQL Editor
@@ -10,6 +11,7 @@
 5. Wait for success message: "✅ Database migrations applied successfully!"
 
 ### Option B: Quick Fix Only (If Option A fails)
+
 ```sql
 -- Just make user_id nullable
 ALTER TABLE public.user_dids ALTER COLUMN user_id DROP NOT NULL;
@@ -30,6 +32,7 @@ ALTER TABLE public.user_dids ALTER COLUMN user_id DROP NOT NULL;
 ## Step 3: Test Certificate Issuance (5 minutes)
 
 ### As Institution Admin:
+
 1. Navigate to "Issue Certificate"
 2. Fill in:
    - Recipient Name: `Test User`
@@ -55,6 +58,7 @@ ALTER TABLE public.user_dids ALTER COLUMN user_id DROP NOT NULL;
 ## Step 4: Test Certificate Claiming (5 minutes)
 
 ### Preparation (One-time setup):
+
 1. Open HashPack or Blade wallet
 2. Go to "Token Association" or "Add Token"
 3. Enter token ID: `0.0.7115182` (your NFT collection)
@@ -62,6 +66,7 @@ ALTER TABLE public.user_dids ALTER COLUMN user_id DROP NOT NULL;
 5. Wait for confirmation
 
 ### Claiming:
+
 1. Paste claim link in browser: `https://localhost:5173/claim/{token}`
 2. Sign in with recipient account
 3. Review certificate details
@@ -90,24 +95,30 @@ ALTER TABLE public.user_dids ALTER COLUMN user_id DROP NOT NULL;
 ## Troubleshooting
 
 ### DID Creation Fails
+
 **Error:** `null value in column user_id violates not-null constraint`  
 **Fix:** Apply SQL migrations (Step 1)
 
 ### Certificate Claim Fails
+
 **Error:** `Token must be associated with your account`  
 **Fix:** Associate token in wallet first (Step 4 - Preparation)
 
 ### Mint Fails
+
 **Error:** `Institution setup incomplete`  
-**Fix:** 
+**Fix:**
+
 1. Ensure institution has `hedera_account_id` set
 2. Ensure institution has `did` created (not "pending")
 3. Check DashboardLayout or Profile page for setup
 
 ### No Claim Link Generated
+
 **Check:** Console for errors  
 **Verify:** `claim_tokens` table exists in database  
 **Fix:** Create table if missing:
+
 ```sql
 CREATE TABLE IF NOT EXISTS public.claim_tokens (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -125,6 +136,7 @@ CREATE TABLE IF NOT EXISTS public.claim_tokens (
 ## Environment Variables Checklist
 
 ### Frontend (.env)
+
 ```bash
 VITE_SUPABASE_URL=https://asxskeceekllmzxatlvn.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1...
@@ -132,6 +144,7 @@ VITE_HEDERA_NETWORK=testnet
 ```
 
 ### Backend (Supabase Secrets)
+
 ```bash
 # Set via: npx supabase secrets set KEY=VALUE --project-ref asxskeceekllmzxatlvn
 HEDERA_OPERATOR_ID=0.0.6834167
@@ -147,26 +160,31 @@ SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1...
 ## Verification Commands
 
 ### Check Edge Functions
+
 ```bash
 npx supabase functions list --project-ref asxskeceekllmzxatlvn
 ```
 
 ### Check Function Logs
+
 ```bash
 npx supabase functions logs claim-certificate --project-ref asxskeceekllmzxatlvn
 ```
 
 ### Check Hedera NFT Collection
+
 ```bash
 curl https://testnet.mirrornode.hedera.com/api/v1/tokens/0.0.7115182
 ```
 
 ### Check HCS Topic
+
 ```bash
 curl https://testnet.mirrornode.hedera.com/api/v1/topics/0.0.7115183/messages
 ```
 
 ### Check Certificate on HashScan
+
 ```
 https://hashscan.io/testnet/token/0.0.7115182
 https://hashscan.io/testnet/topic/0.0.7115183
@@ -177,6 +195,7 @@ https://hashscan.io/testnet/topic/0.0.7115183
 ## Dashboard Testing Checklist
 
 ### Super Admin Dashboard
+
 - [ ] View all institutions
 - [ ] View all users
 - [ ] Manage user roles
@@ -184,6 +203,7 @@ https://hashscan.io/testnet/topic/0.0.7115183
 - [ ] Access system settings
 
 ### Institution Admin Dashboard
+
 - [ ] Issue certificates
 - [ ] View issued certificates
 - [ ] Manage staff members
@@ -192,12 +212,14 @@ https://hashscan.io/testnet/topic/0.0.7115183
 - [ ] View billing information
 
 ### Institution Staff Dashboard
+
 - [ ] Issue certificates (limited permissions)
 - [ ] View certificates issued by self
 - [ ] Cannot manage staff
 - [ ] Cannot view billing
 
 ### Candidate Dashboard
+
 - [ ] View "My Certificates"
 - [ ] Claim certificates via link
 - [ ] Setup DID
@@ -222,6 +244,7 @@ https://hashscan.io/testnet/topic/0.0.7115183
 ## Success Metrics
 
 After testing, you should have:
+
 - ✅ At least 1 DID created
 - ✅ At least 1 certificate minted
 - ✅ At least 1 claim token generated
@@ -247,6 +270,7 @@ After testing, you should have:
 ## Support
 
 If you encounter issues:
+
 1. Check console for errors
 2. Check Supabase function logs
 3. Check Hedera transaction on HashScan
@@ -254,11 +278,13 @@ If you encounter issues:
 5. Review `PRODUCTION_READINESS_AUDIT.md`
 
 **Hedera Resources:**
+
 - Testnet Explorer: https://hashscan.io/testnet
 - Mirror Node API: https://testnet.mirrornode.hedera.com
 - Documentation: https://docs.hedera.com
 
 **Supabase Resources:**
+
 - Dashboard: https://supabase.com/dashboard/project/asxskeceekllmzxatlvn
 - Function Logs: https://supabase.com/dashboard/project/asxskeceekllmzxatlvn/logs/functions
 - Database: https://supabase.com/dashboard/project/asxskeceekllmzxatlvn/editor
@@ -268,6 +294,7 @@ If you encounter issues:
 ## 🎉 You're Ready for Production!
 
 Once all tests pass, your CertChain platform is **production-ready** and can handle:
+
 - ✅ Decentralized identity (DIDs)
 - ✅ NFT certificate minting
 - ✅ Immutable audit logging (HCS)
@@ -281,4 +308,3 @@ Once all tests pass, your CertChain platform is **production-ready** and can han
 **Missing features: Optional enhancements only**
 
 Good luck! 🚀
-

@@ -23,6 +23,9 @@ import {
   GitBranch,
   FileCode,
   Logs,
+  Fingerprint,
+  Bot,
+  Sparkles,
 } from "lucide-react";
 import {
   Sidebar,
@@ -81,23 +84,26 @@ const hasAccessToFeature = (userRole: UserRole | null | undefined, allowedRoles?
 const candidateDashboardItems = [
   { title: "Dashboard", path: "dashboard", icon: LayoutDashboard },
   { title: "My Certificates", path: "my-certificates", icon: FolderClosed },
+  { title: "DID Setup", path: "/identity/did-setup", icon: Fingerprint, shared: true },
+  { title: "Credentials", path: "/credentials", icon: Shield, shared: true },
 ];
 
 const instructorDashboardItems = [
   { title: "Dashboard", path: "dashboard", icon: LayoutDashboard },
   { title: "All Certificates", path: "certificates", icon: Award },
   { title: "Issue Certificate", path: "issue", icon: FileText },
+  { title: "AI Console", path: "/ai-console", icon: Sparkles, shared: true },
   { title: "Batch Issue", path: "batch-issue", icon: Upload },
   { title: "Batch History", path: "batch-upload-history", icon: Clock },
   { title: "Candidates", path: "recipients", icon: Users },
   { title: "Templates", path: "templates", icon: FileStack },
   { title: "Analytics", path: "analytics", icon: BarChart3 },
-];
-
+  { title: "DID Setup", path: "/identity/did-setup", icon: Fingerprint, shared: true },
 const institutionDashboardItems = [
   { title: "Dashboard", path: "dashboard", icon: LayoutDashboard },
   { title: "All Certificates", path: "certificates", icon: Award },
   { title: "Issue Certificate", path: "issue", icon: FileText },
+  { title: "AI Console", path: "/ai-console", icon: Sparkles, shared: true },
   { title: "Batch Issue", path: "batch-issue", icon: Upload },
   { title: "Batch History", path: "batch-upload-history", icon: Clock },
   { title: "Institution", path: "institution", icon: Building2 },
@@ -106,10 +112,14 @@ const institutionDashboardItems = [
   { title: "Analytics", path: "analytics", icon: BarChart3 },
   { title: "Billing", path: "billing", icon: CreditCard },
   { title: "Webhook Logs", path: "webhooks/logs", icon: Webhook },
+  { title: "DID Setup", path: "/identity/did-setup", icon: Fingerprint, shared: true },
+];{ title: "Billing", path: "billing", icon: CreditCard },
+  { title: "Webhook Logs", path: "webhooks/logs", icon: Webhook },
 ];
 
 const adminDashboardItems = [
   { title: "Dashboard", path: "dashboard", icon: LayoutDashboard },
+  { title: "DID Setup", path: "/identity/did-setup", icon: Fingerprint, shared: true },
 ];
 
 const settingsItems = [
@@ -151,9 +161,9 @@ export function DashboardSidebar() {
   };
 
   const buildPath = (item: any) => {
-    // Shared settings use /settings path for all roles
-    if (item.shared) {
-      return `/${item.path}`;
+    // Shared routes (DID Setup, AI Console, Credentials) use absolute paths
+    if (item.shared || item.path.startsWith('/')) {
+      return item.path;
     }
     // Otherwise prefix with role
     return `/${rolePrefix}/${item.path}`;
