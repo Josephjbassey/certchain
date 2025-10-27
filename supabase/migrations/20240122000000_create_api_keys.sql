@@ -25,32 +25,32 @@ ALTER TABLE public.api_keys ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies
 -- Users can view their own API keys
-CREATE POLICY IF NOT EXISTS "Users can view own api keys"
+CREATE POLICY "Users can view own api keys"
   ON public.api_keys
   FOR SELECT
   USING (auth.uid() = user_id);
 
 -- Users can create their own API keys
-CREATE POLICY IF NOT EXISTS "Users can create own api keys"
+CREATE POLICY "Users can create own api keys"
   ON public.api_keys
   FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
 -- Users can update their own API keys
-CREATE POLICY IF NOT EXISTS "Users can update own api keys"
+CREATE POLICY "Users can update own api keys"
   ON public.api_keys
   FOR UPDATE
   USING (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);
 
 -- Users can delete their own API keys
-CREATE POLICY IF NOT EXISTS "Users can delete own api keys"
+CREATE POLICY "Users can delete own api keys"
   ON public.api_keys
   FOR DELETE
   USING (auth.uid() = user_id);
 
 -- Institution admins can view all keys for their institution
-CREATE POLICY IF NOT EXISTS "Institution admins can view institution api keys"
+CREATE POLICY "Institution admins can view institution api keys"
   ON public.api_keys
   FOR SELECT
   USING (

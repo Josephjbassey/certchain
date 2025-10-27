@@ -98,55 +98,104 @@ ALTER TABLE public.hcs_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.webhooks ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies for profiles
-CREATE POLICY "Users can view their own profile"
-  ON public.profiles FOR SELECT
-  USING (auth.uid() = id);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='profiles' AND policyname='Users can view their own profile'
+  ) THEN
+    CREATE POLICY "Users can view their own profile"
+      ON public.profiles FOR SELECT
+      USING (auth.uid() = id);
+  END IF;
+END $$;
 
-CREATE POLICY "Users can update their own profile"
-  ON public.profiles FOR UPDATE
-  USING (auth.uid() = id);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='profiles' AND policyname='Users can update their own profile'
+  ) THEN
+    CREATE POLICY "Users can update their own profile"
+      ON public.profiles FOR UPDATE
+      USING (auth.uid() = id);
+  END IF;
+END $$;
 
 -- RLS Policies for institutions
-CREATE POLICY "Institutions are viewable by all authenticated users"
-  ON public.institutions FOR SELECT
-  TO authenticated
-  USING (TRUE);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='institutions' AND policyname='Institutions are viewable by all authenticated users'
+  ) THEN
+    CREATE POLICY "Institutions are viewable by all authenticated users"
+      ON public.institutions FOR SELECT
+      TO authenticated
+      USING (TRUE);
+  END IF;
+END $$;
 
-CREATE POLICY "Institution admins can update their institution"
-  ON public.institutions FOR UPDATE
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.profiles
-      WHERE profiles.id = auth.uid()
-      AND profiles.institution_id = institutions.id
-      AND profiles.role = 'admin'
-    )
-  );
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='institutions' AND policyname='Institution admins can update their institution'
+  ) THEN
+    CREATE POLICY "Institution admins can update their institution"
+      ON public.institutions FOR UPDATE
+      USING (
+        EXISTS (
+          SELECT 1 FROM public.profiles
+          WHERE profiles.id = auth.uid()
+          AND profiles.institution_id = institutions.id
+          AND profiles.role = 'admin'
+        )
+      );
+  END IF;
+END $$;
 
 -- RLS Policies for certificate cache
-CREATE POLICY "Certificates are viewable by all"
-  ON public.certificate_cache FOR SELECT
-  USING (TRUE);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='certificate_cache' AND policyname='Certificates are viewable by all'
+  ) THEN
+    CREATE POLICY "Certificates are viewable by all"
+      ON public.certificate_cache FOR SELECT
+      USING (TRUE);
+  END IF;
+END $$;
 
-CREATE POLICY "Issuers can insert certificates"
-  ON public.certificate_cache FOR INSERT
-  WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM public.profiles
-      WHERE profiles.id = auth.uid()
-      AND profiles.role IN ('issuer', 'admin')
-    )
-  );
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='certificate_cache' AND policyname='Issuers can insert certificates'
+  ) THEN
+    CREATE POLICY "Issuers can insert certificates"
+      ON public.certificate_cache FOR INSERT
+      WITH CHECK (
+        EXISTS (
+          SELECT 1 FROM public.profiles
+          WHERE profiles.id = auth.uid()
+          AND profiles.role IN ('issuer', 'admin')
+        )
+      );
+  END IF;
+END $$;
 
 -- RLS Policies for claim tokens
-CREATE POLICY "Users can view their own claim tokens"
-  ON public.claim_tokens FOR SELECT
-  USING (
-    certificate_id IN (
-      SELECT certificate_id FROM public.certificate_cache
-      WHERE recipient_account_id = (SELECT hedera_account_id FROM public.profiles WHERE id = auth.uid())
-    )
-  );
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE schemaname='public' AND tablename='claim_tokens' AND policyname='Users can view their own claim tokens'
+  ) THEN
+    CREATE POLICY "Users can view their own claim tokens"
+      ON public.claim_tokens FOR SELECT
+      USING (
+        certificate_id IN (
+          SELECT certificate_id FROM public.certificate_cache
+          WHERE recipient_account_id = (SELECT hedera_account_id FROM public.profiles WHERE id = auth.uid())
+        )
+      );
+  END IF;
+END $$;
 
 -- Trigger for profile creation
 CREATE OR REPLACE FUNCTION public.handle_new_user()
@@ -166,10 +215,17 @@ BEGIN
 END;
 $$;
 
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW
-  EXECUTE FUNCTION public.handle_new_user();
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger WHERE tgname = 'on_auth_user_created'
+  ) THEN
+    CREATE TRIGGER on_auth_user_created
+      AFTER INSERT ON auth.users
+      FOR EACH ROW
+      EXECUTE FUNCTION public.handle_new_user();
+  END IF;
+END $$;
 
 -- Trigger for updated_at timestamps
 CREATE OR REPLACE FUNCTION public.update_updated_at()
@@ -182,15 +238,29 @@ BEGIN
 END;
 $$;
 
-CREATE TRIGGER profiles_updated_at
-  BEFORE UPDATE ON public.profiles
-  FOR EACH ROW
-  EXECUTE FUNCTION public.update_updated_at();
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger WHERE tgname = 'profiles_updated_at'
+  ) THEN
+    CREATE TRIGGER profiles_updated_at
+      BEFORE UPDATE ON public.profiles
+      FOR EACH ROW
+      EXECUTE FUNCTION public.update_updated_at();
+  END IF;
+END $$;
 
-CREATE TRIGGER institutions_updated_at
-  BEFORE UPDATE ON public.institutions
-  FOR EACH ROW
-  EXECUTE FUNCTION public.update_updated_at();
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger WHERE tgname = 'institutions_updated_at'
+  ) THEN
+    CREATE TRIGGER institutions_updated_at
+      BEFORE UPDATE ON public.institutions
+      FOR EACH ROW
+      EXECUTE FUNCTION public.update_updated_at();
+  END IF;
+END $$;
 
 -- Indexes for performance
 CREATE INDEX idx_certificate_cache_issuer ON public.certificate_cache(issuer_did);
