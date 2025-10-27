@@ -13,6 +13,7 @@ I've set up your CertChain project to deploy on **Cloudflare Pages** while keepi
 ## 📁 Files Created
 
 ### Configuration Files:
+
 1. **`wrangler.toml`** - Cloudflare configuration
 2. **`.env.production`** - Production environment variables template
 3. **`public/_headers`** - Security headers for your app
@@ -20,10 +21,12 @@ I've set up your CertChain project to deploy on **Cloudflare Pages** while keepi
 5. **`.github/workflows/deploy.yml`** - Automated deployment workflow
 
 ### Documentation:
+
 1. **`CLOUDFLARE_DEPLOYMENT.md`** - Complete deployment guide (full details)
 2. **`DEPLOYMENT_QUICKSTART.md`** - Quick start guide (TL;DR version)
 
 ### Updated:
+
 - **`package.json`** - Added deployment scripts
 
 ## 🚀 How to Deploy (2 Options)
@@ -31,6 +34,7 @@ I've set up your CertChain project to deploy on **Cloudflare Pages** while keepi
 ### Option 1: Automatic (Easiest) ⭐
 
 1. **Push to GitHub:**
+
    ```bash
    git add .
    git commit -m "Add Cloudflare Pages deployment"
@@ -38,6 +42,7 @@ I've set up your CertChain project to deploy on **Cloudflare Pages** while keepi
    ```
 
 2. **Connect Cloudflare:**
+
    - Visit https://dash.cloudflare.com/
    - Click **Pages** → **Create a project**
    - Connect your GitHub repository
@@ -48,6 +53,7 @@ I've set up your CertChain project to deploy on **Cloudflare Pages** while keepi
 
 3. **Add Environment Variables:**
    In Cloudflare dashboard, add these variables:
+
    ```
    VITE_HEDERA_NETWORK=testnet
    VITE_SUPABASE_PROJECT_ID=asxskeceekllmzxatlvn
@@ -110,19 +116,21 @@ User Browser
 
 ## 💰 Cost Breakdown
 
-| Service | Free Tier | Your Cost |
-|---------|-----------|-----------|
-| **Cloudflare Pages** | Unlimited bandwidth, 500 builds/mo | **$0** |
-| **Supabase** | 500MB DB, 5GB bandwidth, 50K users | **$0** |
-| **Total** | - | **$0/month** |
+| Service              | Free Tier                          | Your Cost    |
+| -------------------- | ---------------------------------- | ------------ |
+| **Cloudflare Pages** | Unlimited bandwidth, 500 builds/mo | **$0**       |
+| **Supabase**         | 500MB DB, 5GB bandwidth, 50K users | **$0**       |
+| **Total**            | -                                  | **$0/month** |
 
 For production with more traffic:
+
 - Cloudflare: Still **$0** (free tier is very generous)
 - Supabase Pro: **$25/mo** (8GB DB, 250GB bandwidth, 100K users)
 
 ## 🎯 What Stays on Supabase?
 
 Everything backend-related:
+
 - ✅ **Authentication** - Login, signup, email verification
 - ✅ **Database** - All your tables and data
 - ✅ **Edge Functions** - Hedera minting, DID creation, etc.
@@ -132,6 +140,7 @@ Everything backend-related:
 ## 🌐 What Moves to Cloudflare?
 
 Only the frontend:
+
 - ✅ **React App** - Your compiled JavaScript
 - ✅ **Static Assets** - Images, fonts, CSS
 - ✅ **HTML** - Your index.html
@@ -140,21 +149,25 @@ Only the frontend:
 ## 📈 Benefits You Get
 
 1. **Speed** ⚡
+
    - Assets served from nearest location to users
    - 100ms load times globally
    - HTTP/3 and Brotli compression
 
 2. **Reliability** 🛡️
+
    - 100% uptime SLA
    - DDoS protection included
    - Automatic failover
 
 3. **Security** 🔒
+
    - Free SSL certificates
    - Security headers configured
    - HTTPS enforced
 
 4. **Developer Experience** 👨‍💻
+
    - Auto-deploy on git push
    - Preview URLs for every PR
    - Rollback to any deployment
@@ -167,6 +180,7 @@ Only the frontend:
 ## 🔄 Continuous Deployment
 
 After initial setup, every push to GitHub automatically:
+
 1. Triggers a build
 2. Runs tests (if configured)
 3. Deploys to Cloudflare
@@ -183,6 +197,7 @@ git push origin main
 ## ✅ Testing Checklist
 
 After deployment, verify:
+
 - [ ] Homepage loads
 - [ ] User can sign up
 - [ ] Email verification works
@@ -205,16 +220,19 @@ After deployment, verify:
 Common issues and solutions:
 
 **Build fails:**
+
 - Check all environment variables are set
 - Verify Node version is 18+
 - Check build logs in Cloudflare dashboard
 
 **Auth doesn't work:**
+
 - Update Supabase Site URL and Redirect URLs
 - Clear browser cache
 - Check browser console for errors
 
 **Assets 404:**
+
 - Verify `_redirects` file exists in `public/`
 - Check all paths start with `/`
 - Rebuild and redeploy
@@ -224,6 +242,7 @@ Common issues and solutions:
 Everything is configured and ready to deploy. Choose your deployment method above and you'll be live in minutes!
 
 **Recommended next steps:**
+
 1. Deploy to Cloudflare Pages (Option 1 above)
 2. Update Supabase configuration
 3. Test authentication flow

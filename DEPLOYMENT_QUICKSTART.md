@@ -3,6 +3,7 @@
 ## 🚀 Quick Deployment Steps
 
 ### 1. Push to GitHub (if not already done)
+
 ```bash
 git add .
 git commit -m "Add Cloudflare Pages deployment config"
@@ -12,6 +13,7 @@ git push origin main
 ### 2. Deploy to Cloudflare Pages
 
 **Option A: Automatic (Recommended)**
+
 1. Go to https://dash.cloudflare.com/
 2. Click **Pages** → **Create a project**
 3. Connect GitHub → Select `certchain` repo
@@ -23,6 +25,7 @@ git push origin main
 6. Click **Save and Deploy**
 
 **Option B: Manual via CLI**
+
 ```bash
 # Install Wrangler globally
 npm install -g wrangler
@@ -66,6 +69,7 @@ VITE_ENABLE_AI_CONSOLE=false
 ### 5. Test Your Deployment
 
 Once deployed, test:
+
 - [ ] Visit your Cloudflare Pages URL
 - [ ] Try signing up
 - [ ] Check email verification
@@ -76,6 +80,7 @@ Once deployed, test:
 ## 📦 What Was Added
 
 ### New Files:
+
 - ✅ `CLOUDFLARE_DEPLOYMENT.md` - Complete deployment guide
 - ✅ `.env.production` - Production environment template
 - ✅ `wrangler.toml` - Cloudflare configuration
@@ -83,16 +88,20 @@ Once deployed, test:
 - ✅ `public/_redirects` - SPA routing support
 
 ### Updated Files:
+
 - ✅ `package.json` - Added deployment scripts
 
 ## 🎯 Next Steps
 
 ### For Production:
+
 1. **Get Custom Domain** (optional)
+
    - Add in Cloudflare Pages → Custom domains
    - SSL is automatic
 
 2. **Switch to Mainnet** (when ready)
+
    - Update `VITE_HEDERA_NETWORK=mainnet`
    - Deploy mainnet HCS topic and NFT collection
    - Update token IDs in environment variables
@@ -124,16 +133,19 @@ npm run deploy:prod
 ## 🔍 Troubleshooting
 
 **Build fails?**
+
 - Check Node version: `node --version` (need 18+)
 - Clear node_modules: `rm -rf node_modules && npm install`
 - Check environment variables are set
 
 **Authentication not working?**
+
 - Verify Supabase Site URL matches deployment URL
 - Check redirect URLs include wildcards
 - Clear browser cache
 
 **Assets not loading?**
+
 - Check browser console for errors
 - Verify all paths are relative (start with `/`)
 - Check `_redirects` file exists in `public/`
@@ -141,11 +153,13 @@ npm run deploy:prod
 ## 📊 Expected Results
 
 ### Performance:
+
 - ⚡ First Contentful Paint: < 1s
 - ⚡ Time to Interactive: < 2s
 - ⚡ Lighthouse Score: 90+
 
 ### Cost:
+
 - 💰 Cloudflare Pages: **FREE**
 - 💰 Supabase: **FREE** (or $25/mo for Pro)
 - 💰 Total: **$0-25/month**
