@@ -1,5 +1,10 @@
 -- Create user roles enum
-CREATE TYPE public.app_role AS ENUM ('admin', 'issuer', 'user');
+DO $
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'app_role') THEN
+        CREATE TYPE public.app_role AS ENUM ('admin', 'issuer', 'user');
+    END IF;
+END$;
 
 -- Create user_roles table
 CREATE TABLE public.user_roles (

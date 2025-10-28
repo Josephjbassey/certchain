@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { corsHeaders } from "../_shared/cors.ts";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
@@ -46,7 +45,7 @@ serve(async (req) => {
       );
     }
 
-    const emailBody = `
+  const emailBody = `
       <!DOCTYPE html>
       <html>
         <head>
@@ -104,60 +103,23 @@ serve(async (req) => {
     `;
 
     // Send email via Resend API
-    const response = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${RESEND_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: "CertChain <noreply@certchain.app>",
-        to: [to],
-        subject: subject || `You're invited to join ${institutionName} on CertChain`,
-        html: emailBody,
-      }),
-    });
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${RESEND_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from: "CertChain <noreply@certchain.app>",
+      to: [to],
+      subject: subject,
+      html: emailBody,
+    }),
+  });
 
-    const data = await response.json();
+  const data = await response.json();
 
-    if (!response.ok) {
-      console.error("Resend API error:", data);
-      return new Response(
-        JSON.stringify({ 
-          error: "Failed to send email",
-          details: data
-        }),
-        { 
-          status: response.status,
-          headers: { ...corsHeaders, "Content-Type": "application/json" }
-        }
-      );
-    }
-
-    console.log("Email sent successfully:", data);
-
-    return new Response(
-      JSON.stringify({ 
-        success: true,
-        messageId: data.id 
-      }),
-      { 
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200
-      }
-    );
-
-  } catch (error) {
-    console.error("Error sending invitation email:", error);
-    return new Response(
-      JSON.stringify({ 
-        error: "Internal server error",
-        message: error.message 
-      }),
-      { 
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" }
-      }
-    );
-  }
+  return new Response(JSON.stringify(data), {
+    headers: { "Content-Type": "application/json" },
+  });
 });
