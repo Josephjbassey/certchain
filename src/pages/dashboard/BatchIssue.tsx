@@ -192,6 +192,30 @@ const BatchIssue = () => {
 
         if (dbError) throw new Error(`Database save failed: ${dbError.message}`);
 
+        // 4. Log to HCS for audit trail (non-blocking)
+        try {
+          await supabase.functions.invoke('hedera-hcs-log', {
+            body: {
+              topicId: '0.0.7115183',
+              messageType: 'certificate_issued',
+              message: {
+                certificateId: mintData.serialNumber,
+                tokenId: mintData.tokenId,
+                serialNumber: mintData.serialNumber,
+                institutionId: profile.institution_id,
+                recipientEmail: row.recipientEmail,
+                recipientName: row.recipientName,
+                certificateType: row.certificateType,
+                issuedAt: row.issueDate,
+              },
+              network: 'testnet',
+            }
+          });
+        } catch (hcsError) {
+          console.error('HCS logging failed for batch certificate:', hcsError);
+          // Don't fail the issuance if HCS logging fails
+        }
+
         batchResults.push({
           success: true,
           row: i + 1,

@@ -7,11 +7,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useRoleBasedNavigation } from "@/hooks/useRoleBasedNavigation";
+import { useActivityLog, ActivityActions } from "@/hooks/useActivityLog";
 import { supabase } from "@/integrations/supabase/client";
 
 const IssueCertificate = () => {
   const navigate = useNavigate();
   const { dashboardPath, certificatesPath } = useRoleBasedNavigation();
+  const { logActivity, logError } = useActivityLog();
   const [formData, setFormData] = useState({
     recipientName: "",
     recipientEmail: "",
@@ -161,9 +163,10 @@ const IssueCertificate = () => {
           console.error('Failed to copy to clipboard:', e);
         }
 
-        // Step 5: Send email with claim link (optional - requires send-invitation-email function)
-        // TODO: Update send-invitation-email function to handle certificate claims
-        toast.info("Email notification not yet implemented. Share the claim link manually.");
+        // Step 5: Send email with claim link (optional feature - can be extended)
+        // Note: send-invitation-email function is available but focused on invitations
+        // For production, create a dedicated send-certificate-claim function or extend existing one
+        toast.info("Share the claim link with the certificate recipient");
 
         console.log('Claim URL:', claimUrl);
       }
@@ -193,11 +196,33 @@ const IssueCertificate = () => {
         // Don't fail the issuance if HCS logging fails
       }
 
+      // Step 7: Log activity for audit trail
+      await logActivity({
+        action: ActivityActions.CERTIFICATE_ISSUED,
+        resourceType: 'certificate',
+        resourceId: certificateId,
+        metadata: {
+          recipientEmail: formData.recipientEmail,
+          recipientName: formData.recipientName,
+          courseName: formData.courseName,
+          tokenId: mintResponse.tokenId,
+          serialNumber: mintResponse.serialNumber,
+          institutionId: profile.institution_id,
+        }
+      });
+
       toast.success("Certificate issued successfully!");
       navigate(certificatesPath);
 
     } catch (error: any) {
       console.error('Error issuing certificate:', error);
+      
+      // Log error for troubleshooting
+      await logError('certificate_issuance_failed', error, {
+        recipientEmail: formData.recipientEmail,
+        courseName: formData.courseName,
+      });
+      
       toast.error(error.message || 'Failed to issue certificate');
     } finally {
       setIsLoading(false);

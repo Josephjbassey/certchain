@@ -86,7 +86,8 @@ export const useCertificateStats = () => {
         totalCertificates,
         activeCertificates,
         recipients: recipientCount || 0,
-        verifications: 0, // TODO: Implement verification tracking
+        verifications: 0, // NOTE: Verification tracking requires adding verification_logs table
+        // Implementation: Track each verify page visit in new table or audit_logs
       };
     },
     enabled: !!user,

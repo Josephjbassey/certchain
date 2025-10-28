@@ -36,14 +36,14 @@ const VerifyDetail = () => {
   useEffect(() => {
     const fetchCertificate = async () => {
       if (!certificateId) return;
-      
+
       setIsLoading(true);
       setError(null);
-      
+
       try {
         // Verify the certificate
         const result = await hederaService.verifyCertificate(certificateId);
-        
+
         if (!result.verified) {
           setError(result.revokedAt ? 'Certificate has been revoked' : 'Certificate not found or invalid');
           setCertificate({
@@ -71,8 +71,8 @@ const VerifyDetail = () => {
         }
 
         const config = getHederaConfig();
-        const [tokenId, serialNumber] = certificateId.includes(':') 
-          ? certificateId.split(':') 
+        const [tokenId, serialNumber] = certificateId.includes(':')
+          ? certificateId.split(':')
           : [result.tokenId || '', String(result.serialNumber || '')];
 
         setCertificate({
@@ -87,7 +87,7 @@ const VerifyDetail = () => {
           serialNumber: `${tokenId}:${serialNumber}`,
           tokenId: tokenId,
           ipfsCid: result.certificateId || '',
-          transactionId: config.network === 'mainnet' 
+          transactionId: config.network === 'mainnet'
             ? `${tokenId}@${Date.now()}`
             : `${tokenId}@${Date.now()}`,
           status: result.revokedAt ? 'revoked' : 'valid',
@@ -108,14 +108,201 @@ const VerifyDetail = () => {
 
   const handleDownload = async () => {
     if (!certificate) return;
-    toast.info("Certificate download feature coming soon!");
-    // TODO: Implement PDF generation and download
+    
+    try {
+      toast.info("Generating PDF certificate...");
+      
+      // Production-ready PDF generation without external libraries
+      // Using browser's print functionality for PDF export
+      const printWindow = window.open('', '_blank');
+      if (!printWindow) {
+        toast.error("Please allow popups to download certificate");
+        return;
+      }
+
+      const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <title>Certificate - ${certificate.courseName}</title>
+          <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body {
+              font-family: 'Georgia', serif;
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              padding: 40px;
+              min-height: 100vh;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            }
+            .certificate {
+              background: white;
+              padding: 60px;
+              max-width: 800px;
+              border-radius: 20px;
+              box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+              border: 15px solid #f8f9fa;
+            }
+            .header {
+              text-align: center;
+              border-bottom: 3px solid #667eea;
+              padding-bottom: 30px;
+              margin-bottom: 40px;
+            }
+            .logo { font-size: 2em; color: #667eea; font-weight: bold; }
+            h1 { font-size: 2.5em; color: #333; margin: 20px 0 10px; }
+            .subtitle { color: #666; font-size: 1.2em; }
+            .content {
+              text-align: center;
+              margin: 40px 0;
+              line-height: 2;
+            }
+            .recipient { font-size: 2em; font-weight: bold; color: #667eea; margin: 20px 0; }
+            .course { font-size: 1.5em; color: #333; margin: 20px 0; }
+            .details {
+              margin-top: 40px;
+              padding-top: 30px;
+              border-top: 2px solid #eee;
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 20px;
+              text-align: left;
+            }
+            .detail-item {
+              padding: 10px;
+              background: #f8f9fa;
+              border-radius: 8px;
+            }
+            .detail-label {
+              font-size: 0.9em;
+              color: #666;
+              margin-bottom: 5px;
+            }
+            .detail-value {
+              font-weight: bold;
+              color: #333;
+              word-break: break-all;
+            }
+            .blockchain {
+              margin-top: 30px;
+              padding: 20px;
+              background: #e8eaf6;
+              border-radius: 10px;
+              text-align: center;
+            }
+            .blockchain h3 {
+              color: #667eea;
+              margin-bottom: 15px;
+            }
+            .verification {
+              font-size: 0.9em;
+              color: #666;
+              font-family: monospace;
+            }
+            .footer {
+              margin-top: 40px;
+              padding-top: 20px;
+              border-top: 2px solid #eee;
+              text-align: center;
+              color: #999;
+              font-size: 0.9em;
+            }
+            @media print {
+              body { background: white; padding: 0; }
+              .certificate { box-shadow: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="certificate">
+            <div class="header">
+              <div class="logo">🛡️ CertChain</div>
+              <h1>Certificate of Completion</h1>
+              <p class="subtitle">Verified on Hedera Blockchain</p>
+            </div>
+            
+            <div class="content">
+              <p>This is to certify that</p>
+              <div class="recipient">${certificate.recipientName || 'Certificate Holder'}</div>
+              <p>has successfully completed</p>
+              <div class="course">${certificate.courseName}</div>
+              <p>Issued by ${certificate.institution}</p>
+            </div>
+
+            <div class="details">
+              <div class="detail-item">
+                <div class="detail-label">Issue Date</div>
+                <div class="detail-value">${new Date(certificate.issuedDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
+              </div>
+              <div class="detail-item">
+                <div class="detail-label">Certificate ID</div>
+                <div class="detail-value">${certificate.serialNumber}</div>
+              </div>
+              ${certificate.recipientDid ? `
+              <div class="detail-item">
+                <div class="detail-label">Recipient DID</div>
+                <div class="detail-value">${certificate.recipientDid}</div>
+              </div>` : ''}
+              ${certificate.institutionDid ? `
+              <div class="detail-item">
+                <div class="detail-label">Issuer DID</div>
+                <div class="detail-value">${certificate.institutionDid}</div>
+              </div>` : ''}
+            </div>
+
+            <div class="blockchain">
+              <h3>🔗 Blockchain Verification</h3>
+              <div class="verification">
+                <p><strong>Token ID:</strong> ${certificate.tokenId}</p>
+                <p><strong>Transaction:</strong> ${certificate.transactionId || 'N/A'}</p>
+                <p><strong>IPFS:</strong> ${certificate.ipfsCid}</p>
+              </div>
+              <p style="margin-top: 15px; font-size: 0.85em;">
+                Verify at: ${window.location.origin}/verify/status/${certificate.id}
+              </p>
+            </div>
+
+            <div class="footer">
+              <p>This certificate is secured on the Hedera Hashgraph network</p>
+              <p>Tamper-proof • Verifiable • Permanent</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `;
+
+      printWindow.document.write(html);
+      printWindow.document.close();
+      
+      // Wait for content to load, then trigger print
+      printWindow.onload = () => {
+        setTimeout(() => {
+          printWindow.print();
+          toast.success("PDF ready! Use Print dialog to save as PDF");
+        }, 500);
+      };
+
+      // NOTE: For advanced PDF generation with custom styling, QR codes, and watermarks:
+      // Install jsPDF: npm install jspdf
+      // Import: import jsPDF from 'jspdf';
+      // Example implementation:
+      // const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+      // doc.setFont('helvetica', 'bold');
+      // doc.text(certificate.courseName, 148, 50, { align: 'center' });
+      // doc.save(`certificate-${certificate.id}.pdf`);
+      
+    } catch (error) {
+      console.error('PDF generation error:', error);
+      toast.error("Failed to generate PDF");
+    }
   };
 
   const handleShare = async () => {
     if (!certificate) return;
     const url = window.location.href;
-    
+
     if (navigator.share) {
       try {
         await navigator.share({
@@ -190,13 +377,11 @@ const VerifyDetail = () => {
 
       <div className="container mx-auto px-4 py-12 max-w-4xl">
         {/* Status Banner */}
-        <Card className={`p-6 mb-8 gradient-card shadow-elevated ${
-          isValid ? 'border-primary/20' : 'border-destructive/20'
-        }`}>
+        <Card className={`p-6 mb-8 gradient-card shadow-elevated ${isValid ? 'border-primary/20' : 'border-destructive/20'
+          }`}>
           <div className="flex items-center gap-4">
-            <div className={`h-16 w-16 rounded-full flex items-center justify-center ${
-              isValid ? 'bg-primary/10' : 'bg-destructive/10'
-            }`}>
+            <div className={`h-16 w-16 rounded-full flex items-center justify-center ${isValid ? 'bg-primary/10' : 'bg-destructive/10'
+              }`}>
               {isValid ? (
                 <CheckCircle2 className="h-8 w-8 text-primary" />
               ) : (
@@ -208,11 +393,11 @@ const VerifyDetail = () => {
                 {isValid ? 'Certificate Verified' : isRevoked ? 'Certificate Revoked' : 'Certificate Invalid'}
               </h1>
               <p className="text-muted-foreground">
-                {isValid 
+                {isValid
                   ? 'This certificate is valid and has been verified on Hedera blockchain'
                   : isRevoked
-                  ? 'This certificate has been revoked and is no longer valid'
-                  : 'This certificate could not be verified'}
+                    ? 'This certificate has been revoked and is no longer valid'
+                    : 'This certificate could not be verified'}
               </p>
             </div>
           </div>
@@ -295,11 +480,10 @@ const VerifyDetail = () => {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Status</p>
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                  isValid 
+                <span className={`px-3 py-1 rounded-full text-sm font-medium ${isValid
                     ? 'bg-primary/10 text-primary'
                     : 'bg-destructive/10 text-destructive'
-                }`}>
+                  }`}>
                   {isValid ? 'Valid' : isRevoked ? 'Revoked' : 'Invalid'}
                 </span>
               </div>

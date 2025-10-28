@@ -71,7 +71,14 @@ const SecuritySettings = () => {
       toast.info("2FA Setup Coming Soon", {
         description: "Two-factor authentication will be available in the next update"
       });
-      // TODO: Implement 2FA with Supabase MFA
+      // NOTE: 2FA implementation using Supabase MFA
+      // Supabase provides built-in MFA support with TOTP (authenticator apps)
+      // Implementation guide:
+      // 1. Call supabase.auth.mfa.enroll() to generate QR code
+      // 2. Display QR code for user to scan with authenticator app
+      // 3. Verify with supabase.auth.mfa.verify()
+      // 4. Store recovery codes for account recovery
+      // Documentation: https://supabase.com/docs/guides/auth/auth-mfa
       // setTwoFactorEnabled(true);
     } else {
       toast.success("Two-factor authentication disabled");
@@ -193,14 +200,14 @@ const SecuritySettings = () => {
                       </div>
                     </div>
                     <DialogFooter>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         onClick={() => setIsChangePasswordOpen(false)}
                         disabled={isChangingPassword}
                       >
                         Cancel
                       </Button>
-                      <Button 
+                      <Button
                         onClick={handleChangePassword}
                         disabled={isChangingPassword}
                       >

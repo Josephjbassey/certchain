@@ -1,1 +1,4 @@
 project_id = "asxskeceekllmzxatlvn"
+
+[auth.security]
+leaked_password_protection = true

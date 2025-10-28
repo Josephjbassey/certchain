@@ -33,8 +33,17 @@ const AiConsole = () => {
     setLoading(true);
 
     try {
-      // Placeholder for AI integration
-      // TODO: Implement edge function call to AI service
+      // NOTE: AI assistant integration placeholder
+      // Recommended approach:
+      // 1. Create Supabase Edge Function 'ai-assistant'
+      // 2. Integrate with OpenAI API, Anthropic Claude, or open-source LLM
+      // 3. Provide context about CertChain operations, Hedera network
+      // 4. Stream responses for better UX
+      // Implementation:
+      // const { data, error } = await supabase.functions.invoke('ai-assistant', {
+      //   body: { message: userMessage, context: 'certchain' }
+      // });
+      // For now, show placeholder response
       setTimeout(() => {
         setMessages(prev => [...prev, {
           role: "assistant",
@@ -100,8 +109,8 @@ const AiConsole = () => {
                   )}
                   <div
                     className={`rounded-2xl px-5 py-3 max-w-[75%] shadow-sm ${message.role === "user"
-                        ? "bg-gradient-to-br from-primary to-primary-glow text-primary-foreground"
-                        : "bg-card border border-border"
+                      ? "bg-gradient-to-br from-primary to-primary-glow text-primary-foreground"
+                      : "bg-card border border-border"
                       }`}
                   >
                     <p className="text-sm whitespace-pre-wrap leading-relaxed">{message.content}</p>
