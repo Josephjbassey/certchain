@@ -1,9 +1,10 @@
 # Database Migration Application Guide
 
 ## Current Status
+
 ✅ Applied: `20251028000000_fix_security_vulnerabilities.sql`  
 ✅ Applied: `20251028000002_fix_rls_performance.sql`  
-✅ Applied: `20251028000003_configure_hedera.sql`  
+✅ Applied: `20251028000003_configure_hedera.sql`
 
 ⏳ **Pending**: 3 migrations need to be applied
 
@@ -12,9 +13,11 @@
 ## Migrations to Apply (In Order)
 
 ### 1. Fix Database Performance (Index Optimization)
+
 **File**: `supabase/migrations/20251028000001_fix_database_performance.sql`
 
 **What it does**:
+
 - Adds missing foreign key index on `invitations.invited_by`
 - Removes duplicate indexes: `idx_user_dids_hash`, `idx_user_dids_hcs_topic`
 - Removes duplicate indexes: `idx_certificate_cache_issuer_did`, `user_dids_account_id_network_key`
@@ -22,6 +25,7 @@
 **Expected outcome**: Resolves 2 `duplicate_index` warnings
 
 **To apply**:
+
 ```sql
 -- Copy and paste the entire contents of:
 -- supabase/migrations/20251028000001_fix_database_performance.sql
@@ -31,9 +35,11 @@
 ---
 
 ### 2. Fix Remaining RLS Issues
+
 **File**: `supabase/migrations/20251028000004_fix_remaining_rls_issues.sql`
 
 **What it does**:
+
 - Fixes remaining `auth_rls_initplan` warnings for:
   - `invitations` table (2 policies)
   - `user_dids` service role policy
@@ -43,6 +49,7 @@
 **Expected outcome**: Resolves remaining 10 `auth_rls_initplan` warnings
 
 **To apply**:
+
 ```sql
 -- Copy and paste the entire contents of:
 -- supabase/migrations/20251028000004_fix_remaining_rls_issues.sql
@@ -51,21 +58,35 @@
 
 ---
 
-### 3. Cleanup Duplicate Policies
+### 3. Cleanup Duplicate Policies (COMPREHENSIVE)
+
 **File**: `supabase/migrations/20251028000005_cleanup_duplicate_policies.sql`
 
 **What it does**:
-- Removes old duplicate RLS policies that have been consolidated:
-  - `api_keys`: Removes 5 separate CRUD policies (kept: "Users can manage own API keys")
-  - `user_dids`: Removes 2 duplicate policies (kept: "Users can manage own DIDs")
-  - `user_wallets`: Removes separate view policy (kept: "Users can manage own wallets")
-  - `certificate_cache`: Removes "Issuers can insert certificates" (kept: "Instructors can issue certificates")
-  - `profiles`: Removes duplicate aggregated view policy
-  - `certificate_cache`: Removes duplicate aggregated data policy
 
-**Expected outcome**: Resolves ~125+ `multiple_permissive_policies` warnings
+Consolidates ALL multiple permissive policies into single efficient policies using OR conditions:
+
+- **application_logs**: 2 SELECT policies → 1 consolidated ("Users can view relevant application logs")
+- **audit_logs**: 3 SELECT policies → 1 consolidated ("Users can view relevant audit logs")
+- **certificate_cache**: 4 SELECT policies → 1 consolidated with public access
+- **institutions**: 4 SELECT + 2 UPDATE policies → 1 each consolidated
+- **instructor_candidates**: 4 SELECT + 2 INSERT policies → 1 each consolidated
+- **invitations**: 2 SELECT policies → 1 consolidated + 1 management policy
+- **profiles**: 4 SELECT + 3 UPDATE policies → 1 each consolidated
+- **user_dids**: 3 SELECT + 2 each for CRUD → 1 SELECT + 1 ALL policy
+- **user_roles**: 2 SELECT policies → 1 consolidated + 1 management policy
+- **user_scopes**: 3 SELECT + 2 each for CRUD → 1 SELECT + 1 ALL policy
+- **webhooks**: 2 policies per action (8 total) → 1 ALL policy
+
+**Expected outcome**: Resolves **~200+ `multiple_permissive_policies` warnings**
+
+**Key improvements**:
+- Single policy with OR conditions is more efficient than multiple policies
+- Maintains all access patterns (users, instructors, admins, super admins)
+- Reduces RLS evaluation overhead significantly
 
 **To apply**:
+
 ```sql
 -- Copy and paste the entire contents of:
 -- supabase/migrations/20251028000005_cleanup_duplicate_policies.sql
@@ -82,11 +103,27 @@ After applying all 3 migrations, run the Supabase Linter again:
 2. Click **Run Linter**
 3. Verify results:
 
-**Expected warnings remaining**: **~0-5 low-priority warnings**
+**Expected warnings remaining**: **~0-10 low-priority warnings**
 
-Most `multiple_permissive_policies` warnings should be gone because:
-- ✅ Consolidated policies (e.g., "Users can manage own API keys" handles INSERT/UPDATE/DELETE/SELECT in one policy)
-- ✅ Old duplicate policies removed
+All `multiple_permissive_policies` warnings should be resolved because:
+
+- ✅ Migration 20251028000005 consolidates ALL duplicate policies across all tables
+- ✅ Uses efficient OR conditions in single policies instead of multiple policies
+- ✅ PostgreSQL only evaluates one policy per role/action instead of 2-4
+- ✅ Maintains exact same access control logic with better performance
+
+## Performance Impact
+
+Before migrations:
+- ~200+ multiple_permissive_policies warnings
+- PostgreSQL evaluating 2-4 policies per query on many tables
+- Suboptimal RLS performance
+
+After migrations:
+- ~0 multiple_permissive_policies warnings expected
+- Single consolidated policy per role/action
+- Significantly improved query performance
+- Same security guarantees maintained
 - ✅ Only necessary policies remain for different access levels (user/admin/super admin)
 
 ---
@@ -113,12 +150,15 @@ Most `multiple_permissive_policies` warnings should be gone because:
 ### If you encounter errors:
 
 **Error: "policy already exists"**
+
 - Solution: The policy was already created in a previous migration. Safe to ignore or add `IF EXISTS` to the DROP statement.
 
 **Error: "index does not exist"**
+
 - Solution: The index was already dropped or never existed. Safe to ignore with `IF EXISTS`.
 
 **Error: "cannot change return type of existing function"**
+
 - Solution: Add `DROP FUNCTION IF EXISTS function_name()` before `CREATE FUNCTION` (like we did with `clean_expired_invitations`).
 
 ---
@@ -126,6 +166,7 @@ Most `multiple_permissive_policies` warnings should be gone because:
 ## Final State
 
 After all migrations:
+
 - ✅ All search_path security vulnerabilities fixed
 - ✅ All RLS policies optimized with `(SELECT auth.uid())` pattern
 - ✅ All duplicate indexes removed
