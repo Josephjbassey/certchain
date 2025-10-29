@@ -47,7 +47,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 // Helper to get role prefix for paths
 const getRolePrefix = (role: UserRole | null | undefined): string => {
   if (!role) return 'candidate';
-  
+
   switch (role) {
     case 'super_admin':
       return 'admin';
@@ -65,19 +65,19 @@ const getRolePrefix = (role: UserRole | null | undefined): string => {
 const hasAccessToFeature = (userRole: UserRole | null | undefined, allowedRoles?: string[]): boolean => {
   if (!allowedRoles || allowedRoles.length === 0) return true;
   if (!userRole) return false;
-  
+
   const roleStr = userRole as string;
-  
+
   // Super admin has access to everything
   if (roleStr === 'super_admin' || roleStr === 'admin') return true;
-  
+
   // Check if user's role is in allowed roles
   if (allowedRoles.includes(roleStr)) return true;
-  
+
   // Legacy role compatibility
   if (roleStr === 'issuer' && allowedRoles.includes('instructor')) return true;
   if (roleStr === 'user' && allowedRoles.includes('candidate')) return true;
-  
+
   return false;
 };
 
@@ -99,6 +99,8 @@ const instructorDashboardItems = [
   { title: "Templates", path: "templates", icon: FileStack },
   { title: "Analytics", path: "analytics", icon: BarChart3 },
   { title: "DID Setup", path: "/identity/did-setup", icon: Fingerprint, shared: true },
+];
+
 const institutionDashboardItems = [
   { title: "Dashboard", path: "dashboard", icon: LayoutDashboard },
   { title: "All Certificates", path: "certificates", icon: Award },
@@ -113,8 +115,6 @@ const institutionDashboardItems = [
   { title: "Billing", path: "billing", icon: CreditCard },
   { title: "Webhook Logs", path: "webhooks/logs", icon: Webhook },
   { title: "DID Setup", path: "/identity/did-setup", icon: Fingerprint, shared: true },
-];{ title: "Billing", path: "billing", icon: CreditCard },
-  { title: "Webhook Logs", path: "webhooks/logs", icon: Webhook },
 ];
 
 const adminDashboardItems = [
@@ -155,8 +155,8 @@ export function DashboardSidebar() {
   };
 
   const getNavClass = (fullPath: string) => {
-    return isActive(fullPath) 
-      ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" 
+    return isActive(fullPath)
+      ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
       : "";
   };
 
@@ -170,18 +170,18 @@ export function DashboardSidebar() {
   };
 
   const menuItems = (() => {
-  switch (rolePrefix) {
-    case 'admin':
-      return adminDashboardItems;
-    case 'institution':
-      return institutionDashboardItems;
-    case 'instructor':
-      return instructorDashboardItems;
-    case 'candidate':
-    default:
-      return candidateDashboardItems;
-  }
-})();
+    switch (rolePrefix) {
+      case 'admin':
+        return adminDashboardItems;
+      case 'institution':
+        return institutionDashboardItems;
+      case 'instructor':
+        return instructorDashboardItems;
+      case 'candidate':
+      default:
+        return candidateDashboardItems;
+    }
+  })();
   const filteredSettings = settingsItems.filter(item => hasAccessToFeature(userRole, item.roles));
   const filteredAdmin = adminItems.filter(item => hasAccessToFeature(userRole, item.roles));
 
