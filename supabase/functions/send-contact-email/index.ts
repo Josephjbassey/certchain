@@ -3,6 +3,9 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const CLOUDFLARE_API_TOKEN = Deno.env.get("CLOUDFLARE_API_TOKEN");
+const CLOUDFLARE_ACCOUNT_ID = Deno.env.get("CLOUDFLARE_ACCOUNT_ID");
+const NOTIFICATION_EMAIL = Deno.env.get("NOTIFICATION_EMAIL") || "support@certchain.app";
 
 interface ContactFormRequest {
   name: string;
@@ -78,6 +81,56 @@ serve(async (req) => {
     // Successfully stored - you can view submissions in Supabase dashboard
     // or set up Cloudflare Email Worker to send notifications
     console.log("Contact form submission stored successfully");
+
+    // Send email notification via Cloudflare Email Routing API (if configured)
+    if (CLOUDFLARE_API_TOKEN && CLOUDFLARE_ACCOUNT_ID) {
+      try {
+        const emailBody = `
+New Contact Form Submission
+
+From: ${name}
+Email: ${email}
+Subject: ${subject}
+
+Message:
+${message}
+
+---
+Submitted at: ${new Date().toISOString()}
+View in dashboard: ${SUPABASE_URL}
+        `.trim();
+
+        // Send email using Cloudflare Email Routing API
+        const emailResponse = await fetch(
+          `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/email/routing/addresses/${NOTIFICATION_EMAIL}/send`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${CLOUDFLARE_API_TOKEN}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              from: `noreply@certchain.app`,
+              to: NOTIFICATION_EMAIL,
+              subject: `Contact Form: ${subject}`,
+              text: emailBody,
+              reply_to: email
+            })
+          }
+        );
+
+        if (!emailResponse.ok) {
+          const errorText = await emailResponse.text();
+          console.error('Cloudflare email send failed:', errorText);
+          // Don't fail the whole request if email fails
+        } else {
+          console.log('Email notification sent via Cloudflare');
+        }
+      } catch (emailError) {
+        console.error('Error sending email notification:', emailError);
+        // Don't fail the whole request if email fails
+      }
+    }
     
     return new Response(
       JSON.stringify({ 
