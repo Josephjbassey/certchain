@@ -1,11 +1,13 @@
 # Contact Form Email Setup Guide
 
 ## Overview
+
 The contact form now sends real emails using Supabase Edge Functions + Resend API.
 
 ## Current Implementation
 
 ### Frontend (Contact.tsx)
+
 - ✅ Form calls `supabase.functions.invoke('send-contact-email')`
 - ✅ Loading state while submitting ("Sending..." button text)
 - ✅ Success toast on successful send
@@ -13,6 +15,7 @@ The contact form now sends real emails using Supabase Edge Functions + Resend AP
 - ✅ Form clears after successful submission
 
 ### Backend (Edge Function)
+
 - ✅ Function: `supabase/functions/send-contact-email/index.ts`
 - ✅ Uses Resend API to send emails
 - ✅ Sends to: `support@certchain.app`
@@ -25,20 +28,23 @@ The contact form now sends real emails using Supabase Edge Functions + Resend AP
 ### 1. Set up Resend API Key in Supabase
 
 1. **Get Resend API Key**:
+
    - Go to [Resend Dashboard](https://resend.com/api-keys)
    - Create new API key (if not already created)
    - Copy the API key (starts with `re_`)
 
 2. **Add to Supabase Secrets**:
+
    ```bash
    # Navigate to project directory
    cd c:/Users/josep/Code/repo/certchain
-   
+
    # Set the secret (replace YOUR_RESEND_API_KEY)
    npx supabase secrets set RESEND_API_KEY=re_xxxxxxxxxxxxxxxxxxxxx
    ```
 
    **OR** via Supabase Dashboard:
+
    - Go to [Supabase Dashboard](https://supabase.com/dashboard)
    - Select your CertChain project
    - Navigate to **Settings** > **Edge Functions** > **Secrets**
@@ -57,6 +63,7 @@ npx supabase functions deploy send-contact-email
 ```
 
 **Expected output**:
+
 ```
 Deploying Function (project: your-project-id)
         send-contact-email (index.ts)
@@ -68,6 +75,7 @@ Deploying Function (project: your-project-id)
 For production emails to work reliably:
 
 1. **Add your domain to Resend**:
+
    - Go to [Resend Dashboard](https://resend.com/domains)
    - Click "Add Domain"
    - Enter: `certchain.app`
@@ -80,9 +88,9 @@ For production emails to work reliably:
    ```typescript
    // In supabase/functions/send-contact-email/index.ts
    // Change from:
-   from: "CertChain Contact Form <noreply@certchain.app>"
+   from: "CertChain Contact Form <noreply@certchain.app>";
    // To verified domain:
-   from: "CertChain Contact Form <noreply@certchain.app>"
+   from: "CertChain Contact Form <noreply@certchain.app>";
    ```
 
 ### 4. Test the Contact Form
@@ -103,6 +111,7 @@ For production emails to work reliably:
 ## Email Template Preview
 
 The sent email includes:
+
 - **Header**: CertChain branding with gradient background
 - **From**: Contact name and email
 - **Email Address**: User's email (clickable)
@@ -135,6 +144,7 @@ You mentioned setting up Cloudflare Email Routing. Here's how it integrates:
 ## Troubleshooting
 
 ### Function not deployed
+
 ```bash
 # Check deployed functions
 npx supabase functions list
@@ -144,6 +154,7 @@ npx supabase functions deploy send-contact-email
 ```
 
 ### RESEND_API_KEY not set
+
 ```bash
 # Check secrets
 npx supabase secrets list
@@ -153,24 +164,28 @@ npx supabase secrets set RESEND_API_KEY=re_xxxxxxxxxxxxxxxxxxxxx
 ```
 
 ### Emails not arriving
+
 1. Check Resend Dashboard > Logs for delivery status
 2. Verify Cloudflare Email Routing is active
 3. Check spam folder
 4. Verify DNS records for Resend domain
 
 ### CORS errors
+
 - Edge function already has CORS headers configured
 - If issues persist, check Supabase Edge Function logs
 
 ## Monitoring
 
 ### Check Edge Function Logs
+
 ```bash
 # View real-time logs
 npx supabase functions logs send-contact-email --follow
 ```
 
 ### Check Resend Delivery
+
 - Go to [Resend Dashboard](https://resend.com/emails)
 - View all sent emails
 - Check delivery status, opens, clicks
@@ -178,6 +193,7 @@ npx supabase functions logs send-contact-email --follow
 ## Production Checklist
 
 Before going live:
+
 - [ ] RESEND_API_KEY secret set in Supabase
 - [ ] Edge function deployed successfully
 - [ ] Resend domain verified (optional but recommended)
@@ -190,11 +206,13 @@ Before going live:
 ## Cost Considerations
 
 **Resend Free Tier**:
+
 - 100 emails/day
 - 3,000 emails/month
 - Perfect for contact forms
 
 **Paid Plans** (if needed later):
+
 - $20/month: 50,000 emails
 - Scales as needed
 
