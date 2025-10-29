@@ -14,6 +14,11 @@ DROP INDEX IF EXISTS idx_user_dids_hcs_topic;
 
 -- STEP 3: Drop duplicate indexes identified by linter
 DROP INDEX IF EXISTS idx_certificate_cache_issuer_did;  -- Keep idx_certificate_cache_issuer
-DROP INDEX IF EXISTS user_dids_account_id_network_key;   -- Keep idx_user_dids_account_network
+
+-- STEP 4: Handle duplicate unique constraint on user_dids
+-- Both user_dids_account_id_network_key (auto-generated constraint) and 
+-- idx_user_dids_account_network (manually created index) enforce uniqueness on (account_id, network)
+-- Drop the auto-generated constraint and keep the manually named one
+ALTER TABLE public.user_dids DROP CONSTRAINT IF EXISTS user_dids_account_id_network_key;
 
 COMMIT;
