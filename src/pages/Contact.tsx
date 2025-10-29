@@ -97,8 +97,8 @@ const Contact = () => {
                   <div>
                     <h3 className="font-semibold mb-1">Email</h3>
                     <p className="text-sm text-muted-foreground mb-2">Our team is here to help</p>
-                    <a href="mailto:support@certchain.example" className="text-primary hover:underline">
-                      support@certchain.example
+                    <a href="mailto:support@certchain.app" className="text-primary hover:underline">
+                      support@certchain.app
                     </a>
                   </div>
                 </div>
@@ -111,9 +111,9 @@ const Contact = () => {
                   </div>
                   <div>
                     <h3 className="font-semibold mb-1">Phone</h3>
-                    <p className="text-sm text-muted-foreground mb-2">Mon-Fri 9am to 6pm EST</p>
-                    <a href="tel:+15551234567" className="text-primary hover:underline">
-                      +1 (555) 123-4567
+                    <p className="text-sm text-muted-foreground mb-2">Mon-Fri 9am to 6pm WAT</p>
+                    <a href="tel:+2349066469867" className="text-primary hover:underline">
+                      +239 (906) 646-9867
                     </a>
                   </div>
                 </div>
@@ -127,9 +127,11 @@ const Contact = () => {
                   <div>
                     <h3 className="font-semibold mb-1">Office</h3>
                     <p className="text-sm text-muted-foreground">
-                      123 Blockchain Avenue<br />
-                      San Francisco, CA 94105<br />
-                      United States
+                      4 Fadogba Street, Ifelodun Estate<br />
+                      Adjacent Alejolowo Block Industry<br />
+                      Along FUTA North Gate<br />
+                      Akure, Ondo State 340110<br />
+                      Nigeria
                     </p>
                   </div>
                 </div>

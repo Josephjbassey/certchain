@@ -133,6 +133,7 @@ After applying all 4 migrations, run the Supabase Linter again:
 3. Verify results:
 
 **Expected warnings remaining**:
+
 - ✅ **0 function_search_path_mutable** warnings (fixed by migration 20251028000000)
 - ✅ **0 multiple_permissive_policies** warnings (fixed by migration 20251028000005)
 - ✅ **0 auth_rls_initplan** warnings (fixed by migration 20251028000005)

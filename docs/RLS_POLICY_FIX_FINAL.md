@@ -3,6 +3,7 @@
 ## Issue Summary
 
 After applying the initial consolidation migration, **21 warnings remained**:
+
 - 1 `auth_rls_initplan` warning (user_dids)
 - 20 `multiple_permissive_policies` warnings (4 tables × 5 roles each)
 
@@ -15,6 +16,7 @@ The problem was using **both FOR SELECT and FOR ALL policies** on the same table
 ### 1. **invitations** (10 warnings resolved)
 
 **Before (2 policies - CONFLICT)**:
+
 ```sql
 -- FOR SELECT policy
 CREATE POLICY "Users can view relevant invitations" FOR SELECT ...
@@ -24,6 +26,7 @@ CREATE POLICY "Admins can manage invitations" FOR ALL ...
 ```
 
 **After (1 policy)**:
+
 ```sql
 CREATE POLICY "Users can manage relevant invitations" FOR ALL
   USING (
@@ -36,6 +39,7 @@ CREATE POLICY "Users can manage relevant invitations" FOR ALL
 ### 2. **user_dids** (10 warnings + 1 auth_rls_initplan resolved)
 
 **Before (2 policies - CONFLICT)**:
+
 ```sql
 -- FOR SELECT policy
 CREATE POLICY "DID documents are readable" FOR SELECT USING (true);
@@ -45,6 +49,7 @@ CREATE POLICY "Users and services can manage DIDs" FOR ALL ...
 ```
 
 **After (1 policy with USING + WITH CHECK)**:
+
 ```sql
 CREATE POLICY "Users and services can manage DIDs" FOR ALL
   USING (
@@ -58,13 +63,15 @@ CREATE POLICY "Users and services can manage DIDs" FOR ALL
   );
 ```
 
-**Key improvement**: 
+**Key improvement**:
+
 - Fixed `auth_rls_initplan` warning by wrapping `auth.uid()` in `(SELECT auth.uid())`
 - Merged public SELECT access with restricted write access in one policy
 
 ### 3. **user_roles** (10 warnings resolved)
 
 **Before (2 policies - CONFLICT)**:
+
 ```sql
 -- FOR SELECT policy
 CREATE POLICY "Users can view relevant roles" FOR SELECT ...
@@ -74,6 +81,7 @@ CREATE POLICY "Super admins can manage roles" FOR ALL ...
 ```
 
 **After (1 policy with USING + WITH CHECK)**:
+
 ```sql
 CREATE POLICY "Users can manage relevant roles" FOR ALL
   USING (
@@ -88,6 +96,7 @@ CREATE POLICY "Users can manage relevant roles" FOR ALL
 ### 4. **user_scopes** (10 warnings resolved)
 
 **Before (2 policies - CONFLICT)**:
+
 ```sql
 -- FOR SELECT policy
 CREATE POLICY "Users can view relevant scopes" FOR SELECT ...
@@ -97,6 +106,7 @@ CREATE POLICY "Admins can manage scopes" FOR ALL ...
 ```
 
 **After (1 policy with USING + WITH CHECK)**:
+
 ```sql
 CREATE POLICY "Users can manage relevant scopes" FOR ALL
   USING (
@@ -113,16 +123,19 @@ CREATE POLICY "Users can manage relevant scopes" FOR ALL
 ## Understanding USING vs WITH CHECK
 
 ### `USING` Clause
+
 - Applies to: **SELECT, UPDATE, DELETE** (read/filter operations)
 - Purpose: Determines which rows are visible to the user
 - Think: "What can I see/access?"
 
 ### `WITH CHECK` Clause
+
 - Applies to: **INSERT, UPDATE** (write operations)
 - Purpose: Determines which rows can be created/modified
 - Think: "What can I create/change?"
 
 ### `FOR ALL` Policy Pattern
+
 When you need different access levels for read vs write:
 
 ```sql
@@ -149,12 +162,12 @@ CREATE POLICY "policy_name" FOR ALL
 
 After applying this migration:
 
-| Metric | Before | After | Improvement |
-|--------|--------|-------|-------------|
-| **Total Warnings** | 21 | **0** | **100%** |
-| **auth_rls_initplan** | 1 | 0 | Fixed |
-| **multiple_permissive_policies** | 20 | 0 | Fixed |
-| **Policies per Table** | 2-4 | 1 | **50-75% reduction** |
+| Metric                           | Before | After | Improvement          |
+| -------------------------------- | ------ | ----- | -------------------- |
+| **Total Warnings**               | 21     | **0** | **100%**             |
+| **auth_rls_initplan**            | 1      | 0     | Fixed                |
+| **multiple_permissive_policies** | 20     | 0     | Fixed                |
+| **Policies per Table**           | 2-4    | 1     | **50-75% reduction** |
 
 ## Verification
 
@@ -182,6 +195,7 @@ After applying the migration:
 **Never use both `FOR SELECT` and `FOR ALL` policies on the same table.**
 
 Instead, use a single `FOR ALL` policy with:
+
 - `USING` clause for read access control
 - `WITH CHECK` clause for write access control
 

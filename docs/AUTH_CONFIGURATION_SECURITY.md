@@ -1,6 +1,7 @@
 # Auth Configuration Security Settings
 
 ## Overview
+
 This document describes Auth configuration settings that must be enabled in Supabase Dashboard to resolve security warnings.
 
 ## Leaked Password Protection
@@ -16,15 +17,18 @@ This document describes Auth configuration settings that must be enabled in Supa
 ### How to Enable
 
 1. **Navigate to Supabase Dashboard**:
+
    - Go to [Supabase Dashboard](https://supabase.com/dashboard)
    - Select your CertChain project
 
 2. **Open Auth Settings**:
+
    - Click on "Authentication" in the left sidebar
    - Click on "Policies" tab
    - Find "Password Security" section
 
 3. **Enable Leaked Password Protection**:
+
    - Toggle on "**Leaked Password Protection**"
    - This feature checks passwords against HaveIBeenPwned.org API
    - When enabled, users cannot register/reset password with compromised passwords
@@ -36,18 +40,21 @@ This document describes Auth configuration settings that must be enabled in Supa
 ### Technical Details
 
 **What it does**:
+
 - Queries HaveIBeenPwned.org API using k-Anonymity model
 - Checks new passwords during registration and password reset
 - Rejects passwords that appear in known breach databases
 - No actual password is sent to external service (uses hash prefix)
 
 **Security Model**:
+
 - Uses k-Anonymity: Only first 5 characters of SHA-1 hash are sent
 - API returns list of suffixes matching that prefix
 - Client-side comparison finds exact match
 - Zero actual password data leaves your system
 
 **User Experience**:
+
 - User tries to register with compromised password (e.g., "password123")
 - System rejects with error: "This password has been exposed in a data breach. Please choose a different password."
 - User selects a secure, unique password
@@ -56,12 +63,14 @@ This document describes Auth configuration settings that must be enabled in Supa
 ### Why This Matters
 
 **Risk Scenario**:
+
 1. User reuses password from another service
 2. That service gets breached
 3. Attacker tries credential stuffing on CertChain
 4. User account compromised
 
 **With Protection Enabled**:
+
 1. User tries to use breached password
 2. System rejects during registration
 3. User creates unique password
