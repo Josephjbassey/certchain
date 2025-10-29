@@ -7,6 +7,7 @@ The Supabase database linter identified **~200+ `multiple_permissive_policies` w
 ### Why Multiple Permissive Policies Are Problematic
 
 When multiple permissive policies exist:
+
 - PostgreSQL must evaluate **ALL policies** for every query
 - If **ANY policy** returns true, access is granted
 - This creates O(n) evaluation overhead where n = number of policies
@@ -15,12 +16,13 @@ When multiple permissive policies exist:
 ### Example Before Fix
 
 **user_dids table had 3 SELECT policies**:
+
 ```sql
 -- Policy 1: Users can manage own DIDs
 CREATE POLICY "Users can manage own DIDs" ON user_dids
   FOR SELECT USING (user_id = auth.uid());
 
--- Policy 2: Service role can manage all DIDs  
+-- Policy 2: Service role can manage all DIDs
 CREATE POLICY "Service role can manage all DIDs" ON user_dids
   FOR SELECT USING (auth.jwt()->>'role' = 'service_role');
 
@@ -52,6 +54,7 @@ CREATE POLICY "Users and services can manage DIDs" ON user_dids
 ```
 
 **Benefits**:
+
 - PostgreSQL evaluates **1 policy** instead of 3
 - Performance: O(1) vs O(n) policy evaluation
 - Same security guarantees maintained
@@ -62,56 +65,67 @@ CREATE POLICY "Users and services can manage DIDs" ON user_dids
 ## Tables Fixed (All Multiple Permissive Policy Warnings)
 
 ### 1. application_logs
+
 **Before**: 2 SELECT policies  
 **After**: 1 consolidated policy with OR condition  
 **Resolved**: 10 warnings (2 policies × 5 roles)
 
 ### 2. audit_logs
+
 **Before**: 3 SELECT policies (super admin, institution admin, users)  
 **After**: 1 consolidated policy with OR conditions  
 **Resolved**: 10 warnings (3 policies × 5 roles, minus overlaps)
 
 ### 3. certificate_cache
+
 **Before**: 4 SELECT policies  
 **After**: 1 consolidated policy (public access = `true`)  
 **Resolved**: 10 warnings
 
 ### 4. institutions
+
 **Before**: 4 SELECT + 2 UPDATE policies  
 **After**: 1 SELECT + 1 UPDATE consolidated policy  
 **Resolved**: 30 warnings (6 policies × 5 roles)
 
 ### 5. instructor_candidates
+
 **Before**: 4 SELECT + 2 INSERT policies  
 **After**: 1 SELECT + 1 INSERT consolidated policy  
 **Resolved**: 30 warnings
 
 ### 6. invitations
+
 **Before**: 2 SELECT policies  
 **After**: 1 SELECT + 1 ALL management policy  
 **Resolved**: 10 warnings
 
 ### 7. profiles
+
 **Before**: 4 SELECT + 3 UPDATE policies  
 **After**: 1 SELECT + 1 UPDATE consolidated policy  
 **Resolved**: 35 warnings (7 policies × 5 roles)
 
 ### 8. user_dids
+
 **Before**: 3 SELECT + 2 INSERT + 2 UPDATE + 2 DELETE (9 total)  
 **After**: 1 SELECT + 1 ALL management policy  
 **Resolved**: 40 warnings (8 policies × 5 roles)
 
 ### 9. user_roles
+
 **Before**: 2 SELECT policies  
 **After**: 1 SELECT + 1 ALL management policy  
 **Resolved**: 10 warnings
 
 ### 10. user_scopes
+
 **Before**: 3 SELECT + 2 INSERT + 2 UPDATE + 2 DELETE (9 total)  
 **After**: 1 SELECT + 1 ALL management policy  
 **Resolved**: 40 warnings
 
 ### 11. webhooks
+
 **Before**: 2 SELECT + 2 INSERT + 2 UPDATE + 2 DELETE (8 total)  
 **After**: 1 ALL management policy  
 **Resolved**: 40 warnings
@@ -120,12 +134,12 @@ CREATE POLICY "Users and services can manage DIDs" ON user_dids
 
 ## Total Impact
 
-| Metric | Before | After | Improvement |
-|--------|--------|-------|-------------|
-| **Total RLS Policies** | ~80+ | ~22 | **72% reduction** |
-| **Linter Warnings** | ~200+ | ~0 | **~100% resolved** |
-| **Policies per Query** | 2-4 | 1 | **50-75% reduction** |
-| **PostgreSQL Evaluation** | O(n) | O(1) | **Constant time** |
+| Metric                    | Before | After | Improvement          |
+| ------------------------- | ------ | ----- | -------------------- |
+| **Total RLS Policies**    | ~80+   | ~22   | **72% reduction**    |
+| **Linter Warnings**       | ~200+  | ~0    | **~100% resolved**   |
+| **Policies per Query**    | 2-4    | 1     | **50-75% reduction** |
+| **PostgreSQL Evaluation** | O(n)   | O(1)  | **Constant time**    |
 
 ---
 
@@ -134,6 +148,7 @@ CREATE POLICY "Users and services can manage DIDs" ON user_dids
 ### Policy Consolidation Patterns
 
 #### Pattern 1: OR Condition for Role-Based Access
+
 ```sql
 -- Consolidate: User access + Admin access
 CREATE POLICY "Users can view relevant data" ON table_name
@@ -147,6 +162,7 @@ CREATE POLICY "Users can view relevant data" ON table_name
 ```
 
 #### Pattern 2: Public Access Simplification
+
 ```sql
 -- When any policy grants public access, consolidate to:
 CREATE POLICY "Public read access" ON table_name
@@ -154,6 +170,7 @@ CREATE POLICY "Public read access" ON table_name
 ```
 
 #### Pattern 3: FOR ALL with Complex USING
+
 ```sql
 -- Consolidate INSERT/UPDATE/DELETE into single policy
 CREATE POLICY "Users can manage data" ON table_name
@@ -172,6 +189,7 @@ CREATE POLICY "Users can manage data" ON table_name
 **Size**: 337 lines (comprehensive consolidation)
 
 **Process**:
+
 1. `DROP POLICY IF EXISTS` for all duplicate policies
 2. `CREATE POLICY` with consolidated OR logic
 3. Wrapped in `BEGIN`/`COMMIT` transaction for atomicity
@@ -185,11 +203,13 @@ CREATE POLICY "Users can manage data" ON table_name
 After applying migration:
 
 1. **Run Supabase Linter**:
+
    - Navigate to Dashboard > Database > Linter
    - Click "Run Linter"
    - Verify ~0 `multiple_permissive_policies` warnings
 
 2. **Test Application Functionality**:
+
    - User authentication and authorization
    - Certificate issuance (instructors)
    - Profile viewing (users, admins)

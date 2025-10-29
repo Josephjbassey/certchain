@@ -81,6 +81,7 @@ Consolidates ALL multiple permissive policies into single efficient policies usi
 **Expected outcome**: Resolves **~200+ `multiple_permissive_policies` warnings**
 
 **Key improvements**:
+
 - Single policy with OR conditions is more efficient than multiple policies
 - Maintains all access patterns (users, instructors, admins, super admins)
 - Reduces RLS evaluation overhead significantly
@@ -115,11 +116,13 @@ All `multiple_permissive_policies` warnings should be resolved because:
 ## Performance Impact
 
 Before migrations:
+
 - ~200+ multiple_permissive_policies warnings
 - PostgreSQL evaluating 2-4 policies per query on many tables
 - Suboptimal RLS performance
 
 After migrations:
+
 - ~0 multiple_permissive_policies warnings expected
 - Single consolidated policy per role/action
 - Significantly improved query performance

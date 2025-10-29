@@ -15,6 +15,7 @@ BEGIN;
 -- Remove: "Super admins can view all logs" + "Users can view own logs"
 DROP POLICY IF EXISTS "Super admins can view all logs" ON public.application_logs;
 DROP POLICY IF EXISTS "Users can view own logs" ON public.application_logs;
+DROP POLICY IF EXISTS "Users can view relevant application logs" ON public.application_logs;
 
 -- Create single consolidated policy
 CREATE POLICY "Users can view relevant application logs" ON public.application_logs
@@ -34,6 +35,7 @@ CREATE POLICY "Users can view relevant application logs" ON public.application_l
 DROP POLICY IF EXISTS "Institution admins can view logs in their institution" ON public.audit_logs;
 DROP POLICY IF EXISTS "Super admins can view all audit logs" ON public.audit_logs;
 DROP POLICY IF EXISTS "Users can view their own audit logs" ON public.audit_logs;
+DROP POLICY IF EXISTS "Users can view relevant audit logs" ON public.audit_logs;
 
 -- Create single consolidated policy
 CREATE POLICY "Users can view relevant audit logs" ON public.audit_logs
@@ -57,6 +59,7 @@ DROP POLICY IF EXISTS "Certificates are viewable by all" ON public.certificate_c
 DROP POLICY IF EXISTS "Institution admins can view certificates in their institution" ON public.certificate_cache;
 DROP POLICY IF EXISTS "Instructors can view certificates they issued" ON public.certificate_cache;
 DROP POLICY IF EXISTS "Users can view their own certificates" ON public.certificate_cache;
+DROP POLICY IF EXISTS "Users can view relevant certificates" ON public.certificate_cache;
 
 -- Create single consolidated policy
 CREATE POLICY "Users can view relevant certificates" ON public.certificate_cache
@@ -75,6 +78,8 @@ DROP POLICY IF EXISTS "Institutions are viewable by all authenticated users" ON 
 DROP POLICY IF EXISTS "Super admins can manage all institutions" ON public.institutions;
 DROP POLICY IF EXISTS "Users can view their institution" ON public.institutions;
 DROP POLICY IF EXISTS "Institution admins can update their institution" ON public.institutions;
+DROP POLICY IF EXISTS "Users can view institutions" ON public.institutions;
+DROP POLICY IF EXISTS "Admins can update institutions" ON public.institutions;
 
 -- Create consolidated SELECT policy
 CREATE POLICY "Users can view institutions" ON public.institutions
@@ -104,6 +109,8 @@ DROP POLICY IF EXISTS "Institution admins can view all relationships in their in
 DROP POLICY IF EXISTS "Instructors can view their candidates" ON public.instructor_candidates;
 DROP POLICY IF EXISTS "Super admins can manage all relationships" ON public.instructor_candidates;
 DROP POLICY IF EXISTS "Instructors can enroll candidates" ON public.instructor_candidates;
+DROP POLICY IF EXISTS "Users can view relevant instructor relationships" ON public.instructor_candidates;
+DROP POLICY IF EXISTS "Instructors can manage candidate relationships" ON public.instructor_candidates;
 
 -- Create consolidated SELECT policy
 CREATE POLICY "Users can view relevant instructor relationships" ON public.instructor_candidates
@@ -139,6 +146,8 @@ CREATE POLICY "Instructors can manage candidate relationships" ON public.instruc
 -- Remove: 2 SELECT policies
 DROP POLICY IF EXISTS "Admins can manage invitations" ON public.invitations;
 DROP POLICY IF EXISTS "Users can view their own invitation" ON public.invitations;
+DROP POLICY IF EXISTS "Users can view relevant invitations" ON public.invitations;
+DROP POLICY IF EXISTS "Users can manage relevant invitations" ON public.invitations;
 
 -- Create single consolidated policy for all operations
 -- Note: FOR ALL includes SELECT, so we don't need a separate SELECT policy
@@ -166,6 +175,8 @@ DROP POLICY IF EXISTS "Users can view their own profile" ON public.profiles;
 DROP POLICY IF EXISTS "Institution admins can update profiles in their institution" ON public.profiles;
 DROP POLICY IF EXISTS "Super admins can update all profiles" ON public.profiles;
 DROP POLICY IF EXISTS "Users can update their own profile" ON public.profiles;
+DROP POLICY IF EXISTS "Users can view relevant profiles" ON public.profiles;
+DROP POLICY IF EXISTS "Users can update relevant profiles" ON public.profiles;
 
 -- Create consolidated SELECT policy
 CREATE POLICY "Users can view relevant profiles" ON public.profiles
@@ -208,6 +219,8 @@ CREATE POLICY "Users can update relevant profiles" ON public.profiles
 DROP POLICY IF EXISTS "Public can read DID documents" ON public.user_dids;
 DROP POLICY IF EXISTS "Service role can manage all DIDs" ON public.user_dids;
 DROP POLICY IF EXISTS "Users can manage own DIDs" ON public.user_dids;
+DROP POLICY IF EXISTS "DID documents are readable" ON public.user_dids;
+DROP POLICY IF EXISTS "Users and services can manage DIDs" ON public.user_dids;
 
 -- Create single consolidated policy for all operations
 -- Note: Public read access means everyone can SELECT, and FOR ALL includes SELECT
@@ -231,6 +244,8 @@ CREATE POLICY "Users and services can manage DIDs" ON public.user_dids
 -- Remove: 2 SELECT policies
 DROP POLICY IF EXISTS "Super admins can manage roles" ON public.user_roles;
 DROP POLICY IF EXISTS "Users can view their own roles" ON public.user_roles;
+DROP POLICY IF EXISTS "Users can view relevant roles" ON public.user_roles;
+DROP POLICY IF EXISTS "Users can manage relevant roles" ON public.user_roles;
 
 -- Create single consolidated policy for all operations
 -- Note: FOR ALL includes SELECT, so we don't need a separate SELECT policy
@@ -255,6 +270,9 @@ CREATE POLICY "Users can manage relevant roles" ON public.user_roles
 DROP POLICY IF EXISTS "Institution admins can manage scopes in their institution" ON public.user_scopes;
 DROP POLICY IF EXISTS "Super admins can manage all scopes" ON public.user_scopes;
 DROP POLICY IF EXISTS "Users can view their own scopes" ON public.user_scopes;
+DROP POLICY IF EXISTS "Users can view relevant scopes" ON public.user_scopes;
+DROP POLICY IF EXISTS "Admins can manage scopes" ON public.user_scopes;
+DROP POLICY IF EXISTS "Users can manage relevant scopes" ON public.user_scopes;
 
 -- Create single consolidated policy for all operations
 -- Note: FOR ALL includes SELECT, so we don't need a separate SELECT policy
@@ -287,6 +305,7 @@ CREATE POLICY "Users can manage relevant scopes" ON public.user_scopes
 -- Remove: 2 policies for each action (SELECT/INSERT/UPDATE/DELETE)
 DROP POLICY IF EXISTS "Super admins can manage webhooks" ON public.webhooks;
 DROP POLICY IF EXISTS "Users can manage own webhooks" ON public.webhooks;
+DROP POLICY IF EXISTS "Users can manage relevant webhooks" ON public.webhooks;
 
 -- Create single consolidated policy for all operations
 CREATE POLICY "Users can manage relevant webhooks" ON public.webhooks
