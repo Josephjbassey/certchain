@@ -235,7 +235,7 @@ CREATE POLICY "Users and services can manage DIDs" ON public.user_dids
     -- Only users and service role can INSERT/UPDATE/DELETE
     user_id = (SELECT auth.uid())
     OR
-    (SELECT auth.jwt()->>'role') = 'service_role'
+    (SELECT (SELECT auth.jwt())->>'role') = 'service_role'
   );
 
 -- ============================================
