@@ -142,7 +142,6 @@ const DidSetup = () => {
               <p className="text-muted-foreground">Checking for existing DID...</p>
             </Card>
           ) : (
-
             <Card className="p-8">
               {!did ? (
                 <div className="space-y-6">
@@ -236,6 +235,7 @@ const DidSetup = () => {
                 </div>
               )}
             </Card>
+          )}
         </div>
       </main>
     </div>
