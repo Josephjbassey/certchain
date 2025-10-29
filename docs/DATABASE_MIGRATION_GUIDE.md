@@ -2,17 +2,45 @@
 
 ## Current Status
 
-✅ Applied: `20251028000000_fix_security_vulnerabilities.sql`  
 ✅ Applied: `20251028000002_fix_rls_performance.sql`  
 ✅ Applied: `20251028000003_configure_hedera.sql`
 
-⏳ **Pending**: 3 migrations need to be applied
+⏳ **Pending**: 4 migrations need to be applied
+
+**Note**: Migration `20251028000000` must be applied before `20251028000001`
 
 ---
 
 ## Migrations to Apply (In Order)
 
-### 1. Fix Database Performance (Index Optimization)
+### 1. Fix Security Vulnerabilities (Function Search Path)
+
+**File**: `supabase/migrations/20251028000000_fix_security_vulnerabilities.sql`
+
+**What it does**:
+
+- Fixes `function_search_path_mutable` warnings by adding `SET search_path` to:
+  - `update_user_dids_updated_at()` trigger function
+  - `handle_api_keys_updated_at()` trigger function
+  - `clean_expired_invitations()` scheduled function
+  - `handle_new_user_invitation()` trigger function
+  - `get_certificates_secure()` query function
+
+**Expected outcome**: Resolves 2 `function_search_path_mutable` WARN security issues
+
+**Security impact**: Prevents search path manipulation attacks where malicious users could create functions in other schemas to hijack execution
+
+**To apply**:
+
+```sql
+-- Copy and paste the entire contents of:
+-- supabase/migrations/20251028000000_fix_security_vulnerabilities.sql
+-- Into Supabase Dashboard > SQL Editor > Run
+```
+
+---
+
+### 2. Fix Database Performance (Index Optimization)
 
 **File**: `supabase/migrations/20251028000001_fix_database_performance.sql`
 
@@ -34,7 +62,7 @@
 
 ---
 
-### 2. Fix Remaining RLS Issues
+### 2. Fix Database Performance (Index Optimization)
 
 **File**: `supabase/migrations/20251028000004_fix_remaining_rls_issues.sql`
 
@@ -58,7 +86,7 @@
 
 ---
 
-### 3. Cleanup Duplicate Policies (COMPREHENSIVE)
+### 3. Fix Remaining RLS Issues
 
 **File**: `supabase/migrations/20251028000005_cleanup_duplicate_policies.sql`
 
@@ -98,16 +126,24 @@ Consolidates ALL multiple permissive policies into single efficient policies usi
 
 ## Post-Migration Verification
 
-After applying all 3 migrations, run the Supabase Linter again:
+After applying all 4 migrations, run the Supabase Linter again:
 
 1. Go to **Supabase Dashboard** > **Database** > **Linter**
 2. Click **Run Linter**
 3. Verify results:
 
-**Expected warnings remaining**: **~0-10 low-priority warnings**
+**Expected warnings remaining**:
+- ✅ **0 function_search_path_mutable** warnings (fixed by migration 20251028000000)
+- ✅ **0 multiple_permissive_policies** warnings (fixed by migration 20251028000005)
+- ✅ **0 auth_rls_initplan** warnings (fixed by migration 20251028000005)
+- ⚠️ **~30 unused_index** INFO warnings (expected - indexes unused until production)
+- ⚠️ **1 auth_leaked_password_protection** WARN (requires Auth config, not migration)
 
-All `multiple_permissive_policies` warnings should be resolved because:
+All critical database linter warnings should be resolved!
 
+**Why migrations work**:
+
+- ✅ Migration 20251028000000 adds `SET search_path` to all vulnerable functions
 - ✅ Migration 20251028000005 consolidates ALL duplicate policies across all tables
 - ✅ Uses efficient OR conditions in single policies instead of multiple policies
 - ✅ PostgreSQL only evaluates one policy per role/action instead of 2-4
@@ -118,12 +154,14 @@ All `multiple_permissive_policies` warnings should be resolved because:
 Before migrations:
 
 - ~200+ multiple_permissive_policies warnings
+- 2 function_search_path_mutable security warnings
 - PostgreSQL evaluating 2-4 policies per query on many tables
 - Suboptimal RLS performance
 
 After migrations:
 
-- ~0 multiple_permissive_policies warnings expected
+- 0 multiple_permissive_policies warnings expected
+- 0 function_search_path_mutable warnings expected
 - Single consolidated policy per role/action
 - Significantly improved query performance
 - Same security guarantees maintained
