@@ -108,10 +108,10 @@ const VerifyDetail = () => {
 
   const handleDownload = async () => {
     if (!certificate) return;
-    
+
     try {
       toast.info("Generating PDF certificate...");
-      
+
       // Production-ready PDF generation without external libraries
       // Using browser's print functionality for PDF export
       const printWindow = window.open('', '_blank');
@@ -275,7 +275,7 @@ const VerifyDetail = () => {
 
       printWindow.document.write(html);
       printWindow.document.close();
-      
+
       // Wait for content to load, then trigger print
       printWindow.onload = () => {
         setTimeout(() => {
@@ -292,7 +292,7 @@ const VerifyDetail = () => {
       // doc.setFont('helvetica', 'bold');
       // doc.text(certificate.courseName, 148, 50, { align: 'center' });
       // doc.save(`certificate-${certificate.id}.pdf`);
-      
+
     } catch (error) {
       console.error('PDF generation error:', error);
       toast.error("Failed to generate PDF");
@@ -481,8 +481,8 @@ const VerifyDetail = () => {
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Status</p>
                 <span className={`px-3 py-1 rounded-full text-sm font-medium ${isValid
-                    ? 'bg-primary/10 text-primary'
-                    : 'bg-destructive/10 text-destructive'
+                  ? 'bg-primary/10 text-primary'
+                  : 'bg-destructive/10 text-destructive'
                   }`}>
                   {isValid ? 'Valid' : isRevoked ? 'Revoked' : 'Invalid'}
                 </span>

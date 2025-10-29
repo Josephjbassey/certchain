@@ -43,7 +43,7 @@ const VerifyScan = () => {
     // Simple QR code detection using pattern recognition
     // This is a basic implementation - for production, consider using jsQR library
     // For now, we'll look for common QR patterns in the data
-    
+
     const data = imageData.data;
     let darkPixels = 0;
     let lightPixels = 0;
@@ -72,7 +72,7 @@ const VerifyScan = () => {
   const startScan = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { 
+        video: {
           facingMode: 'environment',
           width: { ideal: 1280 },
           height: { ideal: 720 }
@@ -161,11 +161,11 @@ const VerifyScan = () => {
 
           ctx.drawImage(img, 0, 0);
           const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-          
+
           // NOTE: For production, use jsQR here:
           // const code = jsQR(imageData.data, imageData.width, imageData.height);
           // if (code) { navigate(`/verify/status/${code.data}`); }
-          
+
           // Simulate QR detection for demo
           const qrCode = detectQRCode(imageData);
           if (qrCode) {
@@ -189,7 +189,7 @@ const VerifyScan = () => {
   return (
     <div className="min-h-screen bg-background">
       <PublicHeader />
-      
+
       {/* Hidden canvas for QR processing */}
       <canvas ref={canvasRef} className="hidden" />
 

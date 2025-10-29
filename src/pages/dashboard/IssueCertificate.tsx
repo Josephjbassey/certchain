@@ -216,13 +216,13 @@ const IssueCertificate = () => {
 
     } catch (error: any) {
       console.error('Error issuing certificate:', error);
-      
+
       // Log error for troubleshooting
       await logError('certificate_issuance_failed', error, {
         recipientEmail: formData.recipientEmail,
         courseName: formData.courseName,
       });
-      
+
       toast.error(error.message || 'Failed to issue certificate');
     } finally {
       setIsLoading(false);

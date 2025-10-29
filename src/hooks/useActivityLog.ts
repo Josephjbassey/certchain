@@ -59,7 +59,7 @@ export const useActivityLog = () => {
           metadata: metadata || null,
           severity,
           ip_address: null, // Can be populated via edge function if needed
-          user_agent: navigator.userAgent,
+          user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
         });
 
       if (error) {
@@ -97,7 +97,7 @@ export const useActivityLog = () => {
         metadata: entry.metadata || null,
         severity: entry.severity || 'info',
         ip_address: null,
-        user_agent: navigator.userAgent,
+        user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
       }));
 
       const { error } = await supabase
