@@ -1,7 +1,7 @@
-# Contact Form Setup Guide
+# Contact Form Email Setup Guide
 
 ## Overview
-The contact form stores submissions in Supabase database AND optionally sends email notifications via Cloudflare Email Routing API.
+The contact form now sends real emails using Supabase Edge Functions + Resend API.
 
 ## Current Implementation
 
@@ -14,72 +14,44 @@ The contact form stores submissions in Supabase database AND optionally sends em
 
 ### Backend (Edge Function)
 - ✅ Function: `supabase/functions/send-contact-email/index.ts`
-- ✅ **Stores submissions in `contact_submissions` table** (always)
-- ✅ **Sends email via Cloudflare Email Routing API** (if configured)
-- ✅ Validates email format and required fields
-- ✅ Returns success even if email fails (database storage is primary)
-
-### Database Table
-- ✅ Table: `contact_submissions`
-- ✅ Columns: id, name, email, subject, message, submitted_at, created_at
-- ✅ RLS enabled: Super admins can view, service role can insert
-- ✅ Indexed on submitted_at and email for performance
-
----
+- ✅ Uses Resend API to send emails
+- ✅ Sends to: `support@certchain.app`
+- ✅ Reply-to: User's email address
+- ✅ Beautiful HTML email template with CertChain branding
+- ✅ Includes all form fields: name, email, subject, message
 
 ## Deployment Steps
 
-### 1. Apply Database Migration
+### 1. Set up Resend API Key in Supabase
+
+1. **Get Resend API Key**:
+   - Go to [Resend Dashboard](https://resend.com/api-keys)
+   - Create new API key (if not already created)
+   - Copy the API key (starts with `re_`)
+
+2. **Add to Supabase Secrets**:
+   ```bash
+   # Navigate to project directory
+   cd c:/Users/josep/Code/repo/certchain
+   
+   # Set the secret (replace YOUR_RESEND_API_KEY)
+   npx supabase secrets set RESEND_API_KEY=re_xxxxxxxxxxxxxxxxxxxxx
+   ```
+
+   **OR** via Supabase Dashboard:
+   - Go to [Supabase Dashboard](https://supabase.com/dashboard)
+   - Select your CertChain project
+   - Navigate to **Settings** > **Edge Functions** > **Secrets**
+   - Add secret:
+     - Key: `RESEND_API_KEY`
+     - Value: `re_xxxxxxxxxxxxxxxxxxxxx`
+
+### 2. Deploy the Edge Function
 
 ```bash
 # Navigate to project directory
 cd c:/Users/josep/Code/repo/certchain
 
-# Apply migration to create contact_submissions table
-# Copy contents of: supabase/migrations/20251029000000_create_contact_submissions.sql
-# Paste into Supabase Dashboard > SQL Editor > Run
-```
-
-### 2. Get Cloudflare API Credentials (Optional - for email notifications)
-
-#### Get API Token:
-1. Go to [Cloudflare Dashboard](https://dash.cloudflare.com/profile/api-tokens)
-2. Click "Create Token"
-3. Use template "Edit Email Routing" or create custom with:
-   - Permissions: **Account > Email Routing > Edit**
-4. Copy the token (starts with something like `abc123...`)
-
-#### Get Account ID:
-1. Go to [Cloudflare Dashboard](https://dash.cloudflare.com)
-2. Select any domain
-3. Account ID is shown in the right sidebar
-4. Copy it (looks like `a1b2c3d4e5f6...`)
-
-### 3. Set Supabase Secrets (Optional - skip if you don't want email notifications)
-
-```bash
-# Set Cloudflare API token
-npx supabase secrets set CLOUDFLARE_API_TOKEN=your_cloudflare_api_token_here
-
-# Set Cloudflare Account ID
-npx supabase secrets set CLOUDFLARE_ACCOUNT_ID=your_account_id_here
-
-# Set notification email (where you want to receive notifications)
-npx supabase secrets set NOTIFICATION_EMAIL=your-email@example.com
-```
-
-**OR** via Supabase Dashboard:
-- Go to [Supabase Dashboard](https://supabase.com/dashboard)
-- Select your CertChain project
-- Navigate to **Settings** > **Edge Functions** > **Secrets**
-- Add secrets:
-  - `CLOUDFLARE_API_TOKEN`: Your Cloudflare API token
-  - `CLOUDFLARE_ACCOUNT_ID`: Your Cloudflare account ID
-  - `NOTIFICATION_EMAIL`: Your email address
-
-### 4. Deploy the Edge Function
-
-```bash
 # Deploy the send-contact-email function
 npx supabase functions deploy send-contact-email
 ```
@@ -91,108 +63,74 @@ Deploying Function (project: your-project-id)
 ✅ Function deployed successfully
 ```
 
-### 5. Configure Cloudflare Email Routing (Optional)
+### 3. Configure Resend Domain (Important!)
 
-#### Set up Email Routing (if not already done):
-1. Go to [Cloudflare Dashboard](https://dash.cloudflare.com)
-2. Select `certchain.app` domain
-3. Navigate to **Email** > **Email Routing**
-4. Enable Email Routing
-5. Add destination address (your email)
-6. Verify your email address
+For production emails to work reliably:
 
-#### Add Routing Rule:
-1. In Email Routing, go to **Routes**
-2. Add route:
-   - **Custom address**: `support@certchain.app`
-   - **Action**: Send to → Your verified email address
+1. **Add your domain to Resend**:
+   - Go to [Resend Dashboard](https://resend.com/domains)
+   - Click "Add Domain"
+   - Enter: `certchain.app`
+   - Add the DNS records to your Cloudflare DNS:
+     - SPF record (TXT)
+     - DKIM record (TXT)
+     - DMARC record (TXT)
 
-### 6. Test the Contact Form
+2. **Update the edge function sender** (optional - after domain verified):
+   ```typescript
+   // In supabase/functions/send-contact-email/index.ts
+   // Change from:
+   from: "CertChain Contact Form <noreply@certchain.app>"
+   // To verified domain:
+   from: "CertChain Contact Form <noreply@certchain.app>"
+   ```
+
+### 4. Test the Contact Form
 
 1. Go to your deployed site: `https://certchain.app/contact`
 2. Fill out the form:
    - Name: Test User
-   - Email: test@example.com
+   - Email: your-test-email@example.com
    - Subject: Test Contact Form
-   - Message: Testing the contact form
+   - Message: Testing the new contact form functionality
 3. Click "Send Message"
 4. Verify:
    - ✅ Button shows "Sending..." during submission
-   - ✅ Success toast appears
-   - ✅ Form fields clear
-   - ✅ Submission appears in Supabase dashboard (contact_submissions table)
-   - ✅ **Email arrives at your notification email** (if Cloudflare configured)
+   - ✅ Success toast appears after ~2-3 seconds
+   - ✅ Form fields clear after success
+   - ✅ Email arrives at `support@certchain.app`
 
----
+## Email Template Preview
 
-## How It Works
+The sent email includes:
+- **Header**: CertChain branding with gradient background
+- **From**: Contact name and email
+- **Email Address**: User's email (clickable)
+- **Subject**: Form subject
+- **Message**: Full message with formatting preserved
+- **Reply Button**: Quick reply to sender
+- **Footer**: Timestamp and CertChain branding
 
-### Submission Flow:
+## Cloudflare Email Routing (Your Setup)
 
-1. **User submits form** → Contact.tsx calls edge function
-2. **Edge function validates** → Checks required fields and email format
-3. **Stores in database** → Inserts into `contact_submissions` table ✅ (Always happens)
-4. **Sends email** → Uses Cloudflare Email Routing API ✅ (If configured)
-5. **Returns success** → Even if email fails, database storage succeeds
+You mentioned setting up Cloudflare Email Routing. Here's how it integrates:
 
-### Email Notification Format:
+### Receiving Emails at support@certchain.app
 
-```
-From: noreply@certchain.app
-To: your-email@example.com
-Reply-To: user's email address
-Subject: Contact Form: [User's Subject]
+1. **Cloudflare Email Routing** forwards emails TO your personal email
+2. **Resend API** sends emails FROM your application
+3. Together they create a complete email system:
+   - Contact form → Resend → `support@certchain.app` → Cloudflare → Your inbox
 
-New Contact Form Submission
+### Configure Email Routing (if not done):
 
-From: John Doe
-Email: john@example.com
-Subject: Question about certificates
-
-Message:
-I'm interested in learning more about your certificate management system...
-
----
-Submitted at: 2025-10-29T10:30:00.000Z
-View in dashboard: https://your-project.supabase.co
-```
-
----
-
-## Viewing Contact Form Submissions
-
-### In Supabase Dashboard
-- Navigate to Table Editor > `contact_submissions`
-- View all fields: name, email, subject, message, submitted_at
-- Sort by submitted_at (newest first)
-- Export to CSV if needed
-
-### Optional: Build Admin Dashboard View
-Create a page in your app for super admins:
-```typescript
-const { data: submissions } = await supabase
-  .from('contact_submissions')
-  .select('*')
-  .order('submitted_at', { ascending: false });
-```
-
----
-
-## Configuration Options
-
-### Option A: Database Only (No Email Notifications)
-- ✅ Don't set Cloudflare secrets
-- ✅ Forms still work, just stored in database
-- ✅ Check dashboard periodically for submissions
-- ✅ **Simplest setup - good for starting**
-
-### Option B: Database + Email Notifications (Recommended)
-- ✅ Set all 3 Cloudflare secrets
-- ✅ Get instant email notifications
-- ✅ **Plus** database backup of all submissions
-- ✅ **Best of both worlds!**
-
----
+1. Go to [Cloudflare Dashboard](https://dash.cloudflare.com)
+2. Select `certchain.app` domain
+3. Navigate to **Email** > **Email Routing**
+4. Add routing rule:
+   - **From**: `support@certchain.app`
+   - **To**: Your personal email (e.g., `joseph@example.com`)
+5. Verify email routing by clicking confirmation link
 
 ## Troubleshooting
 
@@ -205,64 +143,70 @@ npx supabase functions list
 npx supabase functions deploy send-contact-email
 ```
 
-### Table doesn't exist
-- Apply migration: `20251029000000_create_contact_submissions.sql` in Supabase Dashboard SQL Editor
+### RESEND_API_KEY not set
+```bash
+# Check secrets
+npx supabase secrets list
 
-### Emails not being sent (but database works)
-1. Check edge function logs:
-   ```bash
-   npx supabase functions logs send-contact-email --follow
-   ```
-2. Verify all 3 secrets are set:
-   ```bash
-   npx supabase secrets list
-   ```
-3. Verify Cloudflare API token has Email Routing permissions
-4. Check Cloudflare Email Routing is enabled for certchain.app
+# If not listed, set it
+npx supabase secrets set RESEND_API_KEY=re_xxxxxxxxxxxxxxxxxxxxx
+```
+
+### Emails not arriving
+1. Check Resend Dashboard > Logs for delivery status
+2. Verify Cloudflare Email Routing is active
+3. Check spam folder
+4. Verify DNS records for Resend domain
 
 ### CORS errors
 - Edge function already has CORS headers configured
 - If issues persist, check Supabase Edge Function logs
 
-### Submissions not appearing in database
+## Monitoring
+
+### Check Edge Function Logs
 ```bash
 # View real-time logs
 npx supabase functions logs send-contact-email --follow
 ```
 
----
+### Check Resend Delivery
+- Go to [Resend Dashboard](https://resend.com/emails)
+- View all sent emails
+- Check delivery status, opens, clicks
 
 ## Production Checklist
 
-### Minimum (Database Only):
-- [ ] Apply contact_submissions table migration in Supabase
+Before going live:
+- [ ] RESEND_API_KEY secret set in Supabase
 - [ ] Edge function deployed successfully
+- [ ] Resend domain verified (optional but recommended)
+- [ ] Cloudflare Email Routing configured for support@certchain.app
 - [ ] Test form submission end-to-end
-- [ ] Verify submission appears in database
+- [ ] Verify email arrives at destination
+- [ ] Check email formatting and branding
+- [ ] Test reply-to functionality
 
-### Full Setup (Database + Email):
-- [ ] Apply contact_submissions table migration in Supabase
-- [ ] Get Cloudflare API token with Email Routing permissions
-- [ ] Set all 3 Supabase secrets (CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, NOTIFICATION_EMAIL)
-- [ ] Edge function deployed successfully
-- [ ] Cloudflare Email Routing enabled and configured
-- [ ] Test form submission end-to-end
-- [ ] Verify submission appears in database
-- [ ] Verify email notification received
+## Cost Considerations
+
+**Resend Free Tier**:
+- 100 emails/day
+- 3,000 emails/month
+- Perfect for contact forms
+
+**Paid Plans** (if needed later):
+- $20/month: 50,000 emails
+- Scales as needed
+
+## Next Steps
+
+1. Deploy the edge function: `npx supabase functions deploy send-contact-email`
+2. Set RESEND_API_KEY secret
+3. Test the contact form
+4. Monitor first few submissions
+5. Consider adding Resend domain verification for production
 
 ---
 
-## Benefits
-
-✅ **Reliable**: Database is single source of truth  
-✅ **Zero cost**: Cloudflare Email Routing is free  
-✅ **No external dependencies**: Uses Cloudflare you already have  
-✅ **Flexible**: Works with or without email notifications  
-✅ **Searchable**: Easy to query and filter submissions in Supabase  
-✅ **Privacy compliant**: Data stays in your infrastructure  
-✅ **Instant notifications**: Get emails immediately (if configured)  
-
----
-
-**Status**: ✅ Ready to deploy  
+**Status**: ✅ Code complete, ready to deploy  
 **Last Updated**: October 29, 2025

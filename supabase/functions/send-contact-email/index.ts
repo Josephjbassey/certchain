@@ -1,11 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
 
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const CLOUDFLARE_API_TOKEN = Deno.env.get("CLOUDFLARE_API_TOKEN");
-const CLOUDFLARE_ACCOUNT_ID = Deno.env.get("CLOUDFLARE_ACCOUNT_ID");
-const NOTIFICATION_EMAIL = Deno.env.get("NOTIFICATION_EMAIL") || "support@certchain.app";
+const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
 interface ContactFormRequest {
   name: string;
@@ -51,25 +46,13 @@ serve(async (req) => {
       );
     }
 
-    // Store contact form submission in database
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-    
-    const { error: dbError } = await supabase
-      .from('contact_submissions')
-      .insert({
-        name,
-        email,
-        subject,
-        message,
-        submitted_at: new Date().toISOString()
-      });
-
-    if (dbError) {
-      console.error("Error storing contact submission:", dbError);
+    // Check if Resend API key is configured
+    if (!RESEND_API_KEY) {
+      console.error("RESEND_API_KEY not configured");
       return new Response(
         JSON.stringify({ 
-          error: "Failed to submit contact form",
-          details: dbError.message
+          error: "Email service not configured",
+          details: "RESEND_API_KEY environment variable is missing"
         }),
         { 
           status: 500,
@@ -78,74 +61,184 @@ serve(async (req) => {
       );
     }
 
-    // Successfully stored - you can view submissions in Supabase dashboard
-    // or set up Cloudflare Email Worker to send notifications
-    console.log("Contact form submission stored successfully");
+    // Prepare email HTML
+    const emailBody = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>New Contact Form Submission</title>
+          <style>
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+              line-height: 1.6;
+              color: #333;
+              max-width: 600px;
+              margin: 0 auto;
+              padding: 20px;
+            }
+            .header {
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              color: white;
+              padding: 30px;
+              border-radius: 10px 10px 0 0;
+              text-align: center;
+            }
+            .header h1 {
+              margin: 0;
+              font-size: 24px;
+            }
+            .content {
+              background: #f9fafb;
+              padding: 30px;
+              border: 1px solid #e5e7eb;
+              border-top: none;
+            }
+            .field {
+              margin-bottom: 20px;
+            }
+            .field-label {
+              font-weight: 600;
+              color: #4b5563;
+              margin-bottom: 5px;
+              display: block;
+            }
+            .field-value {
+              background: white;
+              padding: 12px;
+              border-radius: 6px;
+              border: 1px solid #e5e7eb;
+            }
+            .message-box {
+              background: white;
+              padding: 15px;
+              border-radius: 6px;
+              border: 1px solid #e5e7eb;
+              white-space: pre-wrap;
+              word-wrap: break-word;
+            }
+            .footer {
+              margin-top: 20px;
+              padding: 20px;
+              text-align: center;
+              color: #6b7280;
+              font-size: 14px;
+              border-top: 1px solid #e5e7eb;
+            }
+            .reply-button {
+              display: inline-block;
+              margin-top: 15px;
+              padding: 12px 24px;
+              background: #667eea;
+              color: white;
+              text-decoration: none;
+              border-radius: 6px;
+              font-weight: 600;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>📩 New Contact Form Submission</h1>
+            <p style="margin: 10px 0 0 0; opacity: 0.9;">CertChain Contact Form</p>
+          </div>
+          
+          <div class="content">
+            <div class="field">
+              <span class="field-label">From:</span>
+              <div class="field-value">${name}</div>
+            </div>
+            
+            <div class="field">
+              <span class="field-label">Email:</span>
+              <div class="field-value">
+                <a href="mailto:${email}" style="color: #667eea; text-decoration: none;">${email}</a>
+              </div>
+            </div>
+            
+            <div class="field">
+              <span class="field-label">Subject:</span>
+              <div class="field-value">${subject}</div>
+            </div>
+            
+            <div class="field">
+              <span class="field-label">Message:</span>
+              <div class="message-box">${message}</div>
+            </div>
+            
+            <div style="text-align: center;">
+              <a href="mailto:${email}?subject=Re: ${encodeURIComponent(subject)}" class="reply-button">
+                Reply to ${name}
+              </a>
+            </div>
+          </div>
+          
+          <div class="footer">
+            <p>This message was sent via the CertChain contact form at certchain.app</p>
+            <p style="margin-top: 10px;">
+              <strong>CertChain</strong><br>
+              4 Fadogba Street, Ifelodun Estate<br>
+              Akure, Ondo State 340110, Nigeria
+            </p>
+          </div>
+        </body>
+      </html>
+    `;
 
-    // Send email notification via Cloudflare Email Routing API (if configured)
-    if (CLOUDFLARE_API_TOKEN && CLOUDFLARE_ACCOUNT_ID) {
-      try {
-        const emailBody = `
-New Contact Form Submission
+    // Send email via Resend
+    const resendResponse = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+      },
+      body: JSON.stringify({
+        from: "CertChain Contact Form <noreply@certchain.app>",
+        to: ["contact@certchain.app"],
+        reply_to: email,
+        subject: `Contact Form: ${subject}`,
+        html: emailBody,
+      }),
+    });
 
-From: ${name}
-Email: ${email}
-Subject: ${subject}
+    const resendData = await resendResponse.json();
 
-Message:
-${message}
-
----
-Submitted at: ${new Date().toISOString()}
-View in dashboard: ${SUPABASE_URL}
-        `.trim();
-
-        // Send email using Cloudflare Email Routing API
-        const emailResponse = await fetch(
-          `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/email/routing/addresses/${NOTIFICATION_EMAIL}/send`,
-          {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${CLOUDFLARE_API_TOKEN}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              from: `noreply@certchain.app`,
-              to: NOTIFICATION_EMAIL,
-              subject: `Contact Form: ${subject}`,
-              text: emailBody,
-              reply_to: email
-            })
-          }
-        );
-
-        if (!emailResponse.ok) {
-          const errorText = await emailResponse.text();
-          console.error('Cloudflare email send failed:', errorText);
-          // Don't fail the whole request if email fails
-        } else {
-          console.log('Email notification sent via Cloudflare');
+    if (!resendResponse.ok) {
+      console.error("Resend API error:", resendData);
+      return new Response(
+        JSON.stringify({ 
+          error: "Failed to send email",
+          details: resendData
+        }),
+        { 
+          status: resendResponse.status,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
         }
-      } catch (emailError) {
-        console.error('Error sending email notification:', emailError);
-        // Don't fail the whole request if email fails
-      }
+      );
     }
-    
+
+    console.log("Contact form email sent successfully:", resendData);
+
     return new Response(
       JSON.stringify({ 
         success: true,
-        message: "Contact form submitted successfully"
+        message: "Email sent successfully",
+        emailId: resendData.id
       }),
       { 
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" }
       }
     );
+
   } catch (error) {
     console.error("Error in send-contact-email function:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: "Internal server error",
+        details: error.message
+      }),
       { 
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" }
