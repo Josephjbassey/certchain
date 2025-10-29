@@ -140,25 +140,18 @@ CREATE POLICY "Instructors can manage candidate relationships" ON public.instruc
 DROP POLICY IF EXISTS "Admins can manage invitations" ON public.invitations;
 DROP POLICY IF EXISTS "Users can view their own invitation" ON public.invitations;
 
--- Recreate with consolidated logic
-CREATE POLICY "Users can view relevant invitations" ON public.invitations
-  FOR SELECT
+-- Create single consolidated policy for all operations
+-- Note: FOR ALL includes SELECT, so we don't need a separate SELECT policy
+CREATE POLICY "Users can manage relevant invitations" ON public.invitations
+  FOR ALL
   USING (
     -- Users can view invitations sent to their email
     email = (SELECT email FROM auth.users WHERE id = (SELECT auth.uid()))
     OR
-    -- Institution admins can view invitations in their institution
+    -- Institution admins can manage invitations in their institution
     is_institution_admin((SELECT auth.uid()), institution_id)
     OR
-    -- Super admins can view all invitations
-    is_super_admin((SELECT auth.uid()))
-  );
-
-CREATE POLICY "Admins can manage invitations" ON public.invitations
-  FOR ALL
-  USING (
-    is_institution_admin((SELECT auth.uid()), institution_id)
-    OR
+    -- Super admins can manage all invitations
     is_super_admin((SELECT auth.uid()))
   );
 
@@ -216,20 +209,20 @@ DROP POLICY IF EXISTS "Public can read DID documents" ON public.user_dids;
 DROP POLICY IF EXISTS "Service role can manage all DIDs" ON public.user_dids;
 DROP POLICY IF EXISTS "Users can manage own DIDs" ON public.user_dids;
 
--- Create single consolidated policy for SELECT
-CREATE POLICY "DID documents are readable" ON public.user_dids
-  FOR SELECT
-  USING (true);  -- Public read access for DID resolution
-
--- Create single consolidated policy for INSERT/UPDATE/DELETE
+-- Create single consolidated policy for all operations
+-- Note: Public read access means everyone can SELECT, and FOR ALL includes SELECT
+-- So we only need one policy that handles all access patterns
 CREATE POLICY "Users and services can manage DIDs" ON public.user_dids
   FOR ALL
   USING (
-    -- Users can manage their own DIDs
+    -- Public read access for DID resolution (everyone can SELECT)
+    true
+  )
+  WITH CHECK (
+    -- Only users and service role can INSERT/UPDATE/DELETE
     user_id = (SELECT auth.uid())
     OR
-    -- Service role can manage all DIDs
-    (SELECT auth.jwt()->>'role' = 'service_role')
+    (SELECT auth.jwt()->>'role') = 'service_role'
   );
 
 -- ============================================
@@ -239,20 +232,19 @@ CREATE POLICY "Users and services can manage DIDs" ON public.user_dids
 DROP POLICY IF EXISTS "Super admins can manage roles" ON public.user_roles;
 DROP POLICY IF EXISTS "Users can view their own roles" ON public.user_roles;
 
--- Create consolidated SELECT policy
-CREATE POLICY "Users can view relevant roles" ON public.user_roles
-  FOR SELECT
-  USING (
-    -- Users can view their own roles
-    user_id = (SELECT auth.uid())
-    OR
-    -- Super admins can view all roles
-    is_super_admin((SELECT auth.uid()))
-  );
-
-CREATE POLICY "Super admins can manage roles" ON public.user_roles
+-- Create single consolidated policy for all operations
+-- Note: FOR ALL includes SELECT, so we don't need a separate SELECT policy
+CREATE POLICY "Users can manage relevant roles" ON public.user_roles
   FOR ALL
   USING (
+    -- Users can view their own roles (SELECT)
+    user_id = (SELECT auth.uid())
+    OR
+    -- Super admins can manage all roles (all operations)
+    is_super_admin((SELECT auth.uid()))
+  )
+  WITH CHECK (
+    -- Only super admins can INSERT/UPDATE/DELETE
     is_super_admin((SELECT auth.uid()))
   );
 
@@ -264,26 +256,24 @@ DROP POLICY IF EXISTS "Institution admins can manage scopes in their institution
 DROP POLICY IF EXISTS "Super admins can manage all scopes" ON public.user_scopes;
 DROP POLICY IF EXISTS "Users can view their own scopes" ON public.user_scopes;
 
--- Create consolidated SELECT policy
-CREATE POLICY "Users can view relevant scopes" ON public.user_scopes
-  FOR SELECT
+-- Create single consolidated policy for all operations
+-- Note: FOR ALL includes SELECT, so we don't need a separate SELECT policy
+CREATE POLICY "Users can manage relevant scopes" ON public.user_scopes
+  FOR ALL
   USING (
-    -- Users can view their own scopes
+    -- Users can view their own scopes (SELECT)
     user_id = (SELECT auth.uid())
     OR
-    -- Institution admins can view scopes in their institution
+    -- Institution admins can manage scopes in their institution
     is_institution_admin((SELECT auth.uid()), (
       SELECT institution_id FROM public.profiles WHERE id = user_scopes.user_id
     ))
     OR
-    -- Super admins can view all scopes
+    -- Super admins can manage all scopes
     is_super_admin((SELECT auth.uid()))
-  );
-
--- Create consolidated management policy
-CREATE POLICY "Admins can manage scopes" ON public.user_scopes
-  FOR ALL
-  USING (
+  )
+  WITH CHECK (
+    -- Only admins can INSERT/UPDATE/DELETE
     is_institution_admin((SELECT auth.uid()), (
       SELECT institution_id FROM public.profiles WHERE id = user_scopes.user_id
     ))
