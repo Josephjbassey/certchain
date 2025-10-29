@@ -24,11 +24,7 @@ CREATE POLICY "Users can view relevant application logs" ON public.application_l
     user_id = (SELECT auth.uid())
     OR
     -- Super admins can view all logs
-    EXISTS (
-      SELECT 1 FROM public.profiles
-      WHERE id = (SELECT auth.uid())
-      AND is_super_admin = true
-    )
+    is_super_admin((SELECT auth.uid()))
   );
 
 -- ============================================
@@ -47,15 +43,10 @@ CREATE POLICY "Users can view relevant audit logs" ON public.audit_logs
     user_id = (SELECT auth.uid())
     OR
     -- Institution admins can view logs in their institution
-    EXISTS (
-      SELECT 1 FROM public.profiles
-      WHERE id = (SELECT auth.uid())
-      AND role IN ('institution_admin', 'super_admin')
-      AND (
-        institution_id = audit_logs.institution_id
-        OR is_super_admin = true
-      )
-    )
+    is_institution_admin((SELECT auth.uid()), institution_id)
+    OR
+    -- Super admins can view all logs
+    is_super_admin((SELECT auth.uid()))
   );
 
 -- ============================================
@@ -97,17 +88,11 @@ CREATE POLICY "Users can view institutions" ON public.institutions
 CREATE POLICY "Admins can update institutions" ON public.institutions
   FOR UPDATE
   USING (
-    EXISTS (
-      SELECT 1 FROM public.profiles
-      WHERE id = (SELECT auth.uid())
-      AND (
-        -- Institution admins can update their own institution
-        (role = 'institution_admin' AND institution_id = institutions.id)
-        OR
-        -- Super admins can update all institutions
-        is_super_admin = true
-      )
-    )
+    -- Institution admins can update their own institution
+    is_institution_admin((SELECT auth.uid()), id)
+    OR
+    -- Super admins can update all institutions
+    is_super_admin((SELECT auth.uid()))
   );
 
 -- ============================================
@@ -130,17 +115,13 @@ CREATE POLICY "Users can view relevant instructor relationships" ON public.instr
     -- Instructors can view their candidates
     instructor_id = (SELECT auth.uid())
     OR
-    -- Institution admins and super admins
-    EXISTS (
-      SELECT 1 FROM public.profiles p
-      WHERE p.id = (SELECT auth.uid())
-      AND (
-        (p.role IN ('institution_admin', 'super_admin') AND p.institution_id IN (
-          SELECT institution_id FROM public.profiles WHERE id = instructor_candidates.instructor_id
-        ))
-        OR p.is_super_admin = true
-      )
-    )
+    -- Institution admins can view relationships in their institution
+    is_institution_admin((SELECT auth.uid()), (
+      SELECT institution_id FROM public.profiles WHERE id = instructor_id
+    ))
+    OR
+    -- Super admins can view all
+    is_super_admin((SELECT auth.uid()))
   );
 
 -- Create consolidated INSERT policy
@@ -149,11 +130,7 @@ CREATE POLICY "Instructors can manage candidate relationships" ON public.instruc
   WITH CHECK (
     instructor_id = (SELECT auth.uid())
     OR
-    EXISTS (
-      SELECT 1 FROM public.profiles
-      WHERE id = (SELECT auth.uid())
-      AND is_super_admin = true
-    )
+    is_super_admin((SELECT auth.uid()))
   );
 
 -- ============================================
@@ -170,30 +147,19 @@ CREATE POLICY "Users can view relevant invitations" ON public.invitations
     -- Users can view invitations sent to their email
     email = (SELECT email FROM auth.users WHERE id = (SELECT auth.uid()))
     OR
-    -- Admins can view invitations in their institution
-    EXISTS (
-      SELECT 1 FROM public.profiles
-      WHERE id = (SELECT auth.uid())
-      AND role IN ('institution_admin', 'super_admin')
-      AND (
-        institution_id = invitations.institution_id
-        OR is_super_admin = true
-      )
-    )
+    -- Institution admins can view invitations in their institution
+    is_institution_admin((SELECT auth.uid()), institution_id)
+    OR
+    -- Super admins can view all invitations
+    is_super_admin((SELECT auth.uid()))
   );
 
 CREATE POLICY "Admins can manage invitations" ON public.invitations
   FOR ALL
   USING (
-    EXISTS (
-      SELECT 1 FROM public.profiles
-      WHERE id = (SELECT auth.uid())
-      AND role IN ('institution_admin', 'super_admin')
-      AND (
-        institution_id = invitations.institution_id
-        OR is_super_admin = true
-      )
-    )
+    is_institution_admin((SELECT auth.uid()), institution_id)
+    OR
+    is_super_admin((SELECT auth.uid()))
   );
 
 -- ============================================
@@ -221,15 +187,11 @@ CREATE POLICY "Users can view relevant profiles" ON public.profiles
       WHERE instructor_id = (SELECT auth.uid())
     )
     OR
-    -- Institution admins and super admins
-    EXISTS (
-      SELECT 1 FROM public.profiles p
-      WHERE p.id = (SELECT auth.uid())
-      AND (
-        (p.role IN ('institution_admin', 'super_admin') AND p.institution_id = profiles.institution_id)
-        OR p.is_super_admin = true
-      )
-    )
+    -- Institution admins can view profiles in their institution
+    is_institution_admin((SELECT auth.uid()), institution_id)
+    OR
+    -- Super admins can view all profiles
+    is_super_admin((SELECT auth.uid()))
   );
 
 -- Create consolidated UPDATE policy
@@ -239,15 +201,11 @@ CREATE POLICY "Users can update relevant profiles" ON public.profiles
     -- Users can update their own profile
     id = (SELECT auth.uid())
     OR
-    -- Institution admins and super admins
-    EXISTS (
-      SELECT 1 FROM public.profiles p
-      WHERE p.id = (SELECT auth.uid())
-      AND (
-        (p.role IN ('institution_admin', 'super_admin') AND p.institution_id = profiles.institution_id)
-        OR p.is_super_admin = true
-      )
-    )
+    -- Institution admins can update profiles in their institution
+    is_institution_admin((SELECT auth.uid()), institution_id)
+    OR
+    -- Super admins can update all profiles
+    is_super_admin((SELECT auth.uid()))
   );
 
 -- ============================================
@@ -281,7 +239,7 @@ CREATE POLICY "Users and services can manage DIDs" ON public.user_dids
 DROP POLICY IF EXISTS "Super admins can manage roles" ON public.user_roles;
 DROP POLICY IF EXISTS "Users can view their own roles" ON public.user_roles;
 
--- Create consolidated policy
+-- Create consolidated SELECT policy
 CREATE POLICY "Users can view relevant roles" ON public.user_roles
   FOR SELECT
   USING (
@@ -289,21 +247,13 @@ CREATE POLICY "Users can view relevant roles" ON public.user_roles
     user_id = (SELECT auth.uid())
     OR
     -- Super admins can view all roles
-    EXISTS (
-      SELECT 1 FROM public.profiles
-      WHERE id = (SELECT auth.uid())
-      AND is_super_admin = true
-    )
+    is_super_admin((SELECT auth.uid()))
   );
 
 CREATE POLICY "Super admins can manage roles" ON public.user_roles
   FOR ALL
   USING (
-    EXISTS (
-      SELECT 1 FROM public.profiles
-      WHERE id = (SELECT auth.uid())
-      AND is_super_admin = true
-    )
+    is_super_admin((SELECT auth.uid()))
   );
 
 -- ============================================
@@ -321,31 +271,24 @@ CREATE POLICY "Users can view relevant scopes" ON public.user_scopes
     -- Users can view their own scopes
     user_id = (SELECT auth.uid())
     OR
-    -- Admins can view scopes
-    EXISTS (
-      SELECT 1 FROM public.profiles p
-      INNER JOIN public.profiles target_user ON target_user.id = user_scopes.user_id
-      WHERE p.id = (SELECT auth.uid())
-      AND (
-        (p.role = 'institution_admin' AND p.institution_id = target_user.institution_id)
-        OR p.is_super_admin = true
-      )
-    )
+    -- Institution admins can view scopes in their institution
+    is_institution_admin((SELECT auth.uid()), (
+      SELECT institution_id FROM public.profiles WHERE id = user_scopes.user_id
+    ))
+    OR
+    -- Super admins can view all scopes
+    is_super_admin((SELECT auth.uid()))
   );
 
 -- Create consolidated management policy
 CREATE POLICY "Admins can manage scopes" ON public.user_scopes
   FOR ALL
   USING (
-    EXISTS (
-      SELECT 1 FROM public.profiles p
-      INNER JOIN public.profiles target_user ON target_user.id = user_scopes.user_id
-      WHERE p.id = (SELECT auth.uid())
-      AND (
-        (p.role = 'institution_admin' AND p.institution_id = target_user.institution_id)
-        OR p.is_super_admin = true
-      )
-    )
+    is_institution_admin((SELECT auth.uid()), (
+      SELECT institution_id FROM public.profiles WHERE id = user_scopes.user_id
+    ))
+    OR
+    is_super_admin((SELECT auth.uid()))
   );
 
 -- ============================================
@@ -363,11 +306,7 @@ CREATE POLICY "Users can manage relevant webhooks" ON public.webhooks
     user_id = (SELECT auth.uid())
     OR
     -- Super admins can manage all webhooks
-    EXISTS (
-      SELECT 1 FROM public.profiles
-      WHERE id = (SELECT auth.uid())
-      AND is_super_admin = true
-    )
+    is_super_admin((SELECT auth.uid()))
   );
 
 COMMIT;
