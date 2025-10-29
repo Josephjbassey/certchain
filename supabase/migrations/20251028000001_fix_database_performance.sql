@@ -12,4 +12,8 @@ CREATE INDEX IF NOT EXISTS idx_invitations_invited_by
 DROP INDEX IF EXISTS idx_user_dids_hash;
 DROP INDEX IF EXISTS idx_user_dids_hcs_topic;
 
+-- STEP 3: Drop duplicate indexes identified by linter
+DROP INDEX IF EXISTS idx_certificate_cache_issuer_did;  -- Keep idx_certificate_cache_issuer
+DROP INDEX IF EXISTS user_dids_account_id_network_key;   -- Keep idx_user_dids_account_network
+
 COMMIT;

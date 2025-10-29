@@ -28,7 +28,9 @@ SECURITY DEFINER
 SET search_path = public, pg_temp;
 
 -- STEP 3: Fix clean_expired_invitations
-CREATE OR REPLACE FUNCTION public.clean_expired_invitations()
+DROP FUNCTION IF EXISTS public.clean_expired_invitations();
+
+CREATE FUNCTION public.clean_expired_invitations()
 RETURNS INTEGER AS $$
 DECLARE
     deleted_count INTEGER;
