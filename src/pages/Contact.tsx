@@ -7,6 +7,7 @@ import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { useState } from "react";
 import { PublicHeader } from "@/components/PublicHeader";
+import { supabase } from "@/integrations/supabase/client";
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -15,11 +16,36 @@ const Contact = () => {
     subject: "",
     message: ""
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success("Message sent! We'll get back to you within 24 hours.");
-    setFormData({ name: "", email: "", subject: "", message: "" });
+    setIsSubmitting(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('send-contact-email', {
+        body: {
+          name: formData.name,
+          email: formData.email,
+          subject: formData.subject,
+          message: formData.message
+        }
+      });
+
+      if (error) {
+        console.error('Error sending contact email:', error);
+        toast.error("Failed to send message. Please try again or email us directly at support@certchain.app");
+        return;
+      }
+
+      toast.success("Message sent! We'll get back to you within 24 hours.");
+      setFormData({ name: "", email: "", subject: "", message: "" });
+    } catch (error) {
+      console.error('Error submitting contact form:', error);
+      toast.error("Failed to send message. Please try again or email us directly at support@certchain.app");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -79,9 +105,9 @@ const Contact = () => {
                       required
                     />
                   </div>
-                  <Button type="submit" variant="hero" size="lg" className="w-full">
+                  <Button type="submit" variant="hero" size="lg" className="w-full" disabled={isSubmitting}>
                     <MessageSquare className="h-4 w-4" />
-                    <span className="ml-2">Send Message</span>
+                    <span className="ml-2">{isSubmitting ? "Sending..." : "Send Message"}</span>
                   </Button>
                 </form>
               </Card>
