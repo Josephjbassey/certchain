@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Shield, Award, User, Mail, Book } from "lucide-react";
+import { Shield, Award, User, Mail, Book, ImagePlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -20,9 +20,42 @@ const IssueCertificate = () => {
     recipientEmail: "",
     courseName: "",
     description: "",
-    skills: ""
+    skills: "",
+    certificateImage: null as File | null
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast.error('Please select a valid image file');
+        return;
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('Image size should be less than 5MB');
+        return;
+      }
+
+      setFormData({ ...formData, certificateImage: file });
+
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = () => {
+    setFormData({ ...formData, certificateImage: null });
+    setImagePreview(null);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,9 +98,38 @@ const IssueCertificate = () => {
         skills: formData.skills.split(',').map(s => s.trim()).filter(Boolean),
         issuedAt: new Date().toISOString(),
         expiresAt: null, // Set expiry if needed
+        imageUrl: null as string | null, // Will be set after upload
       };
 
-      // Step 1: Upload metadata to IPFS via Pinata
+      // Step 1: Upload certificate image to IPFS if provided
+      if (formData.certificateImage) {
+        toast.info("Uploading certificate image to IPFS...");
+
+        // Convert File to base64
+        const reader = new FileReader();
+        const base64Content = await new Promise<string>((resolve, reject) => {
+          reader.onloadend = () => {
+            const base64 = (reader.result as string).split(',')[1]; // Remove data:image/...;base64, prefix
+            resolve(base64);
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(formData.certificateImage!);
+        });
+
+        const imageUploadResponse = await hederaService.uploadToIPFS({
+          type: 'file',
+          fileData: {
+            content: base64Content,
+            filename: formData.certificateImage.name,
+            mimetype: formData.certificateImage.type,
+          },
+        });
+
+        certificateData.imageUrl = `https://gateway.pinata.cloud/ipfs/${imageUploadResponse.ipfsHash}`;
+        toast.success("Image uploaded successfully!");
+      }
+
+      // Step 2: Upload metadata to IPFS via Pinata
       toast.info("Uploading certificate metadata to IPFS...");
       const pinataResponse = await hederaService.uploadToIPFS({
         type: 'metadata',
@@ -77,7 +139,7 @@ const IssueCertificate = () => {
       const ipfsCid = pinataResponse.ipfsHash;
       toast.success(`Metadata uploaded to IPFS: ${ipfsCid}`);
 
-      // Step 2: Mint NFT on Hedera
+      // Step 3: Mint NFT on Hedera
       toast.info("Minting certificate NFT on Hedera...");
       const mintResponse = await hederaService.mintCertificate({
         recipientAccountId: null, // Will be set when claimed
@@ -90,7 +152,7 @@ const IssueCertificate = () => {
 
       toast.success(`Certificate minted! Serial: ${mintResponse.serialNumber}`);
 
-      // Step 3: Save to database
+      // Step 4: Save to database
       const { error: dbError } = await supabase
         .from('certificate_cache')
         .insert({
@@ -110,6 +172,7 @@ const IssueCertificate = () => {
             description: formData.description,
             skills: certificateData.skills,
             recipient_name: formData.recipientName,
+            imageUrl: certificateData.imageUrl,
           },
         });
 
@@ -118,7 +181,7 @@ const IssueCertificate = () => {
         toast.error('Certificate minted but failed to save to database');
       }
 
-      // Step 4: Create claim token
+      // Step 5: Create claim token
       toast.info("Generating claim link...");
       const claimToken = crypto.randomUUID();
       const expiresAt = new Date();
@@ -168,6 +231,7 @@ const IssueCertificate = () => {
             recipientEmail: formData.recipientEmail,
             courseName: formData.courseName,
             issuedAt: new Date().toISOString(),
+            hasImage: !!certificateData.imageUrl,
           },
           network: 'testnet',
         });
@@ -297,6 +361,52 @@ const IssueCertificate = () => {
                 value={formData.skills}
                 onChange={(e) => setFormData({ ...formData, skills: e.target.value })}
               />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex items-center gap-2">
+                <ImagePlus className="h-4 w-4 text-primary" />
+                Certificate Image (Optional)
+              </label>
+              <div className="space-y-3">
+                {imagePreview ? (
+                  <div className="relative">
+                    <img
+                      src={imagePreview}
+                      alt="Certificate preview"
+                      className="w-full h-48 object-cover rounded-lg border"
+                    />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      className="absolute top-2 right-2"
+                      onClick={removeImage}
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="border-2 border-dashed border-border rounded-lg p-6 text-center hover:border-primary transition-colors cursor-pointer">
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageChange}
+                      className="hidden"
+                      id="certificate-image"
+                    />
+                    <label htmlFor="certificate-image" className="cursor-pointer">
+                      <ImagePlus className="h-12 w-12 mx-auto mb-2 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground">
+                        Click to upload certificate image
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        PNG, JPG up to 5MB
+                      </p>
+                    </label>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="border-t border-border/40 pt-6 space-y-4">

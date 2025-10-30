@@ -260,9 +260,16 @@ const DidSetup = () => {
                         Go to Dashboard
                       </Link>
                     </Button>
-                    <Button variant="outline" className="flex-1">
-                      <ExternalLink className="h-4 w-4 mr-2" />
-                      View on Explorer
+                    <Button asChild variant="outline" className="flex-1">
+                      <a
+                        href={`https://hashscan.io/testnet/account/${hederaAccountId}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center"
+                      >
+                        <ExternalLink className="h-4 w-4 mr-2" />
+                        View on Explorer
+                      </a>
                     </Button>
                   </div>
                 </div>

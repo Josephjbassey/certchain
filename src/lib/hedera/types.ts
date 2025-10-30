@@ -107,6 +107,7 @@ export interface PinataUploadRequest {
         filename: string;
         mimetype?: string;
     };
+    file?: File; // For direct file upload
 }
 
 export interface PinataUploadResponse {
