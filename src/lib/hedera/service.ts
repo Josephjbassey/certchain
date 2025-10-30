@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from "@/integrations/supabase/client";
 import type {
     CreateDIDRequest,
     CreateDIDResponse,
@@ -10,9 +10,9 @@ import type {
     PinataUploadResponse,
     HederaDID,
     VerificationResult,
-} from './types';
-import { getHederaConfig, getExplorerUrl } from './config';
-import { retryOperation, parseHederaError, HederaServiceError } from './errors';
+} from "./types";
+import { getHederaConfig, getExplorerUrl } from "./config";
+import { retryOperation, parseHederaError, HederaServiceError } from "./errors";
 
 /**
  * Hedera Service
@@ -38,21 +38,39 @@ export class HederaService {
         return retryOperation(async () => {
             const { network } = getHederaConfig();
 
-            const { data, error } = await supabase.functions.invoke('hedera-create-did', {
-                body: {
-                    ...request,
-                    network: request.network || network,
-                },
+            console.log("Creating DID with request:", {
+                ...request,
+                network: request.network || network,
             });
 
+            const { data, error } = await supabase.functions.invoke(
+                "hedera-create-did",
+                {
+                    body: {
+                        ...request,
+                        network: request.network || network,
+                    },
+                }
+            );
+
+            console.log("DID creation response:", { data, error });
+
             if (error) {
+                console.error("Supabase function invocation error:", error);
                 throw parseHederaError(error);
             }
 
-            if (!data?.success) {
+            if (!data) {
                 throw new HederaServiceError(
-                    data?.error || 'Failed to create DID',
-                    'DID_CREATION_FAILED'
+                    "No response received from DID creation function",
+                    "NO_RESPONSE"
+                );
+            }
+
+            if (!data.success) {
+                throw new HederaServiceError(
+                    data.error || data.message || "Failed to create DID",
+                    "DID_CREATION_FAILED"
                 );
             }
 
@@ -63,25 +81,45 @@ export class HederaService {
     /**
      * Mint a certificate NFT on Hedera Token Service
      */
-    async mintCertificate(request: MintCertificateRequest): Promise<MintCertificateResponse> {
+    async mintCertificate(
+        request: MintCertificateRequest
+    ): Promise<MintCertificateResponse> {
         return retryOperation(async () => {
             const { network } = getHederaConfig();
 
-            const { data, error } = await supabase.functions.invoke('hedera-mint-certificate', {
-                body: {
-                    ...request,
-                    network: request.network || network,
-                },
+            console.log("Minting certificate with request:", {
+                ...request,
+                network: request.network || network,
             });
 
+            const { data, error } = await supabase.functions.invoke(
+                "hedera-mint-certificate",
+                {
+                    body: {
+                        ...request,
+                        network: request.network || network,
+                    },
+                }
+            );
+
+            console.log("Mint certificate response:", { data, error });
+
             if (error) {
+                console.error("Supabase function invocation error:", error);
                 throw parseHederaError(error);
             }
 
-            if (!data?.success) {
+            if (!data) {
                 throw new HederaServiceError(
-                    data?.error || 'Failed to mint certificate',
-                    'MINT_FAILED'
+                    "No response received from mint function",
+                    "NO_RESPONSE"
+                );
+            }
+
+            if (!data.success) {
+                throw new HederaServiceError(
+                    data.error || data.message || "Failed to mint certificate",
+                    "MINT_FAILED"
                 );
             }
 
@@ -96,21 +134,39 @@ export class HederaService {
         return retryOperation(async () => {
             const { network } = getHederaConfig();
 
-            const { data, error } = await supabase.functions.invoke('hedera-hcs-log', {
-                body: {
-                    ...request,
-                    network: request.network || network,
-                },
+            console.log("Logging to HCS with request:", {
+                ...request,
+                network: request.network || network,
             });
 
+            const { data, error } = await supabase.functions.invoke(
+                "hedera-hcs-log",
+                {
+                    body: {
+                        ...request,
+                        network: request.network || network,
+                    },
+                }
+            );
+
+            console.log("HCS log response:", { data, error });
+
             if (error) {
+                console.error("Supabase function invocation error:", error);
                 throw parseHederaError(error);
             }
 
-            if (!data?.success) {
+            if (!data) {
                 throw new HederaServiceError(
-                    data?.error || 'Failed to log to HCS',
-                    'HCS_LOG_FAILED'
+                    "No response received from HCS log function",
+                    "NO_RESPONSE"
+                );
+            }
+
+            if (!data.success) {
+                throw new HederaServiceError(
+                    data.error || data.message || "Failed to log to HCS",
+                    "HCS_LOG_FAILED"
                 );
             }
 
@@ -121,9 +177,11 @@ export class HederaService {
     /**
      * Upload metadata or file to IPFS via Pinata
      */
-    async uploadToIPFS(request: PinataUploadRequest): Promise<PinataUploadResponse> {
+    async uploadToIPFS(
+        request: PinataUploadRequest
+    ): Promise<PinataUploadResponse> {
         return retryOperation(async () => {
-            const { data, error } = await supabase.functions.invoke('pinata-upload', {
+            const { data, error } = await supabase.functions.invoke("pinata-upload", {
                 body: request,
             });
 
@@ -133,8 +191,8 @@ export class HederaService {
 
             if (!data?.success) {
                 throw new HederaServiceError(
-                    data?.error || 'Failed to upload to IPFS',
-                    'IPFS_UPLOAD_FAILED'
+                    data?.error || "Failed to upload to IPFS",
+                    "IPFS_UPLOAD_FAILED"
                 );
             }
 
@@ -151,9 +209,9 @@ export class HederaService {
 
             // Check if DID exists in profile
             const { data: profile } = await supabase
-                .from('profiles')
-                .select('did, hedera_account_id')
-                .eq('hedera_account_id', accountId)
+                .from("profiles")
+                .select("did, hedera_account_id")
+                .eq("hedera_account_id", accountId)
                 .maybeSingle();
 
             if (profile?.did) {
@@ -169,12 +227,13 @@ export class HederaService {
 
             if (response.success) {
                 // Store in profile
-                await supabase.from('profiles')
+                await supabase
+                    .from("profiles")
                     .update({
                         did: response.did,
                         hedera_account_id: accountId,
                     })
-                    .eq('hedera_account_id', accountId);
+                    .eq("hedera_account_id", accountId);
 
                 return {
                     did: response.did,
@@ -185,7 +244,7 @@ export class HederaService {
 
             return null;
         } catch (error) {
-            console.error('Failed to get or create DID:', error);
+            console.error("Failed to get or create DID:", error);
             return null;
         }
     }
@@ -197,9 +256,9 @@ export class HederaService {
         try {
             // Get certificate from database
             const { data: cert, error } = await supabase
-                .from('certificate_cache')
-                .select('*')
-                .eq('certificate_id', certificateId)
+                .from("certificate_cache")
+                .select("*")
+                .eq("certificate_id", certificateId)
                 .maybeSingle();
 
             if (error || !cert) {
@@ -232,7 +291,7 @@ export class HederaService {
                         onChainData = await response.json();
                     }
                 } catch (err) {
-                    console.warn('Failed to fetch on-chain data:', err);
+                    console.warn("Failed to fetch on-chain data:", err);
                 }
             }
 
@@ -249,7 +308,7 @@ export class HederaService {
                 onChainData,
             };
         } catch (error) {
-            console.error('Certificate verification failed:', error);
+            console.error("Certificate verification failed:", error);
             throw parseHederaError(error);
         }
     }
@@ -260,16 +319,16 @@ export class HederaService {
     async getCertificatesForAccount(accountId: string) {
         try {
             const { data, error } = await supabase
-                .from('certificate_cache')
-                .select('*')
-                .eq('recipient_account_id', accountId)
-                .order('issued_at', { ascending: false });
+                .from("certificate_cache")
+                .select("*")
+                .eq("recipient_account_id", accountId)
+                .order("issued_at", { ascending: false });
 
             if (error) throw error;
 
             return data || [];
         } catch (error) {
-            console.error('Failed to get certificates:', error);
+            console.error("Failed to get certificates:", error);
             throw parseHederaError(error);
         }
     }
@@ -286,13 +345,13 @@ export class HederaService {
             );
 
             if (!response.ok) {
-                throw new Error('Failed to fetch HCS messages');
+                throw new Error("Failed to fetch HCS messages");
             }
 
             const data = await response.json();
             return data.messages || [];
         } catch (error) {
-            console.error('Failed to get HCS messages:', error);
+            console.error("Failed to get HCS messages:", error);
             throw parseHederaError(error);
         }
     }
@@ -304,10 +363,12 @@ export class HederaService {
         try {
             const { mirrorNodeUrl } = getHederaConfig();
 
-            const response = await fetch(`${mirrorNodeUrl}/api/v1/accounts/${accountId}`);
+            const response = await fetch(
+                `${mirrorNodeUrl}/api/v1/accounts/${accountId}`
+            );
 
             if (!response.ok) {
-                throw new Error('Failed to fetch account balance');
+                throw new Error("Failed to fetch account balance");
             }
 
             const data = await response.json();
@@ -316,7 +377,7 @@ export class HederaService {
                 tokens: data.balance?.tokens || [],
             };
         } catch (error) {
-            console.error('Failed to get account balance:', error);
+            console.error("Failed to get account balance:", error);
             throw parseHederaError(error);
         }
     }
@@ -331,12 +392,12 @@ export class HederaService {
             const response = await fetch(`${mirrorNodeUrl}/api/v1/tokens/${tokenId}`);
 
             if (!response.ok) {
-                throw new Error('Failed to fetch token info');
+                throw new Error("Failed to fetch token info");
             }
 
             return await response.json();
         } catch (error) {
-            console.error('Failed to get token info:', error);
+            console.error("Failed to get token info:", error);
             throw parseHederaError(error);
         }
     }

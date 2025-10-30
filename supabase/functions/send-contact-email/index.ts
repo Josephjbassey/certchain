@@ -54,8 +54,8 @@ serve(async (req) => {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${RESEND_API_KEY}` },
           body: JSON.stringify({
-            from: "CertChain Contact <noreply@certchain.app>",
-            to: ["support@certchain.app"],
+            from: "CertChain Support <support@mail.certchain.app>",
+            to: ["support@mail.certchain.app"],
             reply_to: email,
             subject: `Contact Form: ${subject}`,
             html: `<h2>New Contact Form</h2><p><b>From:</b> ${name} (${email})</p><p><b>Subject:</b> ${subject}</p><p><b>Message:</b></p><p>${message}</p>`

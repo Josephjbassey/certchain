@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { useRoleBasedNavigation } from "@/hooks/useRoleBasedNavigation";
 import { useActivityLog, ActivityActions } from "@/hooks/useActivityLog";
 import { supabase } from "@/integrations/supabase/client";
+import { hederaService } from "@/lib/hedera/service";
 
 const IssueCertificate = () => {
   const navigate = useNavigate();
@@ -68,42 +69,24 @@ const IssueCertificate = () => {
 
       // Step 1: Upload metadata to IPFS via Pinata
       toast.info("Uploading certificate metadata to IPFS...");
-      const { data: pinataResponse, error: pinataError } = await supabase.functions.invoke(
-        'pinata-upload',
-        {
-          body: {
-            type: 'metadata',
-            certificateData,
-          }
-        }
-      );
+      const pinataResponse = await hederaService.uploadToIPFS({
+        type: 'metadata',
+        certificateData,
+      });
 
-      if (pinataError || !pinataResponse?.IpfsHash) {
-        throw new Error(pinataError?.message || 'Failed to upload to IPFS');
-      }
-
-      const ipfsCid = pinataResponse.IpfsHash;
+      const ipfsCid = pinataResponse.ipfsHash;
       toast.success(`Metadata uploaded to IPFS: ${ipfsCid}`);
 
       // Step 2: Mint NFT on Hedera
       toast.info("Minting certificate NFT on Hedera...");
-      const { data: mintResponse, error: mintError } = await supabase.functions.invoke(
-        'hedera-mint-certificate',
-        {
-          body: {
-            recipientAccountId: null, // Will be set when claimed
-            institutionId: profile.institution_id, // For validation
-            institutionTokenId: institution.collection_token_id,
-            metadataCid: ipfsCid,
-            certificateData,
-            network: 'testnet', // Change to 'mainnet' for production
-          }
-        }
-      );
-
-      if (mintError || !mintResponse?.success) {
-        throw new Error(mintError?.message || mintResponse?.error || 'Failed to mint certificate');
-      }
+      const mintResponse = await hederaService.mintCertificate({
+        recipientAccountId: null, // Will be set when claimed
+        institutionId: profile.institution_id, // For validation
+        institutionTokenId: institution.collection_token_id,
+        metadataCid: ipfsCid,
+        certificateData,
+        network: 'testnet', // Change to 'mainnet' for production
+      });
 
       toast.success(`Certificate minted! Serial: ${mintResponse.serialNumber}`);
 
@@ -174,21 +157,19 @@ const IssueCertificate = () => {
       // Step 6: Log to HCS for audit trail
       toast.info("Logging to Hedera Consensus Service...");
       try {
-        await supabase.functions.invoke('hedera-hcs-log', {
-          body: {
-            topicId: '0.0.7115183', // Your HCS topic
-            messageType: 'certificate_issued',
-            message: {
-              certificateId,
-              tokenId: mintResponse.tokenId,
-              serialNumber: mintResponse.serialNumber,
-              institutionId: profile.institution_id,
-              recipientEmail: formData.recipientEmail,
-              courseName: formData.courseName,
-              issuedAt: new Date().toISOString(),
-            },
-            network: 'testnet',
-          }
+        await hederaService.logToHCS({
+          topicId: '0.0.7115183', // Your HCS topic
+          messageType: 'certificate_issued',
+          message: {
+            certificateId,
+            tokenId: mintResponse.tokenId,
+            serialNumber: mintResponse.serialNumber,
+            institutionId: profile.institution_id,
+            recipientEmail: formData.recipientEmail,
+            courseName: formData.courseName,
+            issuedAt: new Date().toISOString(),
+          },
+          network: 'testnet',
         });
         toast.success("Event logged to HCS!");
       } catch (hcsError) {

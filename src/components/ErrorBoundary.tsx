@@ -132,8 +132,8 @@ export class ErrorBoundary extends Component<Props, State> {
 
                             <p className="text-sm text-muted-foreground text-center">
                                 If this problem persists, please contact support at{' '}
-                                <a href="mailto:support@certchain.io" className="text-primary hover:underline">
-                                    support@certchain.io
+                                <a href="mailto:support@mail.certchain.app" className="text-primary hover:underline">
+                                    support@mail.certchain.app
                                 </a>
                             </p>
                         </CardContent>

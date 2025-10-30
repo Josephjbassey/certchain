@@ -34,7 +34,7 @@ const Contact = () => {
 
       if (error) {
         console.error('Error sending contact email:', error);
-        toast.error("Failed to send message. Please try again or email us directly at support@certchain.app");
+        toast.error("Failed to send message. Please try again or email us directly at support@mail.certchain.app");
         return;
       }
 
@@ -42,7 +42,7 @@ const Contact = () => {
       setFormData({ name: "", email: "", subject: "", message: "" });
     } catch (error) {
       console.error('Error submitting contact form:', error);
-      toast.error("Failed to send message. Please try again or email us directly at support@certchain.app");
+      toast.error("Failed to send message. Please try again or email us directly at support@mail.certchain.app");
     } finally {
       setIsSubmitting(false);
     }
@@ -123,8 +123,8 @@ const Contact = () => {
                   <div>
                     <h3 className="font-semibold mb-1">Email</h3>
                     <p className="text-sm text-muted-foreground mb-2">Our team is here to help</p>
-                    <a href="mailto:support@certchain.app" className="text-primary hover:underline">
-                      support@certchain.app
+                    <a href="mailto:support@mail.certchain.app" className="text-primary hover:underline">
+                      support@mail.certchain.app
                     </a>
                   </div>
                 </div>

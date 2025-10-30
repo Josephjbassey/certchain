@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Link, useNavigate } from "react-router-dom";
 import { useRoleBasedNavigation } from "@/hooks/useRoleBasedNavigation";
+import { hederaService } from "@/lib/hedera/service";
 
 const DidSetup = () => {
   const { user } = useAuth();
@@ -56,47 +57,79 @@ const DidSetup = () => {
       return;
     }
 
+    // Validate Hedera account ID format
+    if (!/^\d+\.\d+\.\d+$/.test(hederaAccountId)) {
+      toast.error("Invalid Hedera Account ID format. Expected format: 0.0.xxxxx");
+      return;
+    }
+
     setLoading(true);
     try {
+      toast.info("Creating your DID on Hedera blockchain...");
 
       // Call Hedera edge function to create DID
-      const { data, error } = await supabase.functions.invoke("hedera-create-did", {
-        body: {
-          userAccountId: hederaAccountId,
-          network: 'testnet' // Change to 'mainnet' for production
-        }
+      const data = await hederaService.createDID({
+        userAccountId: hederaAccountId,
+        network: 'testnet', // Change to 'mainnet' for production
       });
 
-      if (error) throw error;
+      console.log('DID creation response:', { data });
 
-      if (data?.success) {
-        setDid(data.did);
+      // Verify DID was created
+      if (!data.did) {
+        throw new Error('DID was not returned in the response');
+      }
 
-        // Update user profile with DID and Hedera account
-        const { error: updateError } = await supabase
-          .from('profiles')
-          .update({
-            did: data.did,
-            hedera_account_id: hederaAccountId
-          })
-          .eq('id', user.id);
+      setDid(data.did);
 
-        if (updateError) {
-          console.error('Error updating profile:', updateError);
-          toast.error("DID created but failed to update profile");
-        } else {
-          toast.success("DID created successfully!");
-        }
+      // Update user profile with DID and Hedera account
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({
+          did: data.did,
+          hedera_account_id: hederaAccountId
+        })
+        .eq('id', user.id);
+
+      if (updateError) {
+        console.error('Error updating profile:', updateError);
+        toast.warning("DID created but failed to update profile. Please contact support.");
       } else {
-        throw new Error(data?.error || 'Failed to create DID');
+        toast.success("DID created successfully!");
+
+        // Log additional info if available
+        if ((data as any).didDocument) {
+          console.log('DID Document:', (data as any).didDocument);
+        }
+        if ((data as any).topicId) {
+          console.log('HCS Topic ID:', (data as any).topicId);
+        }
+        if ((data as any).explorerUrl) {
+          console.log('Explorer URL:', (data as any).explorerUrl);
+        }
       }
     } catch (error: any) {
       console.error("Error creating DID:", error);
-      toast.error(error.message || "Failed to create DID");
+
+      // Provide user-friendly error messages
+      let errorMessage = "Failed to create DID";
+
+      if (error.message?.includes('Invalid Hedera account')) {
+        errorMessage = "Invalid Hedera Account ID. Please verify your account ID is correct.";
+      } else if (error.message?.includes('credentials not configured')) {
+        errorMessage = "Hedera service is not properly configured. Please contact support.";
+      } else if (error.message?.includes('Network')) {
+        errorMessage = "Network error. Please check your connection and try again.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
   };
+
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
