@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useHederaWallet } from "@/contexts/HederaWalletContext";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,6 +32,7 @@ interface ConnectedWallet {
 const Wallets = () => {
   const [disconnectWalletId, setDisconnectWalletId] = useState<string | null>(null);
   const queryClient = useQueryClient();
+  const { connect, accountId: connectedAccountId, isConnected: walletConnected } = useHederaWallet();
 
   const { data: wallets, isLoading } = useQuery({
     queryKey: ['connected-wallets'],
@@ -98,111 +100,47 @@ const Wallets = () => {
 
   const handleConnectWallet = async () => {
     try {
-      // Check if HashPack extension is installed
-      const hashconnect = (window as any).hashconnect;
-      
-      if (hashconnect) {
-        toast.info("Connecting to HashPack...");
-        
-        // Request pairing with HashPack
-        const appMetadata = {
-          name: "CertChain",
-          description: "Blockchain Certificate Management Platform",
-          icons: [window.location.origin + "/logo.png"],
-          url: window.location.origin
-        };
+      toast.info("Opening wallet connection modal...");
 
-        // Initialize connection
-        await hashconnect.init(appMetadata);
-        
-        // Request pairing
-        const pairingData = await hashconnect.connectToLocalWallet();
-        
-        if (pairingData && pairingData.accountIds && pairingData.accountIds.length > 0) {
-          const accountId = pairingData.accountIds[0];
-          
-          // Save to database
-          const { data: { user } } = await supabase.auth.getUser();
-          if (user) {
-            const { error } = await supabase
-              .from('user_wallets')
-              .insert({
-                user_id: user.id,
-                account_id: accountId,
-                wallet_type: 'hashpack',
-                is_primary: wallets?.length === 0 // Make first wallet primary
-              });
-            
-            if (error) {
-              // Check if wallet already connected
-              if (error.code === '23505') {
-                toast.error("This wallet is already connected");
-                return;
-              }
-              throw error;
+      // Use the DAppConnector to open the modal
+      await connect();
+
+      // After connection, save wallet to database
+      if (connectedAccountId && walletConnected) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { error } = await supabase
+            .from('user_wallets')
+            .insert({
+              user_id: user.id,
+              account_id: connectedAccountId,
+              wallet_type: 'hedera', // Generic type since DAppConnector supports multiple wallets
+              is_primary: wallets?.length === 0
+            });
+
+          if (error) {
+            if (error.code === '23505') {
+              toast.error("This wallet is already connected");
+              return;
             }
-            
-            queryClient.invalidateQueries({ queryKey: ['connected-wallets'] });
-            toast.success(`HashPack wallet connected: ${accountId}`);
+            throw error;
           }
-        } else {
-          toast.error("No accounts found in HashPack wallet");
+
+          queryClient.invalidateQueries({ queryKey: ['connected-wallets'] });
+          toast.success(`Wallet connected: ${connectedAccountId}`);
         }
-      } else if ((window as any).bladeSdk) {
-        toast.info("Connecting to Blade wallet...");
-        const blade = (window as any).bladeSdk;
-        
-        // Initialize Blade
-        await blade.createSession();
-        const accountInfo = await blade.getAccountInfo();
-        
-        if (accountInfo && accountInfo.accountId) {
-          // Save to database
-          const { data: { user } } = await supabase.auth.getUser();
-          if (user) {
-            const { error } = await supabase
-              .from('user_wallets')
-              .insert({
-                user_id: user.id,
-                account_id: accountInfo.accountId,
-                wallet_type: 'blade',
-                is_primary: wallets?.length === 0
-              });
-            
-            if (error) {
-              if (error.code === '23505') {
-                toast.error("This wallet is already connected");
-                return;
-              }
-              throw error;
-            }
-            
-            queryClient.invalidateQueries({ queryKey: ['connected-wallets'] });
-            toast.success(`Blade wallet connected: ${accountInfo.accountId}`);
-          }
-        }
-      } else {
-        // No wallet extension detected - show instructions
-        toast.error("No Hedera wallet detected", {
-          description: "Please install HashPack or Blade wallet extension first",
-          action: {
-            label: "Get HashPack",
-            onClick: () => window.open("https://www.hashpack.app/download", "_blank")
-          }
-        });
       }
     } catch (error: any) {
       console.error("Wallet connection error:", error);
-      
-      // Provide more specific error messages
+
       let errorMessage = error.message || "Please try again";
-      
-      if (error.message?.includes("User rejected")) {
+
+      if (error.message?.includes("User rejected") || error.message?.includes("user rejected")) {
         errorMessage = "Connection cancelled by user";
       } else if (error.message?.includes("already connected")) {
         errorMessage = "Wallet is already connected";
       }
-      
+
       toast.error("Failed to connect wallet", {
         description: errorMessage
       });
