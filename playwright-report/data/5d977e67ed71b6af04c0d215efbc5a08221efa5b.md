@@ -1,0 +1,44 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - region "Notifications (F8)":
+      - list
+    - region "Notifications alt+T"
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - link "CertChain" [ref=e6] [cursor=pointer]:
+          - /url: /
+          - img "CertChain" [ref=e7]
+        - heading "Welcome Back" [level=1] [ref=e8]
+        - paragraph [ref=e9]: Sign in to your CertChain account
+      - generic [ref=e11]:
+        - generic [ref=e12]:
+          - text: Email
+          - generic [ref=e13]:
+            - img [ref=e14]
+            - textbox "your@email.com" [ref=e17]
+        - generic [ref=e18]:
+          - text: Password
+          - generic [ref=e19]:
+            - img [ref=e20]
+            - textbox "Enter your password" [ref=e23]
+        - generic [ref=e24]:
+          - generic [ref=e25] [cursor=pointer]:
+            - checkbox "Remember me" [ref=e26]
+            - generic [ref=e27]: Remember me
+          - link "Forgot password?" [ref=e28] [cursor=pointer]:
+            - /url: /auth/forgot-password
+        - button "Sign In" [ref=e29] [cursor=pointer]:
+          - img
+          - generic [ref=e30]: Sign In
+        - generic [ref=e35]: Or continue with
+        - button "Connect Hedera Wallet" [ref=e36] [cursor=pointer]
+      - paragraph [ref=e37]:
+        - text: Don't have an account?
+        - link "Sign up" [ref=e38] [cursor=pointer]:
+          - /url: /auth/signup
+  - generic:
+    - alertdialog
+```

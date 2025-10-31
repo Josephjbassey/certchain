@@ -1,0 +1,233 @@
+{
+  "tech_stack": [
+    "TypeScript",
+    "React 18.3.1",
+    "Vite 5.4.19",
+    "Supabase (PostgreSQL + Auth + Edge Functions)",
+    "Hedera Hashgraph (HTS + HCS + SDK v2.75.0)",
+    "@hashgraph/hedera-wallet-connect v2.0.3",
+    "WalletConnect Modal v2.7.0",
+    "TailwindCSS",
+    "Radix UI Components",
+    "React Query (TanStack Query)",
+    "React Router DOM",
+    "Zod Validation",
+    "IPFS/Pinata",
+    "Deno (Edge Functions)",
+    "Sonner (Toast Notifications)"
+  ],
+  "features": [
+    {
+      "name": "Hedera Wallet Integration",
+      "description": "DApp connector for Hedera wallet connection, transaction signing, and account management using official DAppConnector",
+      "files": [
+        "src/contexts/HederaWalletContext.tsx",
+        "src/lib/hedera-utils.ts",
+        "src/lib/hedera/service.ts",
+        "src/lib/hedera/config.ts",
+        "src/lib/hedera-dapp-transactions.ts",
+        "src/lib/hedera-transactions.ts"
+      ]
+    },
+    {
+      "name": "Certificate Management",
+      "description": "Core certificate issuance, verification, and claiming functionality with blockchain anchoring",
+      "files": [
+        "src/pages/dashboard/IssueCertificate.tsx",
+        "src/pages/Verify.tsx",
+        "src/pages/Claim.tsx",
+        "src/pages/VerifyDetail.tsx",
+        "src/hooks/useCertificates.ts",
+        "src/examples/hedera-supabase-integration.ts"
+      ]
+    },
+    {
+      "name": "Authentication & Authorization",
+      "description": "Supabase-based authentication with role-based access control (candidate, instructor, institution_admin, super_admin)",
+      "files": [
+        "src/lib/auth-context.tsx",
+        "src/components/ProtectedRoute.tsx",
+        "src/hooks/useUserRole.ts",
+        "src/pages/auth/Login.tsx",
+        "src/pages/auth/Signup.tsx"
+      ]
+    },
+    {
+      "name": "Role-Based Dashboards",
+      "description": "Separate dashboard views for different user roles with role-specific navigation and features",
+      "files": [
+        "src/pages/Dashboard.tsx",
+        "src/pages/dashboard/CandidateDashboard.tsx",
+        "src/pages/dashboard/InstructorDashboard.tsx",
+        "src/pages/dashboard/InstitutionDashboard.tsx",
+        "src/pages/admin/AdminDashboard.tsx",
+        "src/components/DashboardLayout.tsx",
+        "src/components/DashboardSidebar.tsx",
+        "src/hooks/useRoleBasedNavigation.ts"
+      ]
+    },
+    {
+      "name": "Supabase Utilities",
+      "description": "Resilient Supabase operations with retry logic, error handling, caching, and batch operations",
+      "files": [
+        "src/lib/supabase-utils.ts",
+        "src/integrations/supabase/client.ts",
+        "src/integrations/supabase/types.ts"
+      ]
+    },
+    {
+      "name": "Hedera Consensus Service (HCS)",
+      "description": "Event streaming and message submission to Hedera Consensus Service topics for immutable audit logs",
+      "files": [
+        "src/lib/hcs/event-stream.ts",
+        "src/lib/hedera-dapp-transactions.ts"
+      ]
+    },
+    {
+      "name": "IPFS Storage",
+      "description": "Decentralized storage for certificate metadata using Pinata IPFS service with resilient upload and retrieval",
+      "files": [
+        "src/lib/ipfs/service.ts",
+        "src/lib/hedera/config.ts"
+      ]
+    },
+    {
+      "name": "User Management",
+      "description": "Admin tools for managing users, institutions, and staff with invitation system",
+      "files": [
+        "src/pages/admin/UserManagement.tsx",
+        "src/pages/admin/InstitutionManagement.tsx",
+        "src/pages/admin/InvitationManagement.tsx",
+        "src/hooks/useUsers.ts",
+        "src/hooks/useInstitutionStaff.ts"
+      ]
+    },
+    {
+      "name": "Activity Logging",
+      "description": "Comprehensive activity tracking and audit logs for all user actions and system events",
+      "files": [
+        "src/hooks/useActivityLog.ts",
+        "src/lib/logging/logger.ts",
+        "src/pages/admin/ActivityLogs.tsx"
+      ]
+    },
+    {
+      "name": "Profile Management",
+      "description": "User profile viewing and editing with Hedera DID setup and wallet connections",
+      "files": [
+        "src/pages/Profile.tsx",
+        "src/pages/DidSetup.tsx",
+        "src/pages/dashboard/ProfileSettings.tsx"
+      ]
+    },
+    {
+      "name": "Public Pages",
+      "description": "Public-facing landing page, about, pricing, docs, and contact pages with SEO optimization",
+      "files": [
+        "src/pages/Index.tsx",
+        "src/pages/About.tsx",
+        "src/pages/Pricing.tsx",
+        "src/pages/Docs.tsx",
+        "src/pages/Contact.tsx",
+        "src/components/PublicHeader.tsx"
+      ]
+    },
+    {
+      "name": "Edge Functions (Backend)",
+      "description": "Deno-based Supabase Edge Functions for server-side operations including certificate minting, claiming, and verification",
+      "files": [
+        "supabase/functions/hedera-mint-certificate/index.ts",
+        "supabase/functions/claim-certificate/index.ts",
+        "supabase/functions/verify-certificate/index.ts",
+        "supabase/functions/pinata-upload/index.ts",
+        "supabase/functions/create-hedera-did/index.ts",
+        "supabase/functions/_shared/error-handler.ts",
+        "supabase/functions/_shared/validators.ts",
+        "supabase/functions/_shared/logger.ts",
+        "supabase/functions/_shared/supabase-auth.ts"
+      ]
+    },
+    {
+      "name": "Theme System",
+      "description": "Dark/light mode theme provider with system preference detection",
+      "files": [
+        "src/lib/theme-provider.tsx",
+        "src/components/ThemeToggle.tsx"
+      ]
+    },
+    {
+      "name": "UI Components Library",
+      "description": "Radix UI-based component library with custom styling and accessibility features",
+      "files": [
+        "src/components/ui/button.tsx",
+        "src/components/ui/card.tsx",
+        "src/components/ui/dialog.tsx",
+        "src/components/ui/form.tsx",
+        "src/components/ui/input.tsx",
+        "src/components/ui/table.tsx",
+        "src/components/ui/tabs.tsx",
+        "src/components/ui/toast.tsx",
+        "src/components/ui/dropdown-menu.tsx",
+        "src/components/ui/select.tsx",
+        "src/components/ui/badge.tsx",
+        "src/components/ui/avatar.tsx"
+      ]
+    },
+    {
+      "name": "Error Handling",
+      "description": "Comprehensive error boundaries, custom error classes, and standardized error responses",
+      "files": [
+        "src/components/ErrorBoundary.tsx",
+        "src/lib/hedera/errors.ts",
+        "src/lib/supabase-utils.ts",
+        "supabase/functions/_shared/error-handler.ts"
+      ]
+    },
+    {
+      "name": "QR Code Verification",
+      "description": "QR code scanning and generation for certificate verification with mobile-friendly interface",
+      "files": [
+        "src/pages/VerifyScan.tsx",
+        "src/pages/Verify.tsx",
+        "src/pages/VerifyDetail.tsx"
+      ]
+    },
+    {
+      "name": "Search & Filtering",
+      "description": "Advanced search and filtering capabilities for certificates, users, and institutions",
+      "files": [
+        "src/pages/admin/UserManagement.tsx",
+        "src/pages/dashboard/CertificateList.tsx",
+        "src/hooks/useUsers.ts"
+      ]
+    },
+    {
+      "name": "Analytics Dashboard",
+      "description": "Statistics and analytics visualization for certificate issuance, verification, and user activity",
+      "files": [
+        "src/pages/dashboard/InstitutionDashboard.tsx",
+        "src/pages/admin/AdminDashboard.tsx",
+        "src/hooks/useCertificateStats.ts"
+      ]
+    },
+    {
+      "name": "Responsive Design",
+      "description": "Mobile-first responsive design with optimized layouts for all screen sizes",
+      "files": [
+        "src/hooks/use-mobile.tsx",
+        "tailwind.config.ts",
+        "src/index.css"
+      ]
+    },
+    {
+      "name": "Form Validation",
+      "description": "Zod-based form validation with React Hook Form integration for all data entry",
+      "files": [
+        "src/pages/dashboard/IssueCertificate.tsx",
+        "src/pages/auth/Login.tsx",
+        "src/pages/auth/Signup.tsx",
+        "supabase/functions/_shared/validators.ts"
+      ]
+    }
+  ]
+}

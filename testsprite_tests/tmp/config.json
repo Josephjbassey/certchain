@@ -1,7 +1,11 @@
 {
-  "status": "init",
+  "status": "ready_for_test_generation",
   "scope": "codebase",
   "type": "frontend",
   "localEndpoint": "http://localhost:8080/",
-  "serverPort": 56380
+  "serverPort": 56380,
+  "projectName": "cert-chain-aura",
+  "projectPath": "/workspaces/cert-chain-aura-25699-25703-68440-15653-34605",
+  "testIds": [],
+  "additionalInstruction": "Test all critical user flows: public pages, authentication, verification, dashboards, wallet connection, certificate issuance/claiming, navigation, responsive design, error handling"
 }

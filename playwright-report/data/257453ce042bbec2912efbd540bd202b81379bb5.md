@@ -1,0 +1,184 @@
+# Page snapshot
+
+```yaml
+- generic:
+  - generic:
+    - list
+    - region "Notifications alt+T"
+    - generic:
+      - banner:
+        - generic:
+          - link:
+            - /url: /
+            - img
+          - navigation:
+            - link:
+              - /url: /verify
+              - text: Verify
+            - link:
+              - /url: /pricing
+              - text: Pricing
+            - link:
+              - /url: /docs
+              - text: Docs
+            - link:
+              - /url: /about
+              - text: About
+          - generic:
+            - button [expanded]:
+              - img
+              - generic: Toggle theme
+            - link:
+              - /url: /auth/login
+              - button: Sign In
+            - link:
+              - /url: /auth/signup
+              - button: Get Started
+      - generic:
+        - generic:
+          - generic:
+            - generic:
+              - img
+              - generic: Powered by Hedera Hashgraph
+            - heading [level=1]:
+              - text: Decentralized Certificate
+              - generic: Verification Platform
+            - paragraph: Issue, verify, and manage tamper-proof certificates on Hedera blockchain. Instant verification, permanent records, and complete transparency.
+            - generic:
+              - link:
+                - /url: /auth/signup
+                - button:
+                  - text: Start Issuing Certificates
+                  - img
+              - link:
+                - /url: /verify
+                - button: Verify a Certificate
+            - generic:
+              - generic:
+                - img
+                - generic: Instant Verification
+              - generic:
+                - img
+                - generic: Immutable Records
+              - generic:
+                - img
+                - generic: Global Access
+      - generic:
+        - generic:
+          - generic:
+            - heading [level=2]: Why Choose CertChain?
+            - paragraph: Built on Hedera's enterprise-grade distributed ledger technology for unmatched security and speed.
+          - generic:
+            - generic:
+              - generic:
+                - img
+              - heading [level=3]: Tamper-Proof
+              - paragraph: Every certificate is cryptographically signed and stored on Hedera's immutable ledger. Impossible to forge or alter.
+            - generic:
+              - generic:
+                - img
+              - heading [level=3]: Instant Verification
+              - paragraph: Verify certificates in seconds with QR codes or certificate IDs. Real-time blockchain validation.
+            - generic:
+              - generic:
+                - img
+              - heading [level=3]: DID Integration
+              - paragraph: Decentralized identifiers (DIDs) ensure complete ownership and portability of your credentials.
+      - generic:
+        - generic:
+          - generic:
+            - heading [level=2]: How It Works
+            - paragraph: Simple, secure, and scalable certificate management
+          - generic:
+            - generic:
+              - generic: "1"
+              - heading [level=3]: Create Account
+              - paragraph: Sign up and connect your Hedera wallet
+            - generic:
+              - generic: "2"
+              - heading [level=3]: Issue Certificates
+              - paragraph: Upload recipient data and generate NFT certificates
+            - generic:
+              - generic: "3"
+              - heading [level=3]: Store on IPFS
+              - paragraph: Certificate metadata stored on decentralized IPFS
+            - generic:
+              - generic: "4"
+              - heading [level=3]: Verify Anywhere
+              - paragraph: Recipients share verifiable certificates globally
+      - generic:
+        - generic:
+          - generic:
+            - heading [level=2]: Ready to Transform Your Certification Process?
+            - paragraph: Join institutions worldwide using blockchain for credential verification
+            - link:
+              - /url: /auth/signup
+              - button:
+                - text: Get Started for Free
+                - img
+      - contentinfo:
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - link:
+                  - /url: /
+                  - img
+              - paragraph: Decentralized certificate verification powered by Hedera.
+            - generic:
+              - heading [level=4]: Product
+              - list:
+                - listitem:
+                  - link:
+                    - /url: /verify
+                    - text: Verify
+                - listitem:
+                  - link:
+                    - /url: /pricing
+                    - text: Pricing
+                - listitem:
+                  - link:
+                    - /url: /docs
+                    - text: Documentation
+            - generic:
+              - heading [level=4]: Company
+              - list:
+                - listitem:
+                  - link:
+                    - /url: /about
+                    - text: About
+                - listitem:
+                  - link:
+                    - /url: /contact
+                    - text: Contact
+                - listitem:
+                  - link:
+                    - /url: /terms-of-service
+                    - text: Terms of Service
+                - listitem:
+                  - link:
+                    - /url: /privacy-policy
+                    - text: Privacy Policy
+            - generic:
+              - heading [level=4]: Resources
+              - list:
+                - listitem:
+                  - link:
+                    - /url: https://hedera.com
+                    - text: Hedera Network
+                - listitem:
+                  - link:
+                    - /url: https://docs.hedera.com
+                    - text: Hedera Docs
+                - listitem:
+                  - link:
+                    - /url: /docs
+                    - text: API Reference
+          - generic:
+            - paragraph: © 2025 CertChain. Built on Hedera. All rights reserved.
+  - alertdialog
+  - menu "Toggle theme" [active] [ref=e1]:
+    - menuitem "Light" [ref=e2]
+    - menuitem "Dark" [ref=e3]
+    - menuitem "System" [ref=e4]
+```
