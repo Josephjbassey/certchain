@@ -5,6 +5,7 @@ import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  base: '/', // Explicit base path for Cloudflare Pages
   server: {
     host: "::",
     port: 8080,
@@ -19,6 +20,9 @@ export default defineConfig(({ mode }) => ({
     include: ["@hashgraph/hedera-wallet-connect"],
   },
   build: {
+    outDir: 'dist',
+    sourcemap: mode === 'production' ? false : true,
+    minify: mode === 'production' ? 'esbuild' : false,
     commonjsOptions: {
       ignoreTryCatch: false,
     },
