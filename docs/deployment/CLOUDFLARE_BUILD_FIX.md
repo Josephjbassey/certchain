@@ -13,6 +13,7 @@ Cloudflare Pages build was failing with:
 The `@reown/appkit` and `@reown/walletkit` packages are peer dependencies of `@hashgraph/hedera-wallet-connect`. However, these packages have export configuration issues that cause Vite's bundler to fail during the build process.
 
 Specifically:
+
 - `@reown/appkit` package.json doesn't export an `./adapters` path
 - Vite's commonjs resolver tries to process these packages
 - The resolver fails when it can't find the expected exports
@@ -26,7 +27,7 @@ Exclude `@reown` packages from Vite's optimization process:
 export default defineConfig(({ mode }) => ({
   // ... other config
   optimizeDeps: {
-    exclude: ['@reown/appkit', '@reown/walletkit'],
+    exclude: ["@reown/appkit", "@reown/walletkit"],
   },
   build: {
     commonjsOptions: {
@@ -55,18 +56,23 @@ After applying this fix:
 ## Alternative Solutions Considered
 
 ### Option 1: Remove @reown Packages ❌
+
 **Rejected**: They are peer dependencies of `@hashgraph/hedera-wallet-connect`
 
 ### Option 2: Update @reown Packages ❌
+
 **Rejected**: Already using latest versions (^1.7.16, ^1.2.8)
 
 ### Option 3: Vite Alias ❌
+
 **Rejected**: Doesn't solve the export resolution issue
 
 ### Option 4: External Configuration ❌
+
 **Rejected**: Breaks the build completely as dependencies aren't available
 
 ### Option 5: Optimize Deps Exclude ✅
+
 **Selected**: Clean solution that works with the package structure
 
 ## Impact
