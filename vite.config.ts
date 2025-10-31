@@ -13,17 +13,24 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
-      // Prevent resolution of problematic @reown package paths
-      "@reown/appkit/adapters": path.resolve(__dirname, "./src/lib/noop.ts"),
-      "@reown/walletkit/adapters": path.resolve(__dirname, "./src/lib/noop.ts"),
     },
   },
   optimizeDeps: {
-    exclude: ["@reown/appkit", "@reown/walletkit"],
+    include: ["@hashgraph/hedera-wallet-connect"],
   },
   build: {
     commonjsOptions: {
       ignoreTryCatch: false,
+    },
+    rollupOptions: {
+      external: [
+        /^@reown\//,
+      ],
+      output: {
+        manualChunks: {
+          'hedera-wallet': ['@hashgraph/hedera-wallet-connect'],
+        },
+      },
     },
   },
   test: {
