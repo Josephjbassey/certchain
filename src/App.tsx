@@ -1,113 +1,223 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { ThemeProvider } from "@/lib/theme-provider";
-import { AuthProvider } from "@/lib/auth-context";
-import { HederaWalletProvider } from "@/contexts/HederaWalletContext";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { Toaster } from "@/components/ui/toaster";import { Toaster } from "@/components/ui/toaster";
+
+import { Toaster as Sonner } from "@/components/ui/sonner";import { Toaster as Sonner } from "@/components/ui/sonner";
+
+import { TooltipProvider } from "@/components/ui/tooltip";import { TooltipProvider } from "@/components/ui/tooltip";
+
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+import { BrowserRouter, Routes, Route } from "react-router-dom";import { BrowserRouter, Routes, Route } from "react-router-dom";
+
+import { ThemeProvider } from "@/lib/theme-provider";import { ThemeProvider } from "@/lib/theme-provider";
+
+import { HederaWalletProvider } from "@/contexts/HederaWalletContext";import { AuthProvider } from "@/lib/auth-context";
+
+import { ErrorBoundary } from "@/components/ErrorBoundary";import { HederaWalletProvider } from "@/contexts/HederaWalletContext";
+
+import { WalletProtectedRoute } from "@/components/WalletProtectedRoute";import { ErrorBoundary } from "@/components/ErrorBoundary";
+
 import { ProtectedRoute } from "@/components/ProtectedRoute";
-import Index from "./pages/Index";
-import Verify from "./pages/Verify";
-import VerifyDetail from "./pages/VerifyDetail";
-import VerifyScan from "./pages/VerifyScan";
-import VerifyStatus from "./pages/VerifyStatus";
-import Pricing from "./pages/Pricing";
-import About from "./pages/About";
-import Docs from "./pages/Docs";
-import Contact from "./pages/Contact";
-import Login from "./pages/auth/Login";
-import Signup from "./pages/auth/Signup";
-import ForgotPassword from "./pages/auth/ForgotPassword";
-import ResetPassword from "./pages/auth/ResetPassword";
+
+// Public Pagesimport Index from "./pages/Index";
+
+import Index from "./pages/Index";import Verify from "./pages/Verify";
+
+import Verify from "./pages/Verify";import VerifyDetail from "./pages/VerifyDetail";
+
+import VerifyDetail from "./pages/VerifyDetail";import VerifyScan from "./pages/VerifyScan";
+
+import VerifyScan from "./pages/VerifyScan";import VerifyStatus from "./pages/VerifyStatus";
+
+import VerifyStatus from "./pages/VerifyStatus";import Pricing from "./pages/Pricing";
+
+import Pricing from "./pages/Pricing";import About from "./pages/About";
+
+import About from "./pages/About";import Docs from "./pages/Docs";
+
+import Docs from "./pages/Docs";import Contact from "./pages/Contact";
+
+import Contact from "./pages/Contact";import Login from "./pages/auth/Login";
+
+import TermsOfService from "./pages/TermsOfService";import Signup from "./pages/auth/Signup";
+
+import PrivacyPolicy from "./pages/PrivacyPolicy";import ForgotPassword from "./pages/auth/ForgotPassword";
+
+import NotFound from "./pages/NotFound";import ResetPassword from "./pages/auth/ResetPassword";
+
 import VerifyEmail from "./pages/auth/VerifyEmail";
-import TwoFactor from "./pages/auth/TwoFactor";
-import Dashboard from "./pages/Dashboard";
-import Certificates from "./pages/dashboard/Certificates";
-import CertificateDetail from "./pages/dashboard/CertificateDetail";
-import IssueCertificate from "./pages/dashboard/IssueCertificate";
-import BatchIssue from "./pages/dashboard/BatchIssue";
+
+// Wallet-Protected Pagesimport TwoFactor from "./pages/auth/TwoFactor";
+
+import Issue from "./pages/Issue";import Dashboard from "./pages/Dashboard";
+
+import MyCertificates from "./pages/MyCertificates";import Certificates from "./pages/dashboard/Certificates";
+
+import MyCertificateDetail from "./pages/MyCertificateDetail";import CertificateDetail from "./pages/dashboard/CertificateDetail";
+
+import Profile from "./pages/Profile";import IssueCertificate from "./pages/dashboard/IssueCertificate";
+
+import Credentials from "./pages/Credentials";import BatchIssue from "./pages/dashboard/BatchIssue";
+
 import BatchHistory from "./pages/dashboard/BatchHistory";
-import Recipients from "./pages/dashboard/Recipients";
+
+const queryClient = new QueryClient();import Recipients from "./pages/dashboard/Recipients";
+
 import Templates from "./pages/dashboard/Templates";
-import Institution from "./pages/dashboard/Institution";
-import Issuers from "./pages/dashboard/Issuers";
-import Analytics from "./pages/dashboard/Analytics";
-import Billing from "./pages/dashboard/Billing";
-import WebhookLogs from "./pages/dashboard/WebhookLogs";
-import MyCertificates from "./pages/dashboard/MyCertificates";
-import MyCertificateDetail from "./pages/dashboard/MyCertificateDetail";
-import CandidateDashboard from "./pages/dashboard/CandidateDashboard";
-import Profile from "./pages/Profile";
-import AccountSettings from "./pages/settings/AccountSettings";
-import NotificationSettings from "./pages/settings/NotificationSettings";
-import PrivacySettings from "./pages/settings/PrivacySettings";
-import SecuritySettings from "./pages/settings/SecuritySettings";
-import ApiKeys from "./pages/settings/ApiKeys";
-import Wallets from "./pages/settings/Wallets";
-import WebhooksSettings from "./pages/settings/WebhooksSettings";
-import Integrations from "./pages/settings/Integrations";
-import AdminLogs from "./pages/admin/AdminLogs";
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import UserManagement from "./pages/admin/UserManagement";
-import InstitutionManagement from "./pages/admin/InstitutionManagement";
-import SystemSettings from "./pages/admin/SystemSettings";
+
+const App = () => (import Institution from "./pages/dashboard/Institution";
+
+  <ErrorBoundary>import Issuers from "./pages/dashboard/Issuers";
+
+    <QueryClientProvider client={queryClient}>import Analytics from "./pages/dashboard/Analytics";
+
+      <ThemeProvider defaultTheme="system" storageKey="certchain-theme">import Billing from "./pages/dashboard/Billing";
+
+        <HederaWalletProvider>import WebhookLogs from "./pages/dashboard/WebhookLogs";
+
+          <TooltipProvider>import MyCertificates from "./pages/dashboard/MyCertificates";
+
+            <Toaster />import MyCertificateDetail from "./pages/dashboard/MyCertificateDetail";
+
+            <Sonner />import CandidateDashboard from "./pages/dashboard/CandidateDashboard";
+
+            <BrowserRouter>import Profile from "./pages/Profile";
+
+              <Routes>import AccountSettings from "./pages/settings/AccountSettings";
+
+                {/* ===== Public Routes (No Wallet Required) ===== */}import NotificationSettings from "./pages/settings/NotificationSettings";
+
+                <Route path="/" element={<Index />} />import PrivacySettings from "./pages/settings/PrivacySettings";
+
+                <Route path="/verify" element={<Verify />} />import SecuritySettings from "./pages/settings/SecuritySettings";
+
+                <Route path="/verify/:certificateId" element={<VerifyDetail />} />import ApiKeys from "./pages/settings/ApiKeys";
+
+                <Route path="/verify/scan" element={<VerifyScan />} />import Wallets from "./pages/settings/Wallets";
+
+                <Route path="/verify/status/:verificationId" element={<VerifyStatus />} />import WebhooksSettings from "./pages/settings/WebhooksSettings";
+
+                <Route path="/about" element={<About />} />import Integrations from "./pages/settings/Integrations";
+
+                <Route path="/pricing" element={<Pricing />} />import AdminLogs from "./pages/admin/AdminLogs";
+
+                <Route path="/docs" element={<Docs />} />import AdminDashboard from "./pages/admin/AdminDashboard";
+
+                <Route path="/contact" element={<Contact />} />import UserManagement from "./pages/admin/UserManagement";
+
+                <Route path="/terms-of-service" element={<TermsOfService />} />import InstitutionManagement from "./pages/admin/InstitutionManagement";
+
+                <Route path="/privacy-policy" element={<PrivacyPolicy />} />import SystemSettings from "./pages/admin/SystemSettings";
+
 import NotFound from "./pages/NotFound";
-import Claim from "./pages/Claim";
-import Credentials from "./pages/Credentials";
-import DidSetup from "./pages/DidSetup";
-import AiConsole from "./pages/AiConsole";
-import TermsOfService from "./pages/TermsOfService";
-import PrivacyPolicy from "./pages/PrivacyPolicy";
-import { DashboardLayout } from "./components/DashboardLayout";
 
-const queryClient = new QueryClient();
+                {/* ===== Wallet-Protected Routes ===== */}import Claim from "./pages/Claim";
 
-const App = () => (
-  <ErrorBoundary>
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="system" storageKey="certchain-theme">
-        <HederaWalletProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <AuthProvider>
-                <Routes>
-                  {/* Public Pages */}
-                  <Route path="/" element={<Index />} />
-                  <Route path="/verify" element={<Verify />} />
-                  <Route path="/verify/:certificateId" element={<VerifyDetail />} />
-                  <Route path="/verify/scan" element={<VerifyScan />} />
-                  <Route path="/verify/status/:verificationId" element={<VerifyStatus />} />
-                  <Route path="/pricing" element={<Pricing />} />
-                  <Route path="/about" element={<About />} />
-                  <Route path="/docs" element={<Docs />} />
-                  <Route path="/contact" element={<Contact />} />
-                  <Route path="/terms-of-service" element={<TermsOfService />} />
-                  <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                <Routeimport Credentials from "./pages/Credentials";
 
-                  {/* Auth Pages */}
-                  <Route path="/auth/login" element={<Login />} />
-                  <Route path="/auth/signup" element={<Signup />} />
-                  <Route path="/auth/forgot-password" element={<ForgotPassword />} />
-                  <Route path="/auth/reset-password/:token" element={<ResetPassword />} />
-                  <Route path="/auth/verify-email" element={<VerifyEmail />} />
-                  <Route path="/auth/2fa" element={<TwoFactor />} />
+                  path="/issue"import DidSetup from "./pages/DidSetup";
 
-                  {/* == Authenticated Routes == */}
+                  element={import AiConsole from "./pages/AiConsole";
 
-                  {/* Legacy /dashboard redirect - will redirect to role-specific dashboard */}
-                  <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                    <WalletProtectedRoute>import TermsOfService from "./pages/TermsOfService";
 
-                  {/* Candidate Dashboard Routes */}
-                  <Route element={<ProtectedRoute requiredRole="candidate"><DashboardLayout /></ProtectedRoute>}>
-                    <Route path="/candidate/dashboard" element={<CandidateDashboard />} />
-                    <Route path="/candidate/my-certificates" element={<MyCertificates />} />
-                    <Route path="/candidate/my-certificates/:id" element={<MyCertificateDetail />} />
+                      <Issue />import PrivacyPolicy from "./pages/PrivacyPolicy";
+
+                    </WalletProtectedRoute>import { DashboardLayout } from "./components/DashboardLayout";
+
+                  }
+
+                />const queryClient = new QueryClient();
+
+                <Route
+
+                  path="/my-certificates"const App = () => (
+
+                  element={  <ErrorBoundary>
+
+                    <WalletProtectedRoute>    <QueryClientProvider client={queryClient}>
+
+                      <MyCertificates />      <ThemeProvider defaultTheme="system" storageKey="certchain-theme">
+
+                    </WalletProtectedRoute>        <HederaWalletProvider>
+
+                  }          <TooltipProvider>
+
+                />            <Toaster />
+
+                <Route            <Sonner />
+
+                  path="/my-certificates/:id"            <BrowserRouter>
+
+                  element={              <AuthProvider>
+
+                    <WalletProtectedRoute>                <Routes>
+
+                      <MyCertificateDetail />                  {/* Public Pages */}
+
+                    </WalletProtectedRoute>                  <Route path="/" element={<Index />} />
+
+                  }                  <Route path="/verify" element={<Verify />} />
+
+                />                  <Route path="/verify/:certificateId" element={<VerifyDetail />} />
+
+                <Route                  <Route path="/verify/scan" element={<VerifyScan />} />
+
+                  path="/profile/:accountId"                  <Route path="/verify/status/:verificationId" element={<VerifyStatus />} />
+
+                  element={                  <Route path="/pricing" element={<Pricing />} />
+
+                    <WalletProtectedRoute>                  <Route path="/about" element={<About />} />
+
+                      <Profile />                  <Route path="/docs" element={<Docs />} />
+
+                    </WalletProtectedRoute>                  <Route path="/contact" element={<Contact />} />
+
+                  }                  <Route path="/terms-of-service" element={<TermsOfService />} />
+
+                />                  <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+
+                <Route
+
+                  path="/credentials"                  {/* Auth Pages */}
+
+                  element={                  <Route path="/auth/login" element={<Login />} />
+
+                    <WalletProtectedRoute>                  <Route path="/auth/signup" element={<Signup />} />
+
+                      <Credentials />                  <Route path="/auth/forgot-password" element={<ForgotPassword />} />
+
+                    </WalletProtectedRoute>                  <Route path="/auth/reset-password/:token" element={<ResetPassword />} />
+
+                  }                  <Route path="/auth/verify-email" element={<VerifyEmail />} />
+
+                />                  <Route path="/auth/2fa" element={<TwoFactor />} />
+
+
+
+                {/* ===== 404 Not Found ===== */}                  {/* == Authenticated Routes == */}
+
+                <Route path="*" element={<NotFound />} />
+
+              </Routes>                  {/* Legacy /dashboard redirect - will redirect to role-specific dashboard */}
+
+            </BrowserRouter>                  <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+
+          </TooltipProvider>
+
+        </HederaWalletProvider>                  {/* Candidate Dashboard Routes */}
+
+      </ThemeProvider>                  <Route element={<ProtectedRoute requiredRole="candidate"><DashboardLayout /></ProtectedRoute>}>
+
+    </QueryClientProvider>                    <Route path="/candidate/dashboard" element={<CandidateDashboard />} />
+
+  </ErrorBoundary>                    <Route path="/candidate/my-certificates" element={<MyCertificates />} />
+
+);                    <Route path="/candidate/my-certificates/:id" element={<MyCertificateDetail />} />
+
                     <Route path="/candidate/settings/account" element={<AccountSettings />} />
-                    <Route path="/candidate/settings/notifications" element={<NotificationSettings />} />
+
+export default App;                    <Route path="/candidate/settings/notifications" element={<NotificationSettings />} />
+
                     <Route path="/candidate/settings/privacy" element={<PrivacySettings />} />
                     <Route path="/candidate/settings/security" element={<SecuritySettings />} />
                     <Route path="/candidate/settings/wallets" element={<Wallets />} />
