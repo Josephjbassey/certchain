@@ -1,22 +1,35 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import {
   HederaSessionEvent,
   HederaJsonRpcMethod,
   DAppConnector,
   HederaChainId,
-  type SessionData,
 } from '@hashgraph/hedera-wallet-connect';
-import { LedgerId } from '@hashgraph/sdk';
+import { LedgerId, AccountId, Transaction } from '@hashgraph/sdk';
+import { toast } from 'sonner';
+import {
+  executeTransaction as execTx,
+  signTransaction as signTx,
+  getSigner as getSignerUtil,
+  handleHederaError,
+  type HederaNetwork,
+} from '@/lib/hedera-utils';
 
 interface HederaWalletContextType {
   dAppConnector: DAppConnector | null;
   isConnected: boolean;
+  isConnecting: boolean;
   accountId: string | null;
-  network: string | null;
+  network: HederaNetwork;
+  sessionData: any | null;
   connect: () => Promise<void>;
   disconnect: () => Promise<void>;
-  sessionData: SessionData | null;
-  // Expose signer for advanced transaction operations
+  switchNetwork: (network: HederaNetwork) => Promise<void>;
+  executeTransaction: <T extends Transaction>(transaction: T) => Promise<{
+    transactionId: string;
+    receipt: any;
+  }>;
+  signTransaction: <T extends Transaction>(transaction: T) => Promise<T>;
   getSigner: () => any | null;
 }
 
@@ -29,21 +42,38 @@ interface HederaWalletProviderProps {
 export const HederaWalletProvider = ({ children }: HederaWalletProviderProps) => {
   const [dAppConnector, setDAppConnector] = useState<DAppConnector | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
   const [accountId, setAccountId] = useState<string | null>(null);
-  const [network, setNetwork] = useState<string | null>(null);
-  const [sessionData, setSessionData] = useState<SessionData | null>(null);
+  const [network, setNetwork] = useState<HederaNetwork>('testnet');
+  const [sessionData, setSessionData] = useState<any | null>(null);
 
-  // Get WalletConnect project ID from environment
   const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID;
+  const hederaNetwork = (import.meta.env.VITE_HEDERA_NETWORK || 'testnet') as HederaNetwork;
 
-  // Get network from environment (default to testnet)
-  const hederaNetwork = import.meta.env.VITE_HEDERA_NETWORK || 'testnet';
-  const ledgerId = hederaNetwork === 'mainnet' ? LedgerId.MAINNET : LedgerId.TESTNET;
+  const getLedgerId = (net: HederaNetwork) => {
+    switch (net) {
+      case 'mainnet': return LedgerId.MAINNET;
+      case 'previewnet': return LedgerId.PREVIEWNET;
+      default: return LedgerId.TESTNET;
+    }
+  };
+
+  const getChainId = (net: HederaNetwork) => {
+    switch (net) {
+      case 'mainnet': return HederaChainId.Mainnet;
+      case 'previewnet': return HederaChainId.Previewnet;
+      default: return HederaChainId.Testnet;
+    }
+  };
+
+  useEffect(() => {
+    setNetwork(hederaNetwork);
+  }, [hederaNetwork]);
 
   useEffect(() => {
     const initDAppConnector = async () => {
       if (!projectId) {
-        console.error('WalletConnect project ID not found in environment variables');
+        console.error('WalletConnect project ID not found');
         return;
       }
 
@@ -55,34 +85,40 @@ export const HederaWalletProvider = ({ children }: HederaWalletProviderProps) =>
       };
 
       try {
-        // Initialize DAppConnector with metadata, ledger ID, project ID, methods, events, and chains
+        const ledgerId = getLedgerId(hederaNetwork);
+        const chainId = getChainId(hederaNetwork);
+
         const connector = new DAppConnector(
           metadata,
           ledgerId,
           projectId,
           Object.values(HederaJsonRpcMethod),
           [HederaSessionEvent.ChainChanged, HederaSessionEvent.AccountsChanged],
-          [HederaChainId.Testnet]
+          [chainId]
         );
 
         await connector.init({ logger: 'error' });
 
-        // Set up event listeners
-        connector.onSessionIframeCreated = (session) => {
+        connector.onSessionIframeCreated = (session: any) => {
           console.log('Session created:', session);
           setSessionData(session);
-          if (session.accountIds && session.accountIds.length > 0) {
-            setAccountId(session.accountIds[0]);
-            setIsConnected(true);
+          try {
+            if (session?.accountIds && session.accountIds.length > 0) {
+              setAccountId(session.accountIds[0]);
+              setIsConnected(true);
+              toast.success('Wallet connected successfully');
+            }
+          } catch (error) {
+            console.error('Error processing session:', error);
           }
         };
 
-        // Check for existing sessions
         const existingSessions = connector.signers;
         if (existingSessions && existingSessions.length > 0) {
           const firstSession = existingSessions[0];
-          if (firstSession.getAccountId()) {
-            setAccountId(firstSession.getAccountId().toString());
+          const accId = firstSession.getAccountId();
+          if (accId) {
+            setAccountId(accId.toString());
             setIsConnected(true);
             setNetwork(hederaNetwork);
           }
@@ -91,30 +127,37 @@ export const HederaWalletProvider = ({ children }: HederaWalletProviderProps) =>
         setDAppConnector(connector);
       } catch (error) {
         console.error('Failed to initialize DAppConnector:', error);
+        toast.error('Failed to initialize wallet connection');
       }
     };
 
     initDAppConnector();
-  }, [projectId, ledgerId, hederaNetwork]);
+  }, [projectId, hederaNetwork]);
 
-  const connect = async () => {
+  const connect = useCallback(async () => {
     if (!dAppConnector) {
+      toast.error('Wallet connector not initialized');
       throw new Error('DAppConnector not initialized');
     }
 
-    try {
-      // Open the pairing modal
-      await dAppConnector.openModal();
+    if (isConnecting) {
+      return;
+    }
 
-      // Wait for connection
-      // The onSessionIframeCreated callback will handle the session data
+    try {
+      setIsConnecting(true);
+      await dAppConnector.openModal();
     } catch (error) {
       console.error('Failed to connect wallet:', error);
-      throw error;
+      const hederaError = handleHederaError(error);
+      toast.error(hederaError.message);
+      throw hederaError;
+    } finally {
+      setIsConnecting(false);
     }
-  };
+  }, [dAppConnector, isConnecting]);
 
-  const disconnect = async () => {
+  const disconnect = useCallback(async () => {
     if (!dAppConnector) {
       throw new Error('DAppConnector not initialized');
     }
@@ -123,32 +166,73 @@ export const HederaWalletProvider = ({ children }: HederaWalletProviderProps) =>
       await dAppConnector.disconnectAll();
       setIsConnected(false);
       setAccountId(null);
-      setNetwork(null);
       setSessionData(null);
+      toast.success('Wallet disconnected');
     } catch (error) {
       console.error('Failed to disconnect wallet:', error);
-      throw error;
+      const hederaError = handleHederaError(error);
+      toast.error(hederaError.message);
+      throw hederaError;
     }
-  };
+  }, [dAppConnector]);
 
-  const getSigner = () => {
-    if (!dAppConnector || !dAppConnector.signers || dAppConnector.signers.length === 0) {
+  const switchNetwork = useCallback(async (newNetwork: HederaNetwork) => {
+    toast.info(`Network switching to ${newNetwork} - please reconnect your wallet`);
+    await disconnect();
+    setNetwork(newNetwork);
+  }, [disconnect]);
+
+  const executeTransactionFn = useCallback(async <T extends Transaction>(transaction: T) => {
+    try {
+      const result = await execTx(transaction, dAppConnector, accountId);
+      toast.success('Transaction executed successfully');
+      return {
+        transactionId: result.transactionId,
+        receipt: result.receipt,
+      };
+    } catch (error) {
+      const hederaError = handleHederaError(error);
+      toast.error(`Transaction failed: ${hederaError.message}`);
+      throw hederaError;
+    }
+  }, [dAppConnector, accountId]);
+
+  const signTransactionFn = useCallback(async <T extends Transaction>(transaction: T) => {
+    try {
+      const signed = await signTx(transaction, dAppConnector, accountId);
+      toast.success('Transaction signed successfully');
+      return signed;
+    } catch (error) {
+      const hederaError = handleHederaError(error);
+      toast.error(`Signing failed: ${hederaError.message}`);
+      throw hederaError;
+    }
+  }, [dAppConnector, accountId]);
+
+  const getSignerFn = useCallback(() => {
+    try {
+      return getSignerUtil(dAppConnector, accountId);
+    } catch (error) {
+      console.error('Failed to get signer:', error);
       return null;
     }
-    return dAppConnector.signers[0]; // Return first signer
-  };
+  }, [dAppConnector, accountId]);
 
   return (
     <HederaWalletContext.Provider
       value={{
         dAppConnector,
         isConnected,
+        isConnecting,
         accountId,
         network,
         connect,
         disconnect,
+        switchNetwork,
         sessionData,
-        getSigner,
+        getSigner: getSignerFn,
+        executeTransaction: executeTransactionFn,
+        signTransaction: signTransactionFn,
       }}
     >
       {children}
@@ -163,3 +247,4 @@ export const useHederaWallet = () => {
   }
   return context;
 };
+
