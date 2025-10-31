@@ -13,6 +13,9 @@ export default defineConfig(({ mode }) => ({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      // Prevent resolution of problematic @reown package paths
+      "@reown/appkit/adapters": path.resolve(__dirname, "./src/lib/noop.ts"),
+      "@reown/walletkit/adapters": path.resolve(__dirname, "./src/lib/noop.ts"),
     },
   },
   optimizeDeps: {
