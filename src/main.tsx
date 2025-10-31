@@ -6,15 +6,15 @@ import "./index.css";
 const rootElement = document.getElementById("root");
 
 if (!rootElement) {
-  throw new Error("Root element not found. Please check your HTML file.");
+    throw new Error("Root element not found. Please check your HTML file.");
 }
 
 try {
-  createRoot(rootElement).render(<App />);
+    createRoot(rootElement).render(<App />);
 } catch (error) {
-  console.error("Failed to render app:", error);
-  // Display error message to user
-  rootElement.innerHTML = `
+    console.error("Failed to render app:", error);
+    // Display error message to user
+    rootElement.innerHTML = `
     <div style="display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 2rem; font-family: system-ui;">
       <div style="max-width: 600px; text-align: center;">
         <h1 style="font-size: 2rem; margin-bottom: 1rem; color: #dc2626;">Application Error</h1>
