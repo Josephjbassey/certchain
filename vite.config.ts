@@ -15,14 +15,6 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  optimizeDeps: {
-    exclude: ['@reown/appkit', '@reown/walletkit'],
-  },
-  build: {
-    commonjsOptions: {
-      ignoreTryCatch: false,
-    },
-  },
   test: {
     environment: 'jsdom',
     globals: true,
