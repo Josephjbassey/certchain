@@ -16,6 +16,8 @@ interface HederaWalletContextType {
   connect: () => Promise<void>;
   disconnect: () => Promise<void>;
   sessionData: SessionData | null;
+  // Expose signer for advanced transaction operations
+  getSigner: () => any | null;
 }
 
 const HederaWalletContext = createContext<HederaWalletContextType | undefined>(undefined);
@@ -129,6 +131,13 @@ export const HederaWalletProvider = ({ children }: HederaWalletProviderProps) =>
     }
   };
 
+  const getSigner = () => {
+    if (!dAppConnector || !dAppConnector.signers || dAppConnector.signers.length === 0) {
+      return null;
+    }
+    return dAppConnector.signers[0]; // Return first signer
+  };
+
   return (
     <HederaWalletContext.Provider
       value={{
@@ -139,6 +148,7 @@ export const HederaWalletProvider = ({ children }: HederaWalletProviderProps) =>
         connect,
         disconnect,
         sessionData,
+        getSigner,
       }}
     >
       {children}
