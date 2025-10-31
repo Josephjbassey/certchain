@@ -188,8 +188,8 @@ CertChain extensively leverages Hedera's core services:
 **Framework:** React 18 + TypeScript + Vite
 
 **Key Libraries:**
-- `@hashgraph/hedera-wallet-connect` - Wallet integration
-- `@reown/appkit` - WalletConnect implementation
+- `@hashgraph/hedera-wallet-connect` - Official Hedera wallet integration (DAppConnector)
+- `@hashgraph/sdk` - Hedera SDK for blockchain interactions
 - `@tanstack/react-query` - Data fetching and caching
 - `@supabase/supabase-js` - Backend API client
 - `react-router-dom` - Client-side routing

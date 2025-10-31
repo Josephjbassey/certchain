@@ -276,7 +276,6 @@ Cloudflare Pages
 {
   "@hashgraph/sdk": "^2.75.0",
   "@hashgraph/hedera-wallet-connect": "^2.0.3",
-  "@reown/appkit": "^1.8.10",
   "@supabase/supabase-js": "^2.45.0",
   "react": "^18.3.1",
   "react-router-dom": "^6.28.0",
@@ -460,15 +459,21 @@ Issuer: did:hedera:testnet:0.0.7123457
 **Implementation:**
 
 ```typescript
-// Using Reown AppKit + Hedera Wallet Connect
-import { createAppKit } from "@reown/appkit/react";
-import { HederaAdapter } from "@reown/appkit-adapter-hedera";
+// Using official Hedera Wallet Connect (DAppConnector)
+import { DAppConnector, HederaJsonRpcMethod, HederaSessionEvent, HederaChainId } from "@hashgraph/hedera-wallet-connect";
 
-const modal = createAppKit({
-  adapters: [new HederaAdapter()],
-  networks: [hedera, hederaTestnet],
-  projectId: WALLETCONNECT_PROJECT_ID,
-});
+const dAppConnector = new DAppConnector(
+  metadata,
+  LedgerId.TESTNET,
+  projectId,
+  Object.values(HederaJsonRpcMethod),
+  [HederaSessionEvent.ChainChanged, HederaSessionEvent.AccountsChanged],
+  [HederaChainId.Testnet]
+);
+
+// Initialize and open modal
+await dAppConnector.init({ logger: "error" });
+await dAppConnector.openModal();
 ```
 
 ### Integration Flow Diagram
