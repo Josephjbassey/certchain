@@ -36,6 +36,7 @@ This project combines **Hedera blockchain** (decentralized ledger) with **Supaba
 Manages wallet connections using the official `@hashgraph/hedera-wallet-connect` library.
 
 **Features:**
+
 - DAppConnector initialization
 - Wallet connection (HashPack, Blade, Kabila)
 - Session management
@@ -43,12 +44,13 @@ Manages wallet connections using the official `@hashgraph/hedera-wallet-connect`
 - Network configuration
 
 **Usage:**
+
 ```typescript
-import { useHederaWallet } from '@/contexts/HederaWalletContext';
+import { useHederaWallet } from "@/contexts/HederaWalletContext";
 
 function MyComponent() {
   const { dAppConnector, accountId, isConnected, connect } = useHederaWallet();
-  
+
   const handleConnect = async () => {
     await connect(); // Opens wallet modal
   };
@@ -62,22 +64,24 @@ Helper functions that bridge Hedera blockchain operations with Supabase logging.
 **Key Functions:**
 
 #### `signAndExecuteTransaction`
+
 Signs and executes a transaction, then logs it to Supabase.
 
 ```typescript
-import { signAndExecuteTransaction } from '@/lib/hedera-transactions';
-import { TopicCreateTransaction } from '@hashgraph/sdk';
+import { signAndExecuteTransaction } from "@/lib/hedera-transactions";
+import { TopicCreateTransaction } from "@hashgraph/sdk";
 
 const result = await signAndExecuteTransaction(
   dAppConnector,
-  new TopicCreateTransaction().setTopicMemo('My Topic'),
+  new TopicCreateTransaction().setTopicMemo("My Topic"),
   accountId,
-  'TOPIC_CREATE',
-  { purpose: 'certificate' } // metadata
+  "TOPIC_CREATE",
+  { purpose: "certificate" } // metadata
 );
 ```
 
 #### `signTransaction`
+
 Signs a transaction without executing (useful for batch operations).
 
 ```typescript
@@ -85,10 +89,11 @@ const signedTx = await signTransaction(dAppConnector, transaction, accountId);
 ```
 
 #### `executeQuery`
+
 Executes a query on Hedera (e.g., get account balance).
 
 ```typescript
-import { AccountBalanceQuery } from '@hashgraph/sdk';
+import { AccountBalanceQuery } from "@hashgraph/sdk";
 
 const balance = await executeQuery(
   dAppConnector,
@@ -100,6 +105,7 @@ const balance = await executeQuery(
 ### 3. Integration Examples (`src/examples/hedera-supabase-integration.ts`)
 
 Real-world examples showing how to:
+
 - Issue certificates on Hedera + store metadata in Supabase
 - Submit messages to Hedera topics
 - Verify certificate authenticity
@@ -131,6 +137,7 @@ Real-world examples showing how to:
 ```
 
 **Why both?**
+
 - **Hedera**: Immutable proof that certificate was issued
 - **Supabase**: Fast queries, user management, relationships
 
@@ -173,6 +180,7 @@ Real-world examples showing how to:
 ## Database Schema
 
 ### `user_wallets` Table
+
 Stores connected Hedera wallets for each user.
 
 ```sql
@@ -188,6 +196,7 @@ CREATE TABLE user_wallets (
 ```
 
 ### `transaction_logs` Table
+
 Audit trail for all blockchain transactions.
 
 ```sql
@@ -204,6 +213,7 @@ CREATE TABLE transaction_logs (
 ```
 
 ### `certificates` Table
+
 Certificate metadata with blockchain references.
 
 ```sql
@@ -239,60 +249,64 @@ VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 Here's a complete flow for issuing a certificate:
 
 ```typescript
-import { TopicCreateTransaction, TopicMessageSubmitTransaction } from '@hashgraph/sdk';
-import { useHederaWallet } from '@/contexts/HederaWalletContext';
-import { signAndExecuteTransaction } from '@/lib/hedera-transactions';
-import { supabase } from '@/integrations/supabase/client';
+import {
+  TopicCreateTransaction,
+  TopicMessageSubmitTransaction,
+} from "@hashgraph/sdk";
+import { useHederaWallet } from "@/contexts/HederaWalletContext";
+import { signAndExecuteTransaction } from "@/lib/hedera-transactions";
+import { supabase } from "@/integrations/supabase/client";
 
 async function issueCertificate(recipientEmail: string, data: any) {
   const { dAppConnector, accountId } = useHederaWallet();
-  
+
   // 1. Create Hedera topic (immutable ledger)
-  const topicTx = new TopicCreateTransaction()
-    .setTopicMemo('Certificate: ' + data.title);
-    
+  const topicTx = new TopicCreateTransaction().setTopicMemo(
+    "Certificate: " + data.title
+  );
+
   const topicResult = await signAndExecuteTransaction(
     dAppConnector,
     topicTx,
     accountId!,
-    'TOPIC_CREATE',
+    "TOPIC_CREATE",
     { recipient: recipientEmail }
   );
-  
+
   // 2. Submit certificate data to topic
   const message = JSON.stringify({
     certificateId: data.id,
     issuer: accountId,
     recipient: recipientEmail,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
-  
+
   const messageTx = new TopicMessageSubmitTransaction()
     .setTopicId(topicResult.transactionId)
     .setMessage(message);
-    
+
   await signAndExecuteTransaction(
     dAppConnector,
     messageTx,
     accountId!,
-    'TOPIC_MESSAGE',
+    "TOPIC_MESSAGE",
     { topicId: topicResult.transactionId }
   );
-  
+
   // 3. Save to Supabase for fast queries
   const { data: certificate } = await supabase
-    .from('certificates')
+    .from("certificates")
     .insert({
       recipient_email: recipientEmail,
       title: data.title,
       description: data.description,
       topic_id: topicResult.transactionId,
       transaction_hash: topicResult.transactionHash,
-      status: 'issued'
+      status: "issued",
     })
     .select()
     .single();
-    
+
   return certificate;
 }
 ```
@@ -300,6 +314,7 @@ async function issueCertificate(recipientEmail: string, data: any) {
 ## Best Practices
 
 ### 1. **Use Hedera for**:
+
 - Immutable records (certificates, credentials)
 - Proof of existence (timestamps, hashes)
 - NFTs and tokens
@@ -307,6 +322,7 @@ async function issueCertificate(recipientEmail: string, data: any) {
 - Consensus and verification
 
 ### 2. **Use Supabase for**:
+
 - User authentication and profiles
 - Fast queries and searches
 - Relationships between entities
@@ -315,6 +331,7 @@ async function issueCertificate(recipientEmail: string, data: any) {
 - Analytics and reporting
 
 ### 3. **Sync Pattern**:
+
 Always save Hedera transaction IDs in Supabase:
 
 ```typescript
@@ -333,12 +350,13 @@ await signAndExecuteTransaction(...);
 ```
 
 ### 4. **Error Handling**:
+
 Handle both blockchain and database errors:
 
 ```typescript
 try {
   const txResult = await signAndExecuteTransaction(...);
-  
+
   try {
     await supabase.from('table').insert({...});
   } catch (dbError) {
@@ -355,8 +373,9 @@ try {
 ## Testing
 
 ### Test Wallet Connection:
+
 ```typescript
-import { useHederaWallet } from '@/contexts/HederaWalletContext';
+import { useHederaWallet } from "@/contexts/HederaWalletContext";
 
 const { connect, isConnected, accountId } = useHederaWallet();
 
@@ -364,40 +383,43 @@ const { connect, isConnected, accountId } = useHederaWallet();
 await connect();
 
 // Check connection
-console.log('Connected:', isConnected);
-console.log('Account:', accountId);
+console.log("Connected:", isConnected);
+console.log("Account:", accountId);
 ```
 
 ### Test Transaction:
-```typescript
-import { TopicCreateTransaction } from '@hashgraph/sdk';
 
-const tx = new TopicCreateTransaction()
-  .setTopicMemo('Test Topic');
+```typescript
+import { TopicCreateTransaction } from "@hashgraph/sdk";
+
+const tx = new TopicCreateTransaction().setTopicMemo("Test Topic");
 
 const result = await signAndExecuteTransaction(
   dAppConnector,
   tx,
   accountId,
-  'TOPIC_CREATE'
+  "TOPIC_CREATE"
 );
 
-console.log('Transaction ID:', result.transactionId);
+console.log("Transaction ID:", result.transactionId);
 ```
 
 ## Troubleshooting
 
 ### Wallet Not Connecting
+
 - Ensure WalletConnect Project ID is set in `.env`
 - Check that wallet extension is installed
 - Try different wallet (HashPack vs Blade)
 
 ### Transaction Failing
+
 - Check account has sufficient HBAR balance
 - Verify network (testnet vs mainnet)
 - Check transaction parameters
 
 ### Database Errors
+
 - Verify Supabase credentials
 - Check RLS policies
 - Ensure user is authenticated

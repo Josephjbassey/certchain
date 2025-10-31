@@ -7,6 +7,7 @@ import {
   TopicCreateTransaction,
   TopicMessageSubmitTransaction,
 } from "https://esm.sh/@hashgraph/sdk@2.75.0/es2022/sdk.mjs";
+import { executeResilientTransaction } from "../_shared/hedera-resilient-client.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -102,6 +103,7 @@ serve(async (req) => {
   try {
     const { 
       userAccountId, 
+      userId,
       network = 'testnet',
       createTopic = true,
       storeDID = true 
@@ -111,12 +113,21 @@ serve(async (req) => {
       throw new Error('userAccountId is required');
     }
 
+    if (!userId) {
+      throw new Error('userId is required for transaction logging');
+    }
+
     console.log('Creating DID for account:', userAccountId);
 
     // Validate Hedera account ID format (0.0.xxxxx)
     if (!/^\d+\.\d+\.\d+$/.test(userAccountId)) {
       throw new Error('Invalid Hedera account ID format. Expected: 0.0.xxxxx');
     }
+
+    // Initialize Supabase (needed for resilient transaction logging)
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Initialize Hedera client
     const operatorId = Deno.env.get('HEDERA_OPERATOR_ID');
@@ -171,23 +182,37 @@ serve(async (req) => {
     let topicId = null;
     let transactionId = null;
 
-    // Step 3: Optionally publish DID Document to HCS
+    // Step 3: Optionally publish DID Document to HCS with resilient transaction logging
     if (createTopic) {
       console.log('Creating HCS Topic for DID Document...');
       
-      const topicCreateTx = await new TopicCreateTransaction()
-        .setSubmitKey(operatorPrivateKey)
-        .setTopicMemo(`DID Document: ${did}`)
-        .freezeWith(client);
+      // Create topic with resilient logging
+      const topicResult = await executeResilientTransaction(
+        supabase,
+        userId,
+        'TOPIC_CREATE',
+        async () => {
+          const topicCreateTx = await new TopicCreateTransaction()
+            .setSubmitKey(operatorPrivateKey)
+            .setTopicMemo(`DID Document: ${did}`)
+            .freezeWith(client);
 
-      const topicCreateSign = await topicCreateTx.sign(operatorPrivateKey);
-      const topicCreateSubmit = await topicCreateSign.execute(client);
-      const topicCreateRx = await topicCreateSubmit.getReceipt(client);
-      topicId = topicCreateRx.topicId!.toString();
+          const topicCreateSign = await topicCreateTx.sign(operatorPrivateKey);
+          const topicCreateSubmit = await topicCreateSign.execute(client);
+          const topicCreateRx = await topicCreateSubmit.getReceipt(client);
+          topicId = topicCreateRx.topicId!.toString();
 
-      console.log('HCS Topic Created:', topicId);
+          console.log('HCS Topic Created:', topicId);
+          return topicCreateSubmit.transactionId.toString();
+        },
+        { network, enableMirrorBackup: true }
+      );
 
-      // Publish DID Document to HCS
+      if (!topicResult.success) {
+        throw new Error(`Failed to create topic: ${topicResult.error}`);
+      }
+
+      // Publish DID Document to HCS with resilient logging
       console.log('Publishing DID Document to HCS...');
       
       const didMessage = JSON.stringify({
@@ -198,25 +223,34 @@ serve(async (req) => {
         timestamp: new Date().toISOString()
       });
 
-      const submitTx = await new TopicMessageSubmitTransaction()
-        .setTopicId(topicId)
-        .setMessage(didMessage)
-        .freezeWith(client);
+      const publishResult = await executeResilientTransaction(
+        supabase,
+        userId,
+        'TOPIC_MESSAGE_SUBMIT',
+        async () => {
+          const submitTx = await new TopicMessageSubmitTransaction()
+            .setTopicId(topicId!)
+            .setMessage(didMessage)
+            .freezeWith(client);
 
-      const submitSign = await submitTx.sign(operatorPrivateKey);
-      const submitSubmit = await submitSign.execute(client);
-      await submitSubmit.getReceipt(client);
-      
-      transactionId = submitSubmit.transactionId.toString();
-      console.log('DID Document published to HCS');
+          const submitSign = await submitTx.sign(operatorPrivateKey);
+          const submitSubmit = await submitSign.execute(client);
+          await submitSubmit.getReceipt(client);
+          
+          transactionId = submitSubmit.transactionId.toString();
+          console.log('DID Document published to HCS');
+          return transactionId;
+        },
+        { network, enableMirrorBackup: true }
+      );
+
+      if (!publishResult.success) {
+        console.warn('Topic created but DID document publish failed:', publishResult.error);
+      }
     }
 
     // Step 4: Optionally store DID in database
     if (storeDID) {
-      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-      const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-      const supabase = createClient(supabaseUrl, supabaseKey);
-
       console.log('Storing DID in database...');
 
       // Store in user_dids table
@@ -259,7 +293,8 @@ serve(async (req) => {
         topicId,
         transactionId,
         explorerUrl,
-        message: 'DID created and published successfully',
+        message: 'DID created and published successfully with resilient logging',
+        resilientLogging: true,
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

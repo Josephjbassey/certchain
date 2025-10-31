@@ -13,6 +13,7 @@ import {
   TokenMintTransaction,
   TransferTransaction,
 } from "https://esm.sh/@hashgraph/sdk@2.75.0/es2022/sdk.mjs";
+import { executeResilientTransaction } from "../_shared/hedera-resilient-client.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -29,6 +30,7 @@ serve(async (req: Request) => {
       recipientAccountId,
       institutionTokenId,
       institutionId,
+      userId,
       metadataCid,
       certificateData,
       network = 'testnet',
@@ -38,12 +40,17 @@ serve(async (req: Request) => {
       throw new Error('recipientAccountId and metadataCid are required');
     }
 
+    if (!userId) {
+      throw new Error('userId is required for transaction logging');
+    }
+
+    // Initialize Supabase
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
     // Validate institution setup is complete before minting
     if (institutionId) {
-      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-      const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-      const supabase = createClient(supabaseUrl, supabaseKey);
-
       const { data: institution, error: instError } = await supabase
         .from('institutions')
         .select('did, hedera_account_id')
@@ -88,46 +95,75 @@ serve(async (req: Request) => {
 
     let tokenId = institutionTokenId;
 
-    // If no token collection exists, create one
+    // If no token collection exists, create one with resilient logging
     if (!tokenId) {
       console.log('Creating new NFT collection...');
       
-      const tokenCreateTx = await new TokenCreateTransaction()
-        .setTokenName(certificateData?.institutionName || 'CertChain Certificates')
-        .setTokenSymbol('CERT')
-        .setTokenType(TokenType.NonFungibleUnique)
-        .setDecimals(0)
-        .setInitialSupply(0)
-        .setTreasuryAccountId(AccountId.fromString(operatorId))
-        .setSupplyType(TokenSupplyType.Infinite)
-        .setSupplyKey(operatorPrivateKey)
-        .setFreezeDefault(false)
-        .freezeWith(client);
+      const tokenResult = await executeResilientTransaction(
+        supabase,
+        userId,
+        'TOKEN_CREATE',
+        async () => {
+          const tokenCreateTx = await new TokenCreateTransaction()
+            .setTokenName(certificateData?.institutionName || 'CertChain Certificates')
+            .setTokenSymbol('CERT')
+            .setTokenType(TokenType.NonFungibleUnique)
+            .setDecimals(0)
+            .setInitialSupply(0)
+            .setTreasuryAccountId(AccountId.fromString(operatorId))
+            .setSupplyType(TokenSupplyType.Infinite)
+            .setSupplyKey(operatorPrivateKey)
+            .setFreezeDefault(false)
+            .freezeWith(client);
 
-      const tokenCreateSign = await tokenCreateTx.sign(operatorPrivateKey);
-      const tokenCreateSubmit = await tokenCreateSign.execute(client);
-      const tokenCreateRx = await tokenCreateSubmit.getReceipt(client);
-      tokenId = tokenCreateRx.tokenId!.toString();
+          const tokenCreateSign = await tokenCreateTx.sign(operatorPrivateKey);
+          const tokenCreateSubmit = await tokenCreateSign.execute(client);
+          const tokenCreateRx = await tokenCreateSubmit.getReceipt(client);
+          tokenId = tokenCreateRx.tokenId!.toString();
 
-      console.log('Created token collection:', tokenId);
+          console.log('Created token collection:', tokenId);
+          return tokenCreateSubmit.transactionId.toString();
+        },
+        { network, enableMirrorBackup: true }
+      );
+
+      if (!tokenResult.success) {
+        throw new Error(`Failed to create token collection: ${tokenResult.error}`);
+      }
     }
 
-    // Mint NFT with metadata CID
+    // Mint NFT with metadata CID and resilient logging
     console.log('Minting NFT serial...');
     
     const metadata = new TextEncoder().encode(metadataCid);
     
-    const mintTx = await new TokenMintTransaction()
-      .setTokenId(tokenId)
-      .setMetadata([metadata])
-      .freezeWith(client);
-
-    const mintSign = await mintTx.sign(operatorPrivateKey);
-    const mintSubmit = await mintSign.execute(client);
-    const mintRx = await mintSubmit.getReceipt(client);
+    let serialNumber: number | undefined;
     
-    const serialNumber = mintRx.serials[0].toNumber();
-    console.log('Minted NFT serial:', serialNumber);
+    const mintResult = await executeResilientTransaction(
+      supabase,
+      userId,
+      'TOKEN_MINT',
+      async () => {
+        const mintTx = await new TokenMintTransaction()
+          .setTokenId(tokenId!)
+          .setMetadata([metadata])
+          .freezeWith(client);
+
+        const mintSign = await mintTx.sign(operatorPrivateKey);
+        const mintSubmit = await mintSign.execute(client);
+        const mintRx = await mintSubmit.getReceipt(client);
+        
+        serialNumber = mintRx.serials[0].toNumber();
+        console.log('Minted NFT serial:', serialNumber);
+
+        return mintSubmit.transactionId.toString();
+      },
+      { network, enableMirrorBackup: true }
+    );
+
+    if (!mintResult.success) {
+      throw new Error(`Failed to mint NFT: ${mintResult.error}`);
+    }
 
     // Transfer NFT to recipient (optional - could be done via claim token)
     // const transferTx = await new TransferTransaction()
@@ -140,10 +176,12 @@ serve(async (req: Request) => {
         success: true,
         tokenId,
         serialNumber,
-        transactionId: mintSubmit.transactionId.toString(),
-        explorerUrl: `https://hashscan.io/${network}/transaction/${mintSubmit.transactionId}`,
+        transactionId: mintResult.transactionId,
+        explorerUrl: `https://hashscan.io/${network}/transaction/${mintResult.transactionId}`,
         metadataCid,
-        message: 'Certificate minted successfully',
+        message: 'Certificate minted successfully with resilient logging',
+        resilientLogging: true,
+        syncedFromMirror: mintResult.syncedFromMirror,
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

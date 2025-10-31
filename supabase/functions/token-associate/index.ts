@@ -1,10 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import {
   Client,
   PrivateKey,
   AccountId,
   TokenAssociateTransaction,
 } from "https://esm.sh/@hashgraph/sdk@2.75.0/es2022/sdk.mjs";
+import { executeResilientTransaction } from "../_shared/hedera-resilient-client.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -20,6 +22,7 @@ serve(async (req: Request) => {
     const {
       accountId,
       tokenId,
+      userId,
       network = 'testnet',
       privateKey,  // Optional: if user wants to sign themselves
     } = await req.json();
@@ -28,7 +31,16 @@ serve(async (req: Request) => {
       throw new Error('accountId and tokenId are required');
     }
 
+    if (!userId) {
+      throw new Error('userId is required for transaction logging');
+    }
+
     console.log('Associating token with account:', accountId, tokenId);
+
+    // Initialize Supabase
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Check if already associated via Mirror Node
     const mirrorNodeUrl = network === 'mainnet'
@@ -90,36 +102,51 @@ serve(async (req: Request) => {
       );
     }
 
-    // Create and execute token association transaction
+    // Create and execute token association transaction with resilient logging
     console.log('Creating token association transaction...');
     
-    const associateTx = await new TokenAssociateTransaction()
-      .setAccountId(AccountId.fromString(accountId))
-      .setTokenIds([tokenId])
-      .freezeWith(client);
+    const associateResult = await executeResilientTransaction(
+      supabase,
+      userId,
+      'TOKEN_ASSOCIATE',
+      async () => {
+        const associateTx = await new TokenAssociateTransaction()
+          .setAccountId(AccountId.fromString(accountId))
+          .setTokenIds([tokenId])
+          .freezeWith(client);
 
-    // Sign with the account that will be associated
-    // Note: In production, the user's wallet should sign this
-    const signedTx = await associateTx.sign(signingKey);
-    
-    const txResponse = await signedTx.execute(client);
-    const receipt = await txResponse.getReceipt(client);
+        // Sign with the account that will be associated
+        // Note: In production, the user's wallet should sign this
+        const signedTx = await associateTx.sign(signingKey);
+        
+        const txResponse = await signedTx.execute(client);
+        const receipt = await txResponse.getReceipt(client);
 
-    console.log('Token association successful');
+        console.log('Token association successful');
+        return txResponse.transactionId.toString();
+      },
+      { network, enableMirrorBackup: true }
+    );
+
+    if (!associateResult.success) {
+      throw new Error(`Failed to associate token: ${associateResult.error}`);
+    }
 
     const explorerUrl = network === 'mainnet'
-      ? `https://hashscan.io/mainnet/transaction/${txResponse.transactionId}`
-      : `https://hashscan.io/testnet/transaction/${txResponse.transactionId}`;
+      ? `https://hashscan.io/mainnet/transaction/${associateResult.transactionId}`
+      : `https://hashscan.io/testnet/transaction/${associateResult.transactionId}`;
 
     return new Response(
       JSON.stringify({
         success: true,
         alreadyAssociated: false,
-        transactionId: txResponse.transactionId.toString(),
+        transactionId: associateResult.transactionId,
         accountId,
         tokenId,
         explorerUrl,
-        message: 'Token successfully associated with account',
+        message: 'Token successfully associated with account with resilient logging',
+        resilientLogging: true,
+        syncedFromMirror: associateResult.syncedFromMirror,
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
