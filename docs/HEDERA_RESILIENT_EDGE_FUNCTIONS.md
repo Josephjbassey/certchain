@@ -38,14 +38,17 @@ All Hedera edge functions have been upgraded to use a **resilient architecture**
 ## Updated Edge Functions
 
 ### 1. `hedera-create-did`
+
 **Purpose:** Create decentralized identifiers on Hedera
 
 **Resilient Features:**
+
 - Topic creation with automatic logging
 - DID document publication with mirror node backup
 - Transaction confirmation from mirror node after delay
 
 **Required Parameters:**
+
 ```json
 {
   "userAccountId": "0.0.12345",
@@ -57,14 +60,17 @@ All Hedera edge functions have been upgraded to use a **resilient architecture**
 ```
 
 ### 2. `hedera-hcs-log`
+
 **Purpose:** Log events to Hedera Consensus Service
 
 **Resilient Features:**
+
 - Topic creation with transaction logging
 - Message submission with mirror node backup
 - **NEW:** Mirror node sync mode to fetch historical messages
 
 **Required Parameters:**
+
 ```json
 {
   "topicId": "0.0.67890",
@@ -77,6 +83,7 @@ All Hedera edge functions have been upgraded to use a **resilient architecture**
 ```
 
 **Mirror Sync Mode:**
+
 ```json
 {
   "topicId": "0.0.67890",
@@ -87,14 +94,17 @@ All Hedera edge functions have been upgraded to use a **resilient architecture**
 ```
 
 ### 3. `hedera-mint-certificate`
+
 **Purpose:** Mint NFT certificates on Hedera
 
 **Resilient Features:**
+
 - NFT collection creation with logging
 - NFT minting with mirror node verification
 - Institution validation before minting
 
 **Required Parameters:**
+
 ```json
 {
   "recipientAccountId": "0.0.12345",
@@ -110,14 +120,17 @@ All Hedera edge functions have been upgraded to use a **resilient architecture**
 ```
 
 ### 4. `token-associate`
+
 **Purpose:** Associate tokens with Hedera accounts
 
 **Resilient Features:**
+
 - Mirror node check for existing associations
 - Token association with transaction logging
 - Operator-paid association option
 
 **Required Parameters:**
+
 ```json
 {
   "accountId": "0.0.12345",
@@ -135,12 +148,12 @@ All Hedera edge functions have been upgraded to use a **resilient architecture**
 Core function that handles resilient transaction execution:
 
 ```typescript
-import { executeResilientTransaction } from '../_shared/hedera-resilient-client.ts';
+import { executeResilientTransaction } from "../_shared/hedera-resilient-client.ts";
 
 const result = await executeResilientTransaction(
-  supabase,           // Supabase client
-  userId,             // User ID for logging
-  'TRANSACTION_TYPE', // Type of transaction
+  supabase, // Supabase client
+  userId, // User ID for logging
+  "TRANSACTION_TYPE", // Type of transaction
   async () => {
     // Your transaction logic here
     const tx = await createTransaction();
@@ -148,9 +161,9 @@ const result = await executeResilientTransaction(
     return response.transactionId.toString();
   },
   {
-    network: 'testnet',
+    network: "testnet",
     enableMirrorBackup: true,
-    mirrorBackupDelay: 5000
+    mirrorBackupDelay: 5000,
   }
 );
 
@@ -175,14 +188,14 @@ const result = await executeResilientTransaction(
 ### Example: Manual Sync
 
 ```typescript
-import { syncTransactionFromMirrorNode } from '../_shared/hedera-mirror-node.ts';
+import { syncTransactionFromMirrorNode } from "../_shared/hedera-mirror-node.ts";
 
 await syncTransactionFromMirrorNode(
   supabase,
-  '0.0.12345@1234567890.000000000', // Transaction ID
+  "0.0.12345@1234567890.000000000", // Transaction ID
   userId,
-  'TOKEN_MINT',
-  'testnet'
+  "TOKEN_MINT",
+  "testnet"
 );
 ```
 
@@ -219,6 +232,7 @@ CREATE TABLE transaction_logs (
 ### Automatic Recovery
 
 The resilient client automatically:
+
 1. Detects direct logging failures
 2. Waits for transaction to appear on mirror node (2-5 seconds delay)
 3. Syncs transaction data from mirror node
@@ -229,14 +243,14 @@ The resilient client automatically:
 For extended downtime, use the batch sync:
 
 ```typescript
-import { batchSyncTransactions } from '../_shared/hedera-resilient-client.ts';
+import { batchSyncTransactions } from "../_shared/hedera-resilient-client.ts";
 
 const result = await batchSyncTransactions(
   supabase,
-  '0.0.12345',     // Account ID
+  "0.0.12345", // Account ID
   userId,
-  '2024-01-01T00:00:00Z', // Since timestamp
-  'testnet'
+  "2024-01-01T00:00:00Z", // Since timestamp
+  "testnet"
 );
 
 console.log(`Synced: ${result.synced}, Failed: ${result.failed}`);
@@ -245,12 +259,12 @@ console.log(`Synced: ${result.synced}, Failed: ${result.failed}`);
 ### Retry Failed Transactions
 
 ```typescript
-import { retryFailedTransactions } from '../_shared/hedera-resilient-client.ts';
+import { retryFailedTransactions } from "../_shared/hedera-resilient-client.ts";
 
 const result = await retryFailedTransactions(
   supabase,
-  'testnet',
-  50  // Limit
+  "testnet",
+  50 // Limit
 );
 ```
 
@@ -259,13 +273,13 @@ const result = await retryFailedTransactions(
 ### Check Hedera Services
 
 ```typescript
-import { checkHederaHealth } from '../_shared/hedera-resilient-client.ts';
+import { checkHederaHealth } from "../_shared/hedera-resilient-client.ts";
 
-const health = await checkHederaHealth('testnet');
+const health = await checkHederaHealth("testnet");
 
 console.log({
   mirrorNodeAvailable: health.mirrorNodeAvailable,
-  mirrorNodeLatency: health.mirrorNodeLatency
+  mirrorNodeLatency: health.mirrorNodeLatency,
 });
 ```
 
@@ -289,11 +303,13 @@ All updated edge functions return:
 ### Graceful Degradation
 
 1. **Transaction Succeeds, Logging Fails:**
+
    - Transaction is executed
    - Mirror node automatically syncs
    - Returns success with `syncedFromMirror: true`
 
 2. **Transaction Fails:**
+
    - No transaction executed
    - No logging attempted
    - Returns error message
@@ -319,7 +335,7 @@ All updated edge functions return:
 
 ```typescript
 if (result.syncedFromMirror) {
-  console.log('Transaction logged via mirror node backup');
+  console.log("Transaction logged via mirror node backup");
 }
 ```
 
@@ -342,10 +358,10 @@ Create a cron job to periodically retry failed transactions:
 
 ```typescript
 // In a scheduled function
-import { retryFailedTransactions } from '../_shared/hedera-resilient-client.ts';
+import { retryFailedTransactions } from "../_shared/hedera-resilient-client.ts";
 
 // Run every hour
-await retryFailedTransactions(supabase, 'testnet', 100);
+await retryFailedTransactions(supabase, "testnet", 100);
 ```
 
 ## Migration Notes
@@ -355,6 +371,7 @@ await retryFailedTransactions(supabase, 'testnet', 100);
 All edge functions now require `userId` parameter:
 
 **Before:**
+
 ```json
 {
   "accountId": "0.0.12345",
@@ -363,6 +380,7 @@ All edge functions now require `userId` parameter:
 ```
 
 **After:**
+
 ```json
 {
   "accountId": "0.0.12345",
@@ -374,6 +392,7 @@ All edge functions now require `userId` parameter:
 ### Backward Compatibility
 
 Old function calls will fail with:
+
 ```json
 {
   "success": false,
@@ -386,6 +405,7 @@ Old function calls will fail with:
 ### Test Resilience
 
 1. **Normal Operation:**
+
    ```bash
    # Call function normally
    curl -X POST https://your-project.supabase.co/functions/v1/hedera-mint-certificate \
@@ -394,12 +414,13 @@ Old function calls will fail with:
    ```
 
 2. **Simulate Database Failure:**
+
    - Temporarily revoke database permissions
    - Transaction should still succeed with mirror backup
 
 3. **Check Logs:**
    ```sql
-   SELECT * FROM transaction_logs 
+   SELECT * FROM transaction_logs
    WHERE user_id = 'your-user-id'
    ORDER BY created_at DESC
    LIMIT 10;
