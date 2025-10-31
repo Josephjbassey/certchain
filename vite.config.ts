@@ -27,9 +27,6 @@ export default defineConfig(({ mode }) => ({
       ignoreTryCatch: false,
     },
     rollupOptions: {
-      external: [
-        /^@reown\//,
-      ],
       output: {
         manualChunks: {
           'hedera-wallet': ['@hashgraph/hedera-wallet-connect'],
