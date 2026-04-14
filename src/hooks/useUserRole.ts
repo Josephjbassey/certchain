@@ -21,7 +21,7 @@ export const useUserRole = () => {
 
       if (error) {
         console.error('Error fetching user role:', error);
-        return 'candidate' as UserRole; // Safest default
+        throw error; // Re-throw error so consumers can detect and handle it
       }
 
       if (!data || data.length === 0) {

@@ -17,7 +17,8 @@ export default function Dashboard() {
   const [stats, setStats] = useState({
     totalIssued: 0,
     activeRecipients: 0,
-    recentActivity: 0
+    recentActivity: 0,
+    totalHcsLogs: 0
   });
 
   // Placeholder for real stats fetching
@@ -26,7 +27,8 @@ export default function Dashboard() {
     setStats({
       totalIssued: 142,
       activeRecipients: 89,
-      recentActivity: 12
+      recentActivity: 12,
+      totalHcsLogs: 142 // Matches total issued for now; in production, fetch actual HCS log count
     });
   }, []);
 
@@ -81,7 +83,7 @@ export default function Dashboard() {
             <Activity className="h-4 w-4 text-brand-neon" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalIssued}</div>
+            <div className="text-2xl font-bold">{stats.totalHcsLogs}</div>
             <p className="text-xs text-muted-foreground mt-1">
               100% synchronized
             </p>

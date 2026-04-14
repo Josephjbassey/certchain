@@ -52,3 +52,7 @@ build/
 # Supabase
 supabase/.temp/
 .supabase/
+
+# Test reports
+playwright-report/
+test-results/
