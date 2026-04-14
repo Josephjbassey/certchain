@@ -40,3 +40,15 @@ dist-ssr
 
 .gemini/
 gha-creds-*.json
+
+# System & Build
+node_modules/
+dist/
+build/
+.env
+.env.*
+!.env.example
+
+# Supabase
+supabase/.temp/
+.supabase/
