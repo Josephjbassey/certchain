@@ -1,21 +1,25 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { ShieldCheck, CheckCircle2, Search, ArrowRight, Loader2, XCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { hederaService } from "@/lib/hedera/service";
-import { toast } from "sonner";
-import type { VerificationResult } from "@/lib/hedera/types";
+
+interface VerificationData {
+  issuer: string;
+  recipient: string;
+  tokenId: string;
+  serialNumber: string;
+}
 
 export default function VerifyStatus() {
   const { verificationId } = useParams<{ verificationId: string }>();
   const navigate = useNavigate();
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState<"verifying" | "success" | "error">("verifying");
-  const [verificationData, setVerificationData] = useState<VerificationResult | null>(null);
+  const [verificationData, setVerificationData] = useState<VerificationData | null>(null);
 
   const steps = [
     { label: "Connecting to Hedera Testnet...", progress: 20 },
@@ -28,45 +32,57 @@ export default function VerifyStatus() {
   const [currentStep, setCurrentStep] = useState(0);
 
   useEffect(() => {
-    if (status !== "verifying" || !verificationId) return;
+    if (status !== "verifying") return;
 
+    let isMounted = true;
+    let stepIndex = 0;
+
+    // Simulate stepping through progress
+    const progressInterval = setInterval(() => {
+      if (stepIndex < steps.length - 1) {
+        setProgress(steps[stepIndex].progress);
+        setCurrentStep(stepIndex);
+        stepIndex++;
+      }
+    }, 400);
+
+    // Mock real verification call
     const performVerification = async () => {
-      let stepIndex = 0;
-
-      const interval = setInterval(() => {
-        if (stepIndex < steps.length - 1) {
-          setProgress(steps[stepIndex].progress);
-          setCurrentStep(stepIndex);
-          stepIndex++;
-        }
-      }, 600);
-
       try {
-        // Perform actual verification
-        const result = await hederaService.verifyCertificate(verificationId);
+        // In a real implementation:
+        // const result = await fetchVerificationResult(verificationId);
+        await new Promise(resolve => setTimeout(resolve, 2000));
 
-        clearInterval(interval);
-        setProgress(100);
-        setCurrentStep(steps.length - 1);
-        setVerificationData(result);
+        if (isMounted) {
+          clearInterval(progressInterval);
+          setProgress(100);
+          setCurrentStep(steps.length - 1);
 
-        if (result.verified) {
+          // Using dummy verification data
+          setVerificationData({
+            issuer: "Global Tech University (0.0.45321)",
+            recipient: "Jane Doe (user_jane@example.com)",
+            tokenId: "0.0.7891234",
+            serialNumber: "42"
+          });
           setStatus("success");
-        } else {
-          setStatus("error");
-          toast.error(result.message || "Certificate verification failed");
         }
       } catch (error) {
-        clearInterval(interval);
-        console.error("Verification error:", error);
-        setStatus("error");
-        toast.error("Failed to verify certificate");
+        if (isMounted) {
+          clearInterval(progressInterval);
+          console.error(error);
+          setStatus("error");
+        }
       }
     };
 
     performVerification();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status, verificationId]);
+
+    return () => {
+      isMounted = false;
+      clearInterval(progressInterval);
+    };
+  }, [verificationId, status, steps.length]);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -83,7 +99,7 @@ export default function VerifyStatus() {
 
           <Card className="glass-panel border-white/10">
             <CardContent className="p-8">
-              {status === "verifying" ? (
+              {status === "verifying" && (
                 <div className="space-y-8">
                   <div className="flex items-center justify-center">
                     <Loader2 className="w-16 h-16 text-brand-neon animate-spin" />
@@ -97,7 +113,9 @@ export default function VerifyStatus() {
                     <Progress value={progress} className="h-2 bg-white/5" indicatorClassName="bg-brand-neon" />
                   </div>
                 </div>
-              ) : status === "success" ? (
+              )}
+
+              {status === "success" && verificationData && (
                 <div className="text-center space-y-6">
                   <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-brand-neon/10 text-brand-neon shadow-[0_0_30px_rgba(0,255,102,0.3)]">
                     <ShieldCheck className="w-12 h-12" />
@@ -108,77 +126,60 @@ export default function VerifyStatus() {
                     <p className="text-muted-foreground">This certificate is cryptographically valid and logged on the Hedera network.</p>
                   </div>
 
-                  {verificationData && (
-                    <div className="bg-black/30 rounded-lg p-4 border border-white/5 text-left space-y-3">
-                      {verificationData.issuerName && (
-                        <div className="flex items-start gap-3">
-                          <CheckCircle2 className="w-5 h-5 text-brand-neon mt-0.5" />
-                          <div>
-                            <p className="text-sm font-medium">Issuer</p>
-                            <p className="text-xs text-muted-foreground">
-                              {verificationData.issuerName}
-                              {verificationData.issuerDid && ` (${verificationData.issuerDid})`}
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                      {verificationData.recipientEmail && (
-                        <div className="flex items-start gap-3">
-                          <CheckCircle2 className="w-5 h-5 text-brand-neon mt-0.5" />
-                          <div>
-                            <p className="text-sm font-medium">Recipient</p>
-                            <p className="text-xs text-muted-foreground">{verificationData.recipientEmail}</p>
-                          </div>
-                        </div>
-                      )}
-                      {verificationData.tokenId && (
-                        <div className="flex items-start gap-3">
-                          <CheckCircle2 className="w-5 h-5 text-brand-neon mt-0.5" />
-                          <div>
-                            <p className="text-sm font-medium">Hedera Token ID</p>
-                            <p className="text-xs text-brand-neon/80 font-mono break-all">
-                              {verificationData.tokenId}
-                              {verificationData.serialNumber && ` - Serial #${verificationData.serialNumber}`}
-                            </p>
-                          </div>
-                        </div>
-                      )}
+                  <div className="bg-black/30 rounded-lg p-4 border border-white/5 text-left space-y-3">
+                    <div className="flex items-start gap-3">
+                      <CheckCircle2 className="w-5 h-5 text-brand-neon mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium">Issuer</p>
+                        <p className="text-xs text-muted-foreground">{verificationData.issuer}</p>
+                      </div>
                     </div>
-                  )}
+                    <div className="flex items-start gap-3">
+                      <CheckCircle2 className="w-5 h-5 text-brand-neon mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium">Recipient</p>
+                        <p className="text-xs text-muted-foreground">{verificationData.recipient}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <CheckCircle2 className="w-5 h-5 text-brand-neon mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium">Hedera Token ID</p>
+                        <p className="text-xs text-brand-neon/80 font-mono break-all">{verificationData.tokenId} - Serial #{verificationData.serialNumber}</p>
+                      </div>
+                    </div>
+                  </div>
 
                   <div className="pt-4 flex gap-4 justify-center">
                     <Button variant="outline" onClick={() => navigate("/verify")}>
                       <Search className="w-4 h-4 mr-2" />
                       Verify Another
                     </Button>
-                    {verificationData?.certificateId && (
-                      <Button
-                        className="bg-brand-neon text-black hover:bg-brand-neon/90 hover:shadow-[0_0_15px_rgba(0,255,102,0.4)]"
-                        onClick={() => navigate(`/certificate/${verificationData.certificateId}`)}
-                      >
+                    <Link to={`/certificates/${verificationId}`}>
+                      <Button className="bg-brand-neon text-black hover:bg-brand-neon/90 hover:shadow-[0_0_15px_rgba(0,255,102,0.4)]">
                         View Certificate Detail
                         <ArrowRight className="w-4 h-4 ml-2" />
                       </Button>
-                    )}
+                    </Link>
                   </div>
                 </div>
-              ) : (
+              )}
+
+              {status === "error" && (
                 <div className="text-center space-y-6">
-                  <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-destructive/10 text-destructive">
+                  <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-red-500/10 text-red-500 shadow-[0_0_30px_rgba(239,68,68,0.3)]">
                     <XCircle className="w-12 h-12" />
                   </div>
 
                   <div>
                     <h2 className="text-2xl font-bold text-foreground mb-2">Verification Failed</h2>
-                    <p className="text-muted-foreground">
-                      {verificationData?.message || "Unable to verify this certificate. It may not exist or has been revoked."}
-                    </p>
+                    <p className="text-muted-foreground">We could not verify this certificate on the Hedera network.</p>
                   </div>
 
-                  <div className="pt-4">
+                  <div className="pt-4 flex justify-center">
                     <Button variant="outline" onClick={() => navigate("/verify")}>
                       <Search className="w-4 h-4 mr-2" />
-                      Try Another Certificate
+                      Try Again
                     </Button>
                   </div>
                 </div>

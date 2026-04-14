@@ -21,13 +21,12 @@ export const useUserRole = () => {
 
       if (error) {
         console.error('Error fetching user role:', error);
-        throw error; // Re-throw error so consumers can detect and handle it
+        throw error; // Throw error upstream to tanstack query instead of silently falling back
       }
 
       if (!data || data.length === 0) {
-        // This case should be rare if the signup trigger works, but as a fallback:
-        console.warn('No role found for user, defaulting to candidate.');
-        return 'candidate' as UserRole;
+        console.warn('No role found for user.');
+        return null;
       }
 
       // Determine the highest-level role from the roles array
@@ -37,7 +36,7 @@ export const useUserRole = () => {
       if (roles.includes('instructor')) return 'instructor' as UserRole;
       if (roles.includes('candidate')) return 'candidate' as UserRole;
 
-      return 'candidate' as UserRole; // Default fallback
+      return null;
     },
     enabled: !!user,
     staleTime: 5 * 60 * 1000, // Cache for 5 minutes
@@ -70,7 +69,7 @@ export const useHasRole = (requiredRole: UserRole) => {
     if (required === 'instructor')
       return ['instructor', 'institution_admin', 'super_admin'].includes(role);
 
-    // Candidate only has access to candidate features
+    // Candidate is the lowest access level; all authenticated roles may access candidate features
     if (required === 'candidate') return true;
 
     return role === required;

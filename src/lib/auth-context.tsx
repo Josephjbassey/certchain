@@ -46,6 +46,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, []);
 
+  /**
+   * Signs the user out of Supabase.
+   * Note: This function does not handle routing/redirection.
+   * The caller is responsible for redirecting the user after signing out.
+   */
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
@@ -53,7 +58,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.error('Error signing out:', error);
       toast.error('Error signing out');
-      throw error;
     }
   };
 

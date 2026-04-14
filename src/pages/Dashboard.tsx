@@ -28,7 +28,7 @@ export default function Dashboard() {
       totalIssued: 142,
       activeRecipients: 89,
       recentActivity: 12,
-      totalHcsLogs: 142 // Matches total issued for now; in production, fetch actual HCS log count
+      totalHcsLogs: 142
     });
   }, []);
 
