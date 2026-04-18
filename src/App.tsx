@@ -10,17 +10,33 @@ import { AuthProvider, useAuth } from "@/lib/auth-context";
 // Public Pages
 import Index from "./pages/Index";
 import Verify from "./pages/Verify";
+import VerifyDetail from "./pages/VerifyDetail";
+import VerifyScan from "./pages/VerifyScan";
+import VerifyStatus from "./pages/VerifyStatus";
+import About from "./pages/About";
+import Contact from "./pages/Contact";
+import Docs from "./pages/Docs";
+import Pricing from "./pages/Pricing";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
+import NotFound from "./pages/NotFound";
+import Profile from "./pages/Profile";
 
-// Dashboard
+// Dashboard / Authenticated
 import Dashboard from "./pages/Dashboard";
+import Issue from "./pages/Issue";
+import Credentials from "./pages/Credentials";
+import MyCertificates from "./pages/MyCertificates";
+import MyCertificateDetail from "./pages/MyCertificateDetail";
+import AiConsole from "./pages/AiConsole";
 
 const queryClient = new QueryClient();
 
 // Basic ProtectedRoute component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, isLoading } = useAuth();
+  const { user, loading } = useAuth();
 
-  if (isLoading) {
+  if (loading) {
     return <div className="min-h-screen flex items-center justify-center p-6">Loading...</div>;
   }
 
@@ -44,19 +60,33 @@ const App = () => (
                 {/* Public Routes */}
                 <Route path="/" element={<Index />} />
                 <Route path="/verify" element={<Verify />} />
+                <Route path="/verify/scan" element={<VerifyScan />} />
+                <Route path="/verify/:certificateId" element={<VerifyDetail />} />
+                <Route path="/verify/status/:verificationId" element={<VerifyStatus />} />
+
+                <Route path="/about" element={<About />} />
+                <Route path="/contact" element={<Contact />} />
+                <Route path="/docs" element={<Docs />} />
+                <Route path="/pricing" element={<Pricing />} />
+                <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                <Route path="/terms-of-service" element={<TermsOfService />} />
+                <Route path="/profile/:accountId" element={<Profile />} />
 
                 {/* Authenticated Routes */}
                 <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-
-                {/* Dummy routes so Dashboard Links don't 404 */}
-                <Route path="/issue" element={<Navigate to="/dashboard" replace />} />
-                <Route path="/certificates" element={<Navigate to="/dashboard" replace />} />
+                <Route path="/issue" element={<ProtectedRoute><Issue /></ProtectedRoute>} />
+                <Route path="/credentials" element={<ProtectedRoute><Credentials /></ProtectedRoute>} />
+                <Route path="/my-certificates" element={<ProtectedRoute><MyCertificates /></ProtectedRoute>} />
+                <Route path="/my-certificates/:id" element={<ProtectedRoute><MyCertificateDetail /></ProtectedRoute>} />
+                <Route path="/certificates" element={<ProtectedRoute><MyCertificates /></ProtectedRoute>} />
+                <Route path="/certificates/:id" element={<ProtectedRoute><MyCertificateDetail /></ProtectedRoute>} />
+                <Route path="/ai-console" element={<ProtectedRoute><AiConsole /></ProtectedRoute>} />
 
                 {/* Dummy Login route for auth guard redirection */}
                 <Route path="/auth/login" element={<div className="min-h-screen flex items-center justify-center p-6"><h1 className="text-2xl font-bold">Login required (Placeholder)</h1></div>} />
 
                 {/* Catch-all */}
-                <Route path="*" element={<div className="min-h-screen flex items-center justify-center p-6"><h1 className="text-2xl font-bold">404 - Page Not Found</h1></div>} />
+                <Route path="*" element={<NotFound />} />
               </Routes>
             </AuthProvider>
           </BrowserRouter>
