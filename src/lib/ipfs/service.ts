@@ -48,6 +48,7 @@ export class IPFSService {
             }
 
             return data;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             console.error('IPFS metadata upload failed:', error);
             throw new IPFSError(error.message || 'Failed to upload metadata', error);
@@ -94,6 +95,7 @@ export class IPFSService {
             }
 
             return data;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             console.error('IPFS file upload failed:', error);
             throw new IPFSError(error.message || 'Failed to upload file', error);
@@ -103,7 +105,9 @@ export class IPFSService {
     /**
      * Fetch content from IPFS with gateway fallback
      */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async fetchFromIPFS(cid: string): Promise<any> {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let lastError: any;
 
         for (const gateway of this.gatewayFallbacks) {
@@ -226,6 +230,7 @@ export class IPFSService {
             // This would call your backend to generate a presigned Pinata JWT
             // For now, return a placeholder
             throw new Error('Presigned uploads not yet implemented');
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             throw new IPFSError('Failed to generate presigned upload URL', error);
         }

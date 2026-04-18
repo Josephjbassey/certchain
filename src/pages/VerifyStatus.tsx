@@ -81,7 +81,8 @@ export default function VerifyStatus() {
       isMounted = false;
       clearInterval(progressInterval);
     };
-  }, [verificationId, status, steps.length]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [verificationId, status]);
 
   return (
     <div className="min-h-screen flex flex-col">

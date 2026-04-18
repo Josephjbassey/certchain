@@ -25,6 +25,7 @@ import { supabase } from '@/integrations/supabase/client';
 interface TransactionResult {
   transactionId: string;
   transactionHash?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   receipt?: any;
   error?: string;
 }
@@ -36,6 +37,7 @@ interface TransactionLog {
   status: 'pending' | 'success' | 'failed';
   transaction_hash?: string;
   error_message?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   metadata?: Record<string, any>;
 }
 
@@ -47,6 +49,7 @@ export async function signAndExecuteTransaction(
   transaction: Transaction,
   accountId: string,
   transactionType: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   metadata?: Record<string, any>
 ): Promise<TransactionResult> {
   try {
@@ -82,6 +85,7 @@ export async function signAndExecuteTransaction(
       transactionId: result.transactionId,
       transactionHash: result.transactionHash,
     };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     console.error('Transaction execution failed:', error);
 

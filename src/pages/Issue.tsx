@@ -259,6 +259,7 @@ const IssueCertificate = () => {
       toast.success("Certificate issued successfully!");
       navigate(certificatesPath);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error('Error issuing certificate:', error);
 

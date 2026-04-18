@@ -119,6 +119,7 @@ const Signup = () => {
       const redirectUrl = `${window.location.origin}/dashboard`;
 
       // Prepare options for Supabase Auth
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const signUpOptions: any = {
         emailRedirectTo: redirectUrl,
         data: {

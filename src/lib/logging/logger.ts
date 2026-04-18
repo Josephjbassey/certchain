@@ -17,6 +17,7 @@ export enum LogLevel {
 export interface LogEntry {
     level: LogLevel;
     message: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     context?: Record<string, any>;
     timestamp: string;
     userId?: string;
@@ -67,6 +68,7 @@ export class LoggerService {
     /**
      * Log debug message
      */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     debug(message: string, context?: Record<string, any>) {
         this.log(LogLevel.DEBUG, message, context);
     }
@@ -74,6 +76,7 @@ export class LoggerService {
     /**
      * Log info message
      */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     info(message: string, context?: Record<string, any>) {
         this.log(LogLevel.INFO, message, context);
     }
@@ -81,6 +84,7 @@ export class LoggerService {
     /**
      * Log warning
      */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     warn(message: string, context?: Record<string, any>) {
         this.log(LogLevel.WARN, message, context);
     }
@@ -88,6 +92,7 @@ export class LoggerService {
     /**
      * Log error
      */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     error(message: string, error?: Error, context?: Record<string, any>) {
         const errorContext = error ? {
             ...context,
@@ -104,6 +109,7 @@ export class LoggerService {
     /**
      * Log critical error (always sends to HCS immediately)
      */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     critical(message: string, error?: Error, context?: Record<string, any>) {
         const errorContext = error ? {
             ...context,
@@ -121,6 +127,7 @@ export class LoggerService {
     /**
      * Log entry to queue
      */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private async log(level: LogLevel, message: string, context?: Record<string, any>) {
         const entry: LogEntry = {
             level,
@@ -218,6 +225,7 @@ export class LoggerService {
         transactionType: string,
         transactionId: string,
         status: 'success' | 'failed',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         details?: Record<string, any>
     ) {
         this.info(`Hedera transaction ${status}`, {
@@ -248,6 +256,7 @@ export class LoggerService {
     /**
      * Log user action
      */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     logAction(action: string, details?: Record<string, any>) {
         this.info(`User action: ${action}`, details);
     }

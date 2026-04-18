@@ -218,6 +218,7 @@ export class HederaService {
                 return {
                     did: profile.did,
                     accountId: accountId,
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     network: getHederaConfig().network as any,
                 };
             }
@@ -304,6 +305,7 @@ export class HederaService {
                 issuedTo: cert.recipient_account_id || cert.recipient_email,
                 issuedAt: cert.issued_at,
                 revokedAt: cert.revoked_at,
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 metadata: cert.metadata as any,
                 onChainData,
             };

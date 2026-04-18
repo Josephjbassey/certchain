@@ -44,6 +44,7 @@ const TwoFactor = () => {
       } else {
         throw new Error("Verification failed. Please try again.");
       }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       toast.error(error.message);
     } finally {

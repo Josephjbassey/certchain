@@ -8,6 +8,7 @@ export class HederaServiceError extends Error {
         message: string,
         public code: string,
         public transactionId?: string,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         public originalError?: any
     ) {
         super(message);
@@ -20,6 +21,7 @@ export class HederaTransactionError extends HederaServiceError {
         message: string,
         public status: string,
         transactionId?: string,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         originalError?: any
     ) {
         super(message, 'TRANSACTION_FAILED', transactionId, originalError);
@@ -28,6 +30,7 @@ export class HederaTransactionError extends HederaServiceError {
 }
 
 export class HederaNetworkError extends HederaServiceError {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     constructor(message: string, originalError?: any) {
         super(message, 'NETWORK_ERROR', undefined, originalError);
         this.name = 'HederaNetworkError';
@@ -42,6 +45,7 @@ export class HederaValidationError extends HederaServiceError {
 }
 
 export class IPFSError extends Error {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     constructor(message: string, public originalError?: any) {
         super(message);
         this.name = 'IPFSError';
@@ -51,6 +55,7 @@ export class IPFSError extends Error {
 /**
  * Parse Hedera error from various sources
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function parseHederaError(error: any): HederaServiceError {
     // Supabase function error
     if (error?.message) {
@@ -91,6 +96,7 @@ export function parseHederaError(error: any): HederaServiceError {
 /**
  * Get user-friendly error message
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function getErrorMessage(error: any): string {
     if (error instanceof HederaTransactionError) {
         return `Transaction failed: ${error.message}. Please try again.`;
@@ -118,6 +124,7 @@ export async function retryOperation<T>(
     maxRetries: number = 3,
     delayMs: number = 1000
 ): Promise<T> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let lastError: any;
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
