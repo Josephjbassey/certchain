@@ -43,6 +43,7 @@ export interface HederaNFTMetadata {
     expiresAt?: string;
     skills?: string[];
     grade?: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     additionalData?: Record<string, any>;
 }
 
@@ -72,6 +73,7 @@ export interface MintCertificateResponse {
 export interface HCSMessageRequest {
     topicId: string;
     messageType: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     message: Record<string, any>;
     network?: HederaNetwork;
 }
@@ -162,5 +164,6 @@ export interface VerificationResult {
     issuedAt?: string;
     revokedAt?: string | null;
     metadata?: HederaNFTMetadata;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onChainData?: any;
 }

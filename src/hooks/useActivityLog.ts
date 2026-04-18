@@ -5,6 +5,7 @@ export interface ActivityLogEntry {
   action: string;
   resourceType: 'certificate' | 'institution' | 'user' | 'did' | 'webhook' | 'apikey' | 'invitation' | 'system';
   resourceId?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   metadata?: Record<string, any>;
   severity?: 'info' | 'warning' | 'error' | 'critical';
 }
@@ -118,6 +119,7 @@ export const useActivityLog = () => {
   const logError = async (
     action: string,
     error: Error | unknown,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     metadata?: Record<string, any>
   ): Promise<void> => {
     const errorMetadata = {
@@ -143,6 +145,7 @@ export const useActivityLog = () => {
   const logSecurityEvent = async (
     action: string,
     resourceType: ActivityLogEntry['resourceType'],
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     metadata?: Record<string, any>
   ): Promise<void> => {
     await logActivity({

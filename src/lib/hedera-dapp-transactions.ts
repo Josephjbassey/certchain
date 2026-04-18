@@ -30,6 +30,7 @@ export interface SignAndSubmitOptions {
   supabase: SupabaseClient;
   userId: string;
   network?: 'mainnet' | 'testnet' | 'previewnet';
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   metadata?: Record<string, any>;
 }
 
@@ -155,11 +156,13 @@ export function createTopicMessageTransaction(
  */
 export async function signAndSubmitTransaction(
   dAppConnector: DAppConnector,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   transaction: any, // Hedera Transaction type
   options: SignAndSubmitOptions
 ): Promise<{
   success: boolean;
   transactionId?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   receipt?: any;
   error?: string;
 }> {
@@ -211,6 +214,7 @@ export async function signAndSubmitTransaction(
       transactionId: data.transactionId,
       receipt: data.receipt,
     };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     console.error('Error signing and submitting transaction:', error);
     return {
@@ -260,6 +264,7 @@ export async function mintCertificate(
       transactionId: result.transactionId,
       serialNumber: result.receipt?.serials?.[0]?.toNumber(),
     };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     return {
       success: false,
@@ -294,6 +299,7 @@ export async function associateToken(
     });
 
     return result;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     return {
       success: false,
@@ -328,6 +334,7 @@ export async function submitTopicMessage(
     });
 
     return result;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     return {
       success: false,
@@ -395,6 +402,7 @@ export async function issueCertificateComplete(
       associateTransactionId,
       serialNumber: mintResult.serialNumber,
     };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     return {
       success: false,

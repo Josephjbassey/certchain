@@ -235,6 +235,7 @@ export async function waitForMirrorNode(
   network: HederaNetwork = 'testnet',
   maxAttempts: number = 10,
   delayMs: number = 2000
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 ): Promise<any> {
   const config = getNetworkConfig(network);
   const url = `${config.mirrorNodeUrl}/api/v1/transactions/${transactionId}`;
@@ -302,6 +303,7 @@ export class HederaTransactionError extends Error {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function handleHederaError(error: any): HederaTransactionError {
   if (error instanceof HederaTransactionError) {
     return error;
