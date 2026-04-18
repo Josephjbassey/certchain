@@ -22,6 +22,14 @@ import TermsOfService from "./pages/TermsOfService";
 import NotFound from "./pages/NotFound";
 import Profile from "./pages/Profile";
 
+// Auth Pages
+import Login from "./pages/auth/Login";
+import Signup from "./pages/auth/Signup";
+import ForgotPassword from "./pages/auth/ForgotPassword";
+import ResetPassword from "./pages/auth/ResetPassword";
+import TwoFactor from "./pages/auth/TwoFactor";
+import VerifyEmail from "./pages/auth/VerifyEmail";
+
 // Dashboard / Authenticated
 import Dashboard from "./pages/Dashboard";
 import Issue from "./pages/Issue";
@@ -72,6 +80,14 @@ const App = () => (
                 <Route path="/terms-of-service" element={<TermsOfService />} />
                 <Route path="/profile/:accountId" element={<Profile />} />
 
+                {/* Auth Routes */}
+                <Route path="/auth/login" element={<Login />} />
+                <Route path="/auth/signup" element={<Signup />} />
+                <Route path="/auth/forgot-password" element={<ForgotPassword />} />
+                <Route path="/auth/reset-password" element={<ResetPassword />} />
+                <Route path="/auth/2fa" element={<TwoFactor />} />
+                <Route path="/auth/verify-email" element={<VerifyEmail />} />
+
                 {/* Authenticated Routes */}
                 <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                 <Route path="/issue" element={<ProtectedRoute><Issue /></ProtectedRoute>} />
@@ -81,9 +97,6 @@ const App = () => (
                 <Route path="/certificates" element={<ProtectedRoute><MyCertificates /></ProtectedRoute>} />
                 <Route path="/certificates/:id" element={<ProtectedRoute><MyCertificateDetail /></ProtectedRoute>} />
                 <Route path="/ai-console" element={<ProtectedRoute><AiConsole /></ProtectedRoute>} />
-
-                {/* Dummy Login route for auth guard redirection */}
-                <Route path="/auth/login" element={<div className="min-h-screen flex items-center justify-center p-6"><h1 className="text-2xl font-bold">Login required (Placeholder)</h1></div>} />
 
                 {/* Catch-all */}
                 <Route path="*" element={<NotFound />} />
