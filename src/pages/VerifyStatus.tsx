@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer";
+import { PublicHeader as Header } from "@/components/PublicHeader";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { ShieldCheck, CheckCircle2, Search, ArrowRight, Loader2, XCircle } from "lucide-react";
@@ -189,7 +188,7 @@ export default function VerifyStatus() {
         </div>
       </main>
 
-      <Footer />
+
     </div>
   );
 }
