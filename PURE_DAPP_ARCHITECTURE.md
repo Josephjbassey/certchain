@@ -42,7 +42,7 @@ contract CertChainRegistry {
 3. Operations (like minting) are protected by the contract's modifiers, making it physically impossible to bypass RBAC even if the frontend is compromised.
 
 ## 3. Certificate Minting (Replacing Edge Functions)
-**Current (Supabase):** Deno Edge Function uses `HEDERA_OPERATOR_KEY` to mint HTS tokens.
+**Current (Supabase):** Deno Edge Function uses `VITE_HEDERA_OPERATOR_KEY` to mint HTS tokens.
 **Pure dApp:** Direct User-Signed Minting via Smart Contract or HTS.
 - **Problem with purely frontend HTS:** If the frontend holds an operator key, anyone can extract it and mint tokens.
 - **Solution:** A **Factory Smart Contract**.
@@ -54,18 +54,20 @@ contract CertChainRegistry {
 ## 4. Metadata & Storage
 **Current (Supabase):** Relational data mapping `token_id` to `recipient_name`.
 **Pure dApp:** IPFS + HCS (Hedera Consensus Service).
-- **Metadata:** When a certificate is issued, a JSON metadata file (containing recipient name, course details, date) is uploaded to IPFS (via Pinata directly from the frontend, using a scoped/restricted JWT, or via a decentralized node).
-- **State Indexing:** We replace the Supabase SQL database by logging every action to a dedicated **HCS Topic**.
-    - E.g., `TopicMessageSubmitTransaction` containing: `{"action": "ISSUE", "recipient": "0.0.999", "ipfs_hash": "Qm..."}`
+- **Metadata:** When a certificate is issued, a JSON metadata file is uploaded to IPFS. **Crucially, to preserve privacy, no PII (Personally Identifiable Information like email or legal name) should be uploaded directly to public IPFS.** Instead, store a hashed/encrypted pseudonym or require an off-chain secure layer to link identities.
+- Uploading from the frontend to Pinata directly using long-lived JWTs is a massive security risk. We must use an upload proxy or short-lived, strictly scoped ephemeral tokens.
+- **State Indexing:** We replace the Supabase SQL database by logging actions to a dedicated **HCS Topic**.
+    - E.g., `TopicMessageSubmitTransaction` containing only non-PII pointers: `{"action": "ISSUE", "recipient": "0.0.999", "ipfs_hash": "Qm..."}`
     - The frontend queries the Hedera Mirror Node for this Topic ID to build a history of all issued certificates (the "Database").
 
 ## 5. Summary of the Pure dApp Stack
+
 | Feature | Current Hybrid Stack | Pure dApp Stack |
 | :--- | :--- | :--- |
 | **Authentication** | Supabase Auth (Email/Pass) | Hedera Wallet Connect (HashPack) |
 | **User Roles (RBAC)** | Postgres `user_roles` table | Solidity Smart Contract Mapping |
 | **Database/History** | Supabase Postgres (SQL) | Hedera Mirror Node (HCS Topic Queries) |
 | **Server Logic** | Supabase Edge Functions | Solidity Smart Contracts (HSCS) |
-| **Storage** | Supabase Storage / IPFS | IPFS via decentralized gateway |
+| **Storage** | Supabase Storage / IPFS | IPFS via decentralized gateway (Privacy Preserved) |
 
 Moving to a pure dApp offers maximum decentralization and trustlessness, eliminating monthly SaaS costs (Supabase), but introduces complexity regarding Smart Contract deployment, gas fees paid by end-users, and slightly slower data querying (Mirror Node vs SQL).

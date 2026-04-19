@@ -25,12 +25,10 @@ export interface ValidationSchema {
 /**
  * Validate request body against schema
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function validateRequest<T = any>(
   req: Request,
   schema: ValidationSchema
 ): Promise<T> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let body: any;
 
   try {
@@ -158,7 +156,10 @@ export function isValidEmail(email: string): boolean {
  */
 export function isValidUrl(url: string): boolean {
   try {
-    new URL(url);
+    const urlObj = new URL(url.trim());
+    if (urlObj.protocol !== 'http:' && urlObj.protocol !== 'https:') {
+      return false;
+    }
     return true;
   } catch {
     return false;

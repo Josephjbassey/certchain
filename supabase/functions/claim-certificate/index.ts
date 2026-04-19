@@ -38,6 +38,17 @@ serve(async (req) => {
     }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    // Authorization Check
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Missing Authorization header" }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    if (userError || !user || user.id !== userId) {
+      return new Response(JSON.stringify({ error: "Unauthorized access" }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
 
     // 1) Lookup claim token
     const { data: claimRow, error: claimErr } = await supabase
@@ -193,7 +204,6 @@ serve(async (req) => {
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (transferErr: any) {
       // Common cause: TOKEN_NOT_ASSOCIATED_TO_ACCOUNT or ACCOUNT_FROZEN_FOR_TOKEN
       return new Response(
@@ -209,7 +219,6 @@ serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     console.error("Error in claim-certificate:", error);
     return new Response(

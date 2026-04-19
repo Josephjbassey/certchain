@@ -238,7 +238,7 @@ export async function verifyApiKey(
   await supabase
     .from('api_keys')
     .update({ last_used_at: new Date().toISOString() })
-    .eq('key', apiKey);
+    .eq('id', keyData.id);
 
   logger?.debug('API key verified', {
     userId: key.user_id,

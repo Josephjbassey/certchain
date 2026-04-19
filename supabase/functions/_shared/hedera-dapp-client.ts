@@ -20,13 +20,6 @@ import {
 } from "https://esm.sh/@hashgraph/sdk@2.75.0/es2022/sdk.mjs";
 import { syncTransactionFromMirrorNode } from './hedera-mirror-node.ts';
 
-
-import { TransactionReceipt } from "https://esm.sh/@hashgraph/sdk@2.75.0/es2022/sdk.mjs";
-
-function getErrorMessage(err: unknown): string {
-    if (err instanceof Error) return err.message;
-    return String(err);
-}
 export interface SignedTransactionPayload {
   signedTransactionBytes: string; // Base64 encoded signed transaction
   signerAccountId: string; // User's Hedera account ID
@@ -136,7 +129,7 @@ export async function processDAppTransaction(
       console.log('Transaction logged directly to Supabase');
 
       // Async confirmation from mirror node after delay
-      setTimeout(async () => {
+      EdgeRuntime.waitUntil(async () => {
         try {
           const mirrorTx = await import('./hedera-mirror-node.ts').then(m =>
             m.waitForTransaction(transactionId, { network, maxRetries: 5, retryDelay: 2000 })

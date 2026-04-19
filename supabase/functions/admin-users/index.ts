@@ -115,24 +115,21 @@ serve(async (req) => {
       default:
         return json({ success: false, error: "Invalid action" }, 400);
     }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     console.error("admin-users error:", error);
     return json({ success: false, error: error?.message || "Internal error" }, 500);
   }
 });
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function handleList(payload: z.infer<typeof ListSchema>, supabaseAdmin: any) {
   const { page, perPage, search } = payload;
 
   // Supabase admin list users (auth table)
-  // @ts-expect-error Ignore untyped admin module methods types for admin API are available at runtime
+  // @ts-ignore types for admin API are available at runtime
   const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage });
   if (error) return json({ success: false, error: error.message }, 500);
 
   const users = data?.users || [];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const userIds = users.map((u: any) => u.id);
 
   // Fetch profiles and roles
@@ -150,38 +147,32 @@ async function handleList(payload: z.infer<typeof ListSchema>, supabaseAdmin: an
 
   if (roleErr) return json({ success: false, error: roleErr.message }, 500);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const profileMap = new Map(profiles?.map((p: any) => [p.id, p]));
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const roleMap = new Map(userRoles?.map((r: any) => [r.user_id, r.role]));
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let result = users.map((u: any) => ({
     id: u.id,
     email: u.email,
     created_at: u.created_at,
     last_sign_in_at: u.last_sign_in_at,
     role: roleMap.get(u.id) || 'candidate',
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     institution_id: (profileMap.get(u.id) as any)?.institution_id || null,
   }));
 
   // Optional simple search by email
   if (search && search.trim().length > 0) {
     const s = search.toLowerCase();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     result = result.filter((u: any) => String(u.email || "").toLowerCase().includes(s));
   }
 
   return json({ success: true, page, perPage, count: result.length, users: result });
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function handleCreate(payload: z.infer<typeof CreateSchema>, supabaseAdmin: any) {
   const { email, role, institutionId } = payload;
 
   // Create auth user (send invite email automatically by default)
-  // @ts-expect-error Ignore untyped admin module methods
+  // @ts-ignore
   const { data: created, error: createErr } = await supabaseAdmin.auth.admin.createUser({
     email,
     email_confirm: false,
@@ -213,7 +204,6 @@ async function handleCreate(payload: z.infer<typeof CreateSchema>, supabaseAdmin
   return json({ success: true, userId: user.id, email, role, institutionId: institutionId ?? null });
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function handleUpdate(payload: z.infer<typeof UpdateSchema>, supabaseAdmin: any) {
   const { userId, role, disabled, institutionId } = payload;
 
@@ -245,12 +235,11 @@ async function handleUpdate(payload: z.infer<typeof UpdateSchema>, supabaseAdmin
   return json({ success: true, userId, updated: { role, ...profilePatch } });
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function handleDelete(payload: z.infer<typeof DeleteSchema>, supabaseAdmin: any) {
   const { userId } = payload;
 
   // Delete auth user first
-  // @ts-expect-error Ignore untyped admin module methods
+  // @ts-ignore
   const { error: delErr } = await supabaseAdmin.auth.admin.deleteUser(userId);
   if (delErr) return json({ success: false, error: delErr.message }, 500);
 
