@@ -81,7 +81,7 @@ export function handleError(error: unknown, defaultMessage: string = 'Internal s
 /**
  * Success response helper
  */
-export function successResponse<T = any>(data: T, statusCode: number = 200): Response {
+export function successResponse<T = unknown>(data: T, statusCode: number = 200): Response {
   return new Response(
     JSON.stringify(data),
     {

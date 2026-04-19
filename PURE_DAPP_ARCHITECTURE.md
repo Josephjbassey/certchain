@@ -42,7 +42,7 @@ contract CertChainRegistry {
 3. Operations (like minting) are protected by the contract's modifiers, making it physically impossible to bypass RBAC even if the frontend is compromised.
 
 ## 3. Certificate Minting (Replacing Edge Functions)
-**Current (Supabase):** Deno Edge Function uses `VITE_HEDERA_OPERATOR_KEY` to mint HTS tokens.
+**Current (Supabase):** Deno Edge Function uses `HEDERA_OPERATOR_KEY` to mint HTS tokens.
 **Pure dApp:** Direct User-Signed Minting via Smart Contract or HTS.
 - **Problem with purely frontend HTS:** If the frontend holds an operator key, anyone can extract it and mint tokens.
 - **Solution:** A **Factory Smart Contract**.

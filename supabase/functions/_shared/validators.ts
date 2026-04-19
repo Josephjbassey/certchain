@@ -16,8 +16,8 @@ export interface ValidationSchema {
     min?: number;
     max?: number;
     pattern?: RegExp;
-    enum?: any[];
-    validate?: (value: any) => boolean;
+    enum?: unknown[];
+    validate?: (value: unknown) => boolean;
     errorMessage?: string;
   };
 }
@@ -25,14 +25,19 @@ export interface ValidationSchema {
 /**
  * Validate request body against schema
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function validateRequest<T = any>(
   req: Request,
   schema: ValidationSchema
 ): Promise<T> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let body: any;
 
   try {
     body = await req.json();
+    if (typeof body !== "object" || body === null || Array.isArray(body)) {
+      throw badRequestError("Request body must be a JSON object");
+    }
   } catch (error) {
     throw badRequestError('Invalid JSON in request body');
   }

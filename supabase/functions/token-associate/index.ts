@@ -77,6 +77,7 @@ serve(async (req: Request) => {
       : Client.forTestnet();
 
     // Determine who will pay for and sign the transaction
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let signingKey: any;
     let payerAccountId: string;
 
@@ -152,11 +153,12 @@ serve(async (req: Request) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
     );
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     console.error('Error associating token:', error);
 
     // Check for specific error cases
-    let errorMessage = error.message || 'Failed to associate token';
+    const errorMessage = error.message || 'Failed to associate token';
 
     if (errorMessage.includes('TOKEN_ALREADY_ASSOCIATED')) {
       return new Response(

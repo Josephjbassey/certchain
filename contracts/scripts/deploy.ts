@@ -3,8 +3,14 @@ import { ethers } from "hardhat";
 async function main() {
   console.log("Starting deployment on Hedera...");
 
-  const [deployer] = await ethers.getSigners();
-  console.log("Deploying contracts with account:", deployer?.address);
+  const signers = await ethers.getSigners();
+  if (signers.length === 0) {
+      console.error("❌ No deployer signer configured.");
+      process.exit(1);
+  }
+  const deployer = signers[0];
+
+  console.log("Deploying contracts with account:", deployer.address);
 
   // Deploy Registry
   const Registry = await ethers.getContractFactory("CertChainRegistry");

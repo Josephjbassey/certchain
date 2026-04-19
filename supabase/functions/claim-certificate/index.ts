@@ -193,6 +193,7 @@ serve(async (req) => {
         }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (transferErr: any) {
       // Common cause: TOKEN_NOT_ASSOCIATED_TO_ACCOUNT or ACCOUNT_FROZEN_FOR_TOKEN
       return new Response(
@@ -208,6 +209,7 @@ serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     console.error("Error in claim-certificate:", error);
     return new Response(

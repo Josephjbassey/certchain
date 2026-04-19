@@ -10,6 +10,7 @@ interface LogContext {
   functionName?: string;
   userId?: string;
   requestId?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any;
 }
 
@@ -20,6 +21,7 @@ class Logger {
     this.context = context;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private log(level: LogLevel, message: string, meta?: Record<string, any>) {
     const logEntry = {
       level,
@@ -36,18 +38,22 @@ class Logger {
     logMethod(JSON.stringify(logEntry));
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   debug(message: string, meta?: Record<string, any>) {
     this.log('debug', message, meta);
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   info(message: string, meta?: Record<string, any>) {
     this.log('info', message, meta);
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   warn(message: string, meta?: Record<string, any>) {
     this.log('warn', message, meta);
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   error(message: string, error?: Error | unknown, meta?: Record<string, any>) {
     const errorMeta = {
       ...meta,
@@ -89,6 +95,7 @@ export function logTransaction(
   logger: Logger,
   transactionType: string,
   transactionId: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   details?: Record<string, any>
 ) {
   logger.info('Transaction executed', {
@@ -107,6 +114,7 @@ export function logExternalApiCall(
   endpoint: string,
   success: boolean,
   duration?: number,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   details?: Record<string, any>
 ) {
   const message = `External API call to ${service}: ${success ? 'success' : 'failed'}`;
@@ -133,6 +141,7 @@ export function logDatabaseOperation(
   operation: string,
   table: string,
   success: boolean,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   details?: Record<string, any>
 ) {
   const message = `Database ${operation} on ${table}: ${success ? 'success' : 'failed'}`;

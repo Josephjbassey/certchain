@@ -20,6 +20,7 @@ contract CertChainFactory {
     }
 
     modifier onlyAuthorizedMinters() {
+        require(registry.isRegistered(msg.sender), "Caller is not registered");
         CertChainRegistry.Role callerRole = registry.getRole(msg.sender);
         require(
             callerRole == CertChainRegistry.Role.InstitutionAdmin ||
@@ -34,7 +35,7 @@ contract CertChainFactory {
      * @dev Called by frontend to issue a certificate. Verifies RBAC, then executes HTS interactions.
      * Note: In a production Hedera environment, we would import standard Hedera precompiles (IHederaTokenService.sol).
      */
-    function issueCertificate(string calldata ipfsHash, address recipient) external onlyAuthorizedMinters {
+    function issueCertificate(string calldata /*ipfsHash*/, address /*recipient*/) external view onlyAuthorizedMinters {
         // Find out who is issuing
         address institution = msg.sender;
         CertChainRegistry.Role role = registry.getRole(msg.sender);
@@ -43,10 +44,18 @@ contract CertChainFactory {
             institution = registry.institutionInstructors(msg.sender);
         }
 
+        // Suppress unused warning while keeping implementation stub visible
+        // using the institution variable
+        require(institution != address(0), "Invalid institution");
+
         // Logic here to invoke HTS_PRECOMPILE to mint the NFT to the given token class.
         // HTS interactions typically require IHederaTokenService(HTS_PRECOMPILE).mintToken(tokenId, metadata);
         // This is a proxy mechanism. The Smart Contract itself is the admin of the Token Class.
 
-        emit CertificateMinted(institution, msg.sender, ipfsHash);
+        // TODO: Implement actual HTS precompile interactions
+        revert("HTS Precompile interaction not yet implemented in pure-dApp stub");
+
+        // The event emission is suppressed by the revert, but kept for future implementation reference.
+        // emit CertificateMinted(institution, msg.sender, ipfsHash);
     }
 }

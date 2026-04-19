@@ -13,6 +13,11 @@ import {
   type MirrorNodeOptions,
 } from './hedera-mirror-node.ts';
 
+
+function getErrorMessage(err: unknown): string {
+    if (err instanceof Error) return err.message;
+    return String(err);
+}
 export interface TransactionResult {
   success: boolean;
   transactionId?: string;
@@ -155,12 +160,12 @@ export async function executeResilientTransaction(
         syncedFromMirror: false,
       };
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(`Error executing ${transactionType} transaction:`, error);
 
     return {
       success: false,
-      error: error.message || 'Transaction execution failed',
+      error: getErrorMessage(error) || 'Transaction execution failed',
     };
   }
 }
@@ -179,7 +184,7 @@ export async function queryTransactionStatus(
 ): Promise<{
   status: 'success' | 'failed' | 'pending' | 'not_found';
   transactionHash?: string;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
 }> {
   try {
     // First, check Supabase

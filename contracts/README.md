@@ -9,7 +9,7 @@ To deploy these contracts to the Hedera Testnet, you must have an active Hedera 
 Ensure your `.env` file (at the root of the repository) contains the following variable:
 
 ```env
-VITE_HEDERA_OPERATOR_KEY=0x<your_ecdsa_private_key>
+HEDERA_OPERATOR_KEY=0x<your_ecdsa_private_key>
 ```
 *Note: Hardhat requires your private key to be in Hex format (starting with `0x`) for EVM signing.*
 

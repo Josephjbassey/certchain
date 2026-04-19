@@ -8,14 +8,12 @@ pragma solidity ^0.8.20;
 contract CertChainRegistry {
     enum Role { None, Candidate, Instructor, InstitutionAdmin, SuperAdmin }
 
-    address public owner;
     mapping(address => Role) public userRoles;
     mapping(address => address) public institutionInstructors; // maps instructor to institution admin
 
     event RoleAssigned(address indexed user, Role newRole, address indexed assignedBy);
 
     constructor() {
-        owner = msg.sender;
         userRoles[msg.sender] = Role.SuperAdmin;
     }
 
@@ -49,6 +47,11 @@ contract CertChainRegistry {
 
     // Checking access levels
     function getRole(address user) external view returns (Role) {
-        return userRoles[user] == Role.None ? Role.Candidate : userRoles[user]; // Fallback
+        return userRoles[user]; // Return the raw stored role
+    }
+
+    // Check if user is explicitly registered in the system
+    function isRegistered(address user) external view returns (bool) {
+        return userRoles[user] != Role.None;
     }
 }

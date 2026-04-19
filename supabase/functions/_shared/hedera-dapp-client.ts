@@ -20,6 +20,13 @@ import {
 } from "https://esm.sh/@hashgraph/sdk@2.75.0/es2022/sdk.mjs";
 import { syncTransactionFromMirrorNode } from './hedera-mirror-node.ts';
 
+
+import { TransactionReceipt } from "https://esm.sh/@hashgraph/sdk@2.75.0/es2022/sdk.mjs";
+
+function getErrorMessage(err: unknown): string {
+    if (err instanceof Error) return err.message;
+    return String(err);
+}
 export interface SignedTransactionPayload {
   signedTransactionBytes: string; // Base64 encoded signed transaction
   signerAccountId: string; // User's Hedera account ID
@@ -30,7 +37,7 @@ export interface DAppTransactionResult {
   success: boolean;
   transactionId?: string;
   transactionHash?: string;
-  receipt?: any;
+  receipt?: TransactionReceipt;
   error?: string;
   syncedFromMirror?: boolean;
 }
@@ -69,9 +76,9 @@ export async function submitSignedTransaction(
       receipt,
       response,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error submitting signed transaction:', error);
-    throw new Error(`Failed to submit signed transaction: ${error.message}`);
+    throw new Error(`Failed to submit signed transaction: ${getErrorMessage(error)}`);
   }
 }
 
@@ -195,12 +202,12 @@ export async function processDAppTransaction(
         syncedFromMirror: false,
       };
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(`Error processing DApp transaction:`, error);
 
     return {
       success: false,
-      error: error.message || 'Transaction processing failed',
+      error: getErrorMessage(error) || 'Transaction processing failed',
     };
   }
 }
