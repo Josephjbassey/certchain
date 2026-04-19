@@ -45,3 +45,4 @@ gha-creds-*.json
 # Supabase
 supabase/.temp/
 .supabase/
+contracts/node_modules
