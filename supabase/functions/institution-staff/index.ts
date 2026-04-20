@@ -114,7 +114,6 @@ serve(async (req) => {
       default:
         return json({ success: false, error: "Invalid action" }, 400);
     }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     console.error("institution-staff error:", error);
     return json({ success: false, error: error?.message || "Internal error" }, 500);
@@ -134,7 +133,6 @@ async function authorizeInstitutionAccess(
   throw new Error("Forbidden: not allowed to manage this institution");
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function handleList(payload: z.infer<typeof ListSchema>, supabaseAdmin: any) {
   const { institutionId, search } = payload;
 
@@ -147,9 +145,7 @@ async function handleList(payload: z.infer<typeof ListSchema>, supabaseAdmin: an
   if (error) return json({ success: false, error: error.message }, 500);
 
   const userIds = [...new Set([
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ...data.map((r: any) => r.instructor_id),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ...data.map((r: any) => r.candidate_id)
   ])];
 
@@ -164,15 +160,12 @@ async function handleList(payload: z.infer<typeof ListSchema>, supabaseAdmin: an
     .select("user_id, role")
     .in("user_id", userIds);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const profileMap = new Map(profiles?.map((p: any) => [p.id, p]));
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const roleMap = new Map(roles?.map((r: any) => [r.user_id, r.role]));
 
   let staff = userIds.map(userId => ({
     userId,
     institutionId,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     email: (profileMap.get(userId) as any)?.email ?? null,
     role: roleMap.get(userId) ?? 'candidate',
   }));
@@ -185,7 +178,6 @@ async function handleList(payload: z.infer<typeof ListSchema>, supabaseAdmin: an
   return json({ success: true, institutionId, count: staff.length, staff });
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function handleAdd(payload: z.infer<typeof AddSchema>, supabaseAdmin: any) {
   const { institutionId, userId, email } = payload;
 
@@ -193,7 +185,7 @@ async function handleAdd(payload: z.infer<typeof AddSchema>, supabaseAdmin: any)
 
   if (!targetUserId) {
     // Create and invite a new user via email
-    // @ts-expect-error Ignore untyped admin module methods
+    // @ts-ignore
     const { data: created, error: createErr } = await supabaseAdmin.auth.admin.createUser({
       email: email!,
       email_confirm: false,
@@ -235,7 +227,6 @@ async function handleAdd(payload: z.infer<typeof AddSchema>, supabaseAdmin: any)
   return json({ success: true, institutionId, userId: targetUserId });
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function handleRemove(payload: z.infer<typeof RemoveSchema>, supabaseAdmin: any) {
   const { institutionId, userId } = payload;
 

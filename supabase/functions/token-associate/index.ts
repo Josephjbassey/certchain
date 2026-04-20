@@ -41,6 +41,17 @@ serve(async (req: Request) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
+    // Authorization Check
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Missing Authorization header" }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    if (userError || !user || user.id !== userId) {
+      return new Response(JSON.stringify({ error: "Unauthorized access" }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
 
     // Check if already associated via Mirror Node
     const mirrorNodeUrl = network === 'mainnet'
@@ -77,7 +88,6 @@ serve(async (req: Request) => {
       : Client.forTestnet();
 
     // Determine who will pay for and sign the transaction
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let signingKey: any;
     let payerAccountId: string;
 
@@ -153,12 +163,11 @@ serve(async (req: Request) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
     );
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     console.error('Error associating token:', error);
 
     // Check for specific error cases
-    const errorMessage = error.message || 'Failed to associate token';
+    let errorMessage = error.message || 'Failed to associate token';
 
     if (errorMessage.includes('TOKEN_ALREADY_ASSOCIATED')) {
       return new Response(

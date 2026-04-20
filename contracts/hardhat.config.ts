@@ -4,16 +4,9 @@ import * as dotenv from "dotenv";
 
 dotenv.config({ path: '../.env' });
 
+// Ensure we are reading the correct environment variable and format it properly
 let operatorKey = process.env.HEDERA_OPERATOR_KEY || "";
-if (operatorKey.startsWith("0x")) {
-    operatorKey = operatorKey.slice(2);
-}
-// Ensure key is 32 bytes (64 hex characters) if it's DER-encoded (often 48 or 64 bytes)
-// We take the last 64 characters if it's longer
-if (operatorKey.length > 64) {
-    operatorKey = operatorKey.slice(-64);
-}
-if (operatorKey) {
+if (operatorKey && !operatorKey.startsWith("0x")) {
     operatorKey = `0x${operatorKey}`;
 }
 

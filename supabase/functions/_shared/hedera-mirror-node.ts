@@ -66,6 +66,14 @@ export function getMirrorNodeUrl(network: 'mainnet' | 'testnet' | 'previewnet' =
  * @param transactionId - Hedera transaction ID (e.g., "0.0.12345@1234567890.000000000")
  * @param options - Mirror node options
  */
+
+function toMirrorTimestamp(isoString: string): string {
+    const d = new Date(isoString);
+    const ms = d.getTime();
+    const sec = Math.floor(ms / 1000);
+    const nsec = (ms % 1000) * 1000000;
+    return `${sec}.${nsec.toString().padStart(9, '0')}`;
+}
 export async function getTransaction(
   transactionId: string,
   options: MirrorNodeOptions = {}
@@ -99,7 +107,6 @@ export async function getTransaction(
     }
 
     return data.transactions[0];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     if (error.name === 'AbortError') {
       console.error('Mirror node request timeout');
@@ -155,7 +162,6 @@ export async function getTopicMessages(
 
     const data = await response.json();
     return data.messages || [];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     console.error('Error fetching topic messages from mirror node:', error);
     return [];
@@ -207,7 +213,6 @@ export async function getAccountTransactions(
 
     const data = await response.json();
     return data.transactions || [];
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     console.error('Error fetching account transactions from mirror node:', error);
     return [];
@@ -257,7 +262,6 @@ export async function waitForTransaction(
  * @param transactionType - Type of transaction
  */
 export async function syncTransactionFromMirrorNode(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   supabaseClient: any,
   transactionId: string,
   userId: string,
@@ -334,7 +338,6 @@ export async function syncTransactionFromMirrorNode(
  * @param since - Timestamp to sync from (ISO format)
  */
 export async function batchSyncTransactions(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   supabaseClient: any,
   accountId: string,
   userId: string,

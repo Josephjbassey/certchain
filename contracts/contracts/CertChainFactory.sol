@@ -16,6 +16,7 @@ contract CertChainFactory {
     event CertificateMinted(address indexed institution, address indexed instructor, string ipfsHash);
 
     constructor(address _registryAddress) {
+        require(_registryAddress != address(0), "CertChainFactory: zero registry address");
         registry = CertChainRegistry(_registryAddress);
     }
 

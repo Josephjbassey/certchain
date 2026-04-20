@@ -55,7 +55,7 @@ serve(async (req) => {
         limit: 100,
       });
 
-      // Store messages in database
+      // Format messages for response
       const syncedMessages = [];
       for (const msg of messages) {
         const decodedMessage = decodeTopicMessage(msg.message);
@@ -187,7 +187,6 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
     );
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     console.error('Error logging to HCS:', error);
     return new Response(

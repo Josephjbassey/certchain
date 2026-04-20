@@ -13,11 +13,6 @@ import {
   type MirrorNodeOptions,
 } from './hedera-mirror-node.ts';
 
-
-function getErrorMessage(err: unknown): string {
-    if (err instanceof Error) return err.message;
-    return String(err);
-}
 export interface TransactionResult {
   success: boolean;
   transactionId?: string;

@@ -41,7 +41,7 @@ serve(async (req) => {
         metadata = {
           name: metadataToUpload.courseName || 'Certificate',
           description: metadataToUpload.recipientEmail
-            ? `Certificate issued to ${metadataToUpload.recipientEmail}`
+            ? `Certificate issued to DID ${metadataToUpload.recipientDid || 'Anonymous'}`
             : `Certificate issued by ${metadataToUpload.institutionName || 'Institution'}`,
           image: metadataToUpload.imageUrl || '',
           attributes: [
@@ -99,6 +99,9 @@ serve(async (req) => {
       let fileContent;
       if (typeof fileData.content === 'string') {
         // Assume base64 encoded
+        if (fileData.content.length > 5 * 1024 * 1024) {
+          throw new Error('Upload exceeds 5MB size limit');
+        }
         const binaryString = atob(fileData.content);
         const bytes = new Uint8Array(binaryString.length);
         for (let i = 0; i < binaryString.length; i++) {
@@ -143,7 +146,6 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
     );
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     console.error('Error uploading to Pinata:', error);
     return new Response(
