@@ -18,7 +18,7 @@ const IssueCertificate = () => {
     recipientName: "",
     recipientEmail: "",
     courseName: "",
-    issueDate: new Date().toISOString().split("T")[0],
+    issueDate: `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}-${String(new Date().getDate()).padStart(2, "0")}`,
     description: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -31,9 +31,7 @@ const IssueCertificate = () => {
       // Simulate HTS Minting interaction
       await new Promise(resolve => setTimeout(resolve, 2000));
 
-      toast.success("Certificate issued successfully on Hedera!");
-      logActivity("issue", `Issued to ${formData.recipientName}`);
-      navigate(certificatesPath);
+      toast.info(`Simulation: No real Hedera transaction was performed for ${formData.recipientName}.`);
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : "Unknown error";
       toast.error(`Failed: ${msg}`);

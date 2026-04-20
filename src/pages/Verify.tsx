@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { PublicHeader as Header } from "@/components/PublicHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,8 +7,16 @@ import { useNavigate } from "react-router-dom";
 
 export default function Verify() {
   const [certId, setCertId] = useState("");
-  const [status, setStatus] = useState<"idle" | "verifying" | "success" | "error">("idle");
+  const [status, setStatus] = useState<"idle" | "verifying">("idle");
   const navigate = useNavigate();
+
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
 
   const handleVerify = (e: React.FormEvent) => {
     e.preventDefault();
@@ -16,11 +24,9 @@ export default function Verify() {
 
     setStatus("verifying");
 
-    // Simulate pinging Hedera Mirror Node
-    setTimeout(() => {
-      // For demonstration, navigate to the detail page or show status
-      // Real implementation would fetch from Hedera
-      navigate(`/verify/status/${certId}`);
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      navigate(`/verify/status/${encodeURIComponent(certId)}`);
     }, 1500);
   };
 

@@ -10,29 +10,50 @@ export type UserRole =
 export const useUserRole = () => {
   const { user } = useAuth();
 
-  return useQuery({
+  return useQuery<UserRole | null>({
     queryKey: ['user-role', user?.id],
     queryFn: async () => {
       if (!user) return null;
-      // TODO: Replace with Smart Contract RBAC check
-      return 'super_admin' as UserRole; // Placeholder for UI dev
+
+      // Development override support for quick UI testing
+      if (import.meta.env.MODE === 'development') {
+          const override = import.meta.env.VITE_DEV_LOCAL_ROLE as UserRole | undefined;
+          if (override) return override;
+      }
+
+      // Default to least-privileged role
+      // TODO: Replace with Smart Contract RBAC check in pure dApp mode
+      return 'candidate';
     },
     enabled: !!user,
   });
 };
 
+/**
+ * Checks if the current user has a role that meets or exceeds the required role.
+ * Hierarchy: super_admin > institution_admin > instructor > candidate.
+ */
 export const useHasRole = (requiredRole: UserRole) => {
   const { data: userRole, isLoading } = useUserRole();
 
   const hasRole = () => {
     if (!userRole) return false;
-    const role = userRole as string;
-    const required = requiredRole as string;
-    if (role === 'super_admin') return true;
-    if (required === 'institution_admin') return role === 'institution_admin' || role === 'super_admin';
-    if (required === 'instructor') return ['instructor', 'institution_admin', 'super_admin'].includes(role);
-    if (required === 'candidate') return true;
-    return role === required;
+
+    // Super admin has access to everything
+    if (userRole === 'super_admin') return true;
+
+    // Institution admin has access to institution features and below
+    if (requiredRole === 'institution_admin')
+      return userRole === 'institution_admin' || userRole === 'super_admin';
+
+    // Instructor has access to instructor and candidate features
+    if (requiredRole === 'instructor')
+      return ['instructor', 'institution_admin', 'super_admin'].includes(userRole);
+
+    // Candidate is the lowest access level; all authenticated roles may access candidate features
+    if (requiredRole === 'candidate') return true;
+
+    return userRole === requiredRole;
   };
 
   return { hasRole: hasRole(), isLoading };

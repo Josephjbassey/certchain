@@ -1,8 +1,20 @@
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/auth-context';
 
+export interface Certificate {
+  certificate_id: string;
+  token_id?: string;
+  serial_number?: string;
+  issuer_did: string;
+  recipient_account_id?: string;
+  recipient_email?: string;
+  issued_at: string;
+  revoked_at?: string | null;
+  metadata?: Record<string, unknown>;
+}
+
 export function useCertificates() {
-  return useQuery({
+  return useQuery<Certificate[]>({
     queryKey: ['certificates'],
     queryFn: async () => {
       // Stub
@@ -14,7 +26,7 @@ export function useCertificates() {
 export function useMyCertificates() {
   const { user } = useAuth();
 
-  return useQuery({
+  return useQuery<Certificate[]>({
     queryKey: ['my-certificates', user?.id],
     queryFn: async () => {
       // Stub
@@ -25,7 +37,7 @@ export function useMyCertificates() {
 }
 
 export function useCertificate(id: string | undefined) {
-  return useQuery({
+  return useQuery<Certificate | null>({
     queryKey: ['certificate', id],
     queryFn: async () => {
       // Stub
@@ -36,25 +48,25 @@ export function useCertificate(id: string | undefined) {
 }
 
 export function useVerifyCertificate(certId: string | undefined) {
-  return useQuery({
+  return useQuery<{ verified: boolean } | null>({
     queryKey: ['verify-certificate', certId],
     queryFn: async () => {
-      // Stub
-      return { verified: true };
+      // Stub fail-closed
+      return { verified: false };
     },
     enabled: !!certId
   });
 }
 
 export function useCertificateStats() {
-  return useQuery({
+  return useQuery<{ total: number; active: number; revoked: number } | null>({
     queryKey: ['certificate-stats'],
     queryFn: async () => {
-      // Stub
+      // Stub safe default
       return {
-        total: 100,
-        active: 95,
-        revoked: 5
+        total: 0,
+        active: 0,
+        revoked: 0
       };
     }
   });

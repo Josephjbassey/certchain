@@ -15,9 +15,8 @@ export default function Contact() {
 
     // Simulate API call
     setTimeout(() => {
-        toast.success("Message sent successfully!");
+        toast.info("Demo mode: message not sent — please use our public social channels.");
         setIsSubmitting(false);
-        (e.target as HTMLFormElement).reset();
     }, 1500);
   };
 

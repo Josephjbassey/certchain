@@ -1,5 +1,5 @@
 // Mock for dApp transactions since Supabase is removed
 export const executeHederaDAppTransaction = async (txInfo: unknown) => {
-  console.log("Mock executing dApp transaction", txInfo);
+  console.log("Mock executing dApp transaction... (details omitted for privacy)");
   return { success: true, transactionId: "0.0.123@456" };
 };
