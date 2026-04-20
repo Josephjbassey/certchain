@@ -1,1 +1,0 @@
-ALTER TABLE public.api_keys ADD COLUMN IF NOT EXISTS institution_id UUID REFERENCES public.institutions(id) ON DELETE CASCADE;
