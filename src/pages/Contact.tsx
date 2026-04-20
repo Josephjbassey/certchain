@@ -1,184 +1,109 @@
-import { Shield, Mail, MessageSquare, Phone, MapPin } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Link } from "react-router-dom";
-import { toast } from "sonner";
 import { useState } from "react";
 import { PublicHeader } from "@/components/PublicHeader";
-import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
+import { Mail, MessageSquare, Send, User } from "lucide-react";
 
-const Contact = () => {
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    subject: "",
-    message: ""
-  });
+export default function Contact() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    try {
-      const { data, error } = await supabase.functions.invoke('send-contact-email', {
-        body: {
-          name: formData.name,
-          email: formData.email,
-          subject: formData.subject,
-          message: formData.message
-        }
-      });
-
-      if (error) {
-        console.error('Error sending contact email:', error);
-        toast.error("Failed to send message. Please try again or email us directly at support@mail.certchain.app");
-        return;
-      }
-
-      toast.success("Message sent! We'll get back to you within 24 hours.");
-      setFormData({ name: "", email: "", subject: "", message: "" });
-    } catch (error) {
-      console.error('Error submitting contact form:', error);
-      toast.error("Failed to send message. Please try again or email us directly at support@mail.certchain.app");
-    } finally {
-      setIsSubmitting(false);
-    }
+    // Simulate API call
+    setTimeout(() => {
+        toast.info("Demo mode: message not sent — please use our public social channels.");
+        setIsSubmitting(false);
+    }, 1500);
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen flex flex-col font-sans">
       <PublicHeader />
 
-      <div className="container mx-auto px-4 py-16">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-16">
-            <h1 className="text-5xl font-bold mb-4">Get in Touch</h1>
-            <p className="text-xl text-muted-foreground">
-              Have questions? We're here to help you get started with CertChain
+      <main className="flex-1 flex flex-col items-center justify-center py-20 px-4 relative">
+        {/* Background elements */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/5 via-background to-background pointer-events-none" />
+
+        <div className="max-w-2xl w-full z-10">
+          <div className="text-center mb-12">
+            <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">Get in Touch</h1>
+            <p className="text-lg text-muted-foreground">
+              Have questions about CertChain? We're here to help.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-12">
-            {/* Contact Form */}
-            <div>
-              <Card className="p-8 shadow-elevated">
-                <h2 className="text-2xl font-bold mb-6">Send us a message</h2>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Name</label>
-                    <Input
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      placeholder="Your name"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Email</label>
-                    <Input
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      placeholder="your@email.com"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Subject</label>
-                    <Input
-                      value={formData.subject}
-                      onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                      placeholder="How can we help?"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Message</label>
-                    <Textarea
-                      value={formData.message}
-                      onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                      placeholder="Tell us more about your needs..."
-                      rows={5}
-                      required
-                    />
-                  </div>
-                  <Button type="submit" variant="hero" size="lg" className="w-full" disabled={isSubmitting}>
-                    <MessageSquare className="h-4 w-4" />
-                    <span className="ml-2">{isSubmitting ? "Sending..." : "Send Message"}</span>
-                  </Button>
-                </form>
-              </Card>
-            </div>
+          <div className="glass-panel p-8 md:p-10 border border-primary/10">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-sm font-medium flex items-center gap-2" htmlFor="name">
+                  <User className="w-4 h-4 text-muted-foreground" />
+                  Name
+                </label>
+                <Input
+                  id="name"
+                  name="name"
+                  placeholder="Your name"
+                  required
+                  className="bg-background/50 h-12"
+                />
+              </div>
 
-            {/* Contact Info */}
-            <div className="space-y-6">
-              <Card className="p-6 gradient-card">
-                <div className="flex gap-4">
-                  <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Mail className="h-6 w-6 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold mb-1">Email</h3>
-                    <p className="text-sm text-muted-foreground mb-2">Our team is here to help</p>
-                    <a href="mailto:support@mail.certchain.app" className="text-primary hover:underline">
-                      support@mail.certchain.app
-                    </a>
-                  </div>
-                </div>
-              </Card>
+              <div className="space-y-2">
+                <label className="text-sm font-medium flex items-center gap-2" htmlFor="email">
+                  <Mail className="w-4 h-4 text-muted-foreground" />
+                  Email
+                </label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="your@email.com"
+                  required
+                  className="bg-background/50 h-12"
+                />
+              </div>
 
-              <Card className="p-6 gradient-card">
-                <div className="flex gap-4">
-                  <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Phone className="h-6 w-6 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold mb-1">Phone</h3>
-                    <p className="text-sm text-muted-foreground mb-2">Mon-Fri 9am to 6pm WAT</p>
-                    <a href="tel:+2349066469867" className="text-primary hover:underline">
-                      +239 (906) 646-9867
-                    </a>
-                  </div>
-                </div>
-              </Card>
+              <div className="space-y-2">
+                <label className="text-sm font-medium flex items-center gap-2" htmlFor="message">
+                  <MessageSquare className="w-4 h-4 text-muted-foreground" />
+                  Message
+                </label>
+                <Textarea
+                  id="message"
+                  name="message"
+                  placeholder="How can we help you?"
+                  required
+                  className="min-h-[150px] bg-background/50 resize-none"
+                />
+              </div>
 
-              <Card className="p-6 gradient-card">
-                <div className="flex gap-4">
-                  <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <MapPin className="h-6 w-6 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold mb-1">Office</h3>
-                    <p className="text-sm text-muted-foreground">
-                      4 Fadogba Street, Ifelodun Estate<br />
-                      Adjacent Alejolowo Block Industry<br />
-                      Along FUTA North Gate<br />
-                      Akure, Ondo State 340110<br />
-                      Nigeria
-                    </p>
-                  </div>
-                </div>
-              </Card>
-
-              <Card className="p-6 bg-muted/30">
-                <h3 className="font-semibold mb-3">Enterprise Solutions</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Need a custom solution for your organization? Our team can help design
-                  and implement a tailored certificate management system.
-                </p>
-                <Button variant="outline" className="w-full">
-                  Schedule a Demo
-                </Button>
-              </Card>
-            </div>
+              <Button
+                type="submit"
+                className="w-full h-12 text-lg"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <span className="flex items-center">
+                    <span className="animate-spin mr-2 border-2 border-current border-t-transparent rounded-full w-5 h-5"></span>
+                    Sending...
+                  </span>
+                ) : (
+                  <span className="flex items-center">
+                    Send Message
+                    <Send className="ml-2 w-5 h-5" />
+                  </span>
+                )}
+              </Button>
+            </form>
           </div>
         </div>
-      </div>
+      </main>
+
+
     </div>
   );
-};
-
-export default Contact;
+}

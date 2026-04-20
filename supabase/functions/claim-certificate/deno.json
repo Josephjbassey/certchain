@@ -1,7 +1,0 @@
-{
-  "tasks": {},
-  "importMap": "./import_map.json",
-  "compilerOptions": {
-    "lib": ["deno.window", "deno.worker", "es2021"]
-  }
-}
