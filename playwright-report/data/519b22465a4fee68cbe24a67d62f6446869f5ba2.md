@@ -1,0 +1,158 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - region "Notifications (F8)":
+      - list
+    - region "Notifications alt+T"
+    - generic [ref=e3]:
+      - banner [ref=e4]:
+        - generic [ref=e5]:
+          - link "CertChain" [ref=e6] [cursor=pointer]:
+            - /url: /
+            - img "CertChain" [ref=e7]
+          - navigation [ref=e8]:
+            - link "Verify" [ref=e9] [cursor=pointer]:
+              - /url: /verify
+            - link "Pricing" [ref=e10] [cursor=pointer]:
+              - /url: /pricing
+            - link "Docs" [ref=e11] [cursor=pointer]:
+              - /url: /docs
+            - link "About" [ref=e12] [cursor=pointer]:
+              - /url: /about
+          - generic [ref=e13]:
+            - button "Toggle theme" [ref=e14] [cursor=pointer]:
+              - img
+              - img
+              - generic [ref=e15]: Toggle theme
+            - link "Sign In" [ref=e16] [cursor=pointer]:
+              - /url: /auth/login
+              - button "Sign In" [ref=e17]
+            - link "Get Started" [ref=e18] [cursor=pointer]:
+              - /url: /auth/signup
+              - button "Get Started" [ref=e19]
+      - generic [ref=e23]:
+        - generic [ref=e24]:
+          - img [ref=e25]
+          - generic [ref=e27]: Powered by Hedera Hashgraph
+        - heading "Decentralized Certificate Verification Platform" [level=1] [ref=e28]:
+          - text: Decentralized Certificate
+          - generic [ref=e29]: Verification Platform
+        - paragraph [ref=e30]: Issue, verify, and manage tamper-proof certificates on Hedera blockchain. Instant verification, permanent records, and complete transparency.
+        - generic [ref=e31]:
+          - link "Start Issuing Certificates" [ref=e32] [cursor=pointer]:
+            - /url: /auth/signup
+            - button "Start Issuing Certificates" [ref=e33]:
+              - text: Start Issuing Certificates
+              - img
+          - link "Verify a Certificate" [ref=e34] [cursor=pointer]:
+            - /url: /verify
+            - button "Verify a Certificate" [ref=e35]
+        - generic [ref=e36]:
+          - generic [ref=e37]:
+            - img [ref=e38]
+            - generic [ref=e41]: Instant Verification
+          - generic [ref=e42]:
+            - img [ref=e43]
+            - generic [ref=e46]: Immutable Records
+          - generic [ref=e47]:
+            - img [ref=e48]
+            - generic [ref=e51]: Global Access
+      - generic [ref=e53]:
+        - generic [ref=e54]:
+          - heading "Why Choose CertChain?" [level=2] [ref=e55]
+          - paragraph [ref=e56]: Built on Hedera's enterprise-grade distributed ledger technology for unmatched security and speed.
+        - generic [ref=e57]:
+          - generic [ref=e58]:
+            - img [ref=e60]
+            - heading "Tamper-Proof" [level=3] [ref=e62]
+            - paragraph [ref=e63]: Every certificate is cryptographically signed and stored on Hedera's immutable ledger. Impossible to forge or alter.
+          - generic [ref=e64]:
+            - img [ref=e66]
+            - heading "Instant Verification" [level=3] [ref=e68]
+            - paragraph [ref=e69]: Verify certificates in seconds with QR codes or certificate IDs. Real-time blockchain validation.
+          - generic [ref=e70]:
+            - img [ref=e72]
+            - heading "DID Integration" [level=3] [ref=e75]
+            - paragraph [ref=e76]: Decentralized identifiers (DIDs) ensure complete ownership and portability of your credentials.
+      - generic [ref=e78]:
+        - generic [ref=e79]:
+          - heading "How It Works" [level=2] [ref=e80]
+          - paragraph [ref=e81]: Simple, secure, and scalable certificate management
+        - generic [ref=e82]:
+          - generic [ref=e83]:
+            - generic [ref=e84]: "1"
+            - heading "Create Account" [level=3] [ref=e85]
+            - paragraph [ref=e86]: Sign up and connect your Hedera wallet
+          - generic [ref=e87]:
+            - generic [ref=e88]: "2"
+            - heading "Issue Certificates" [level=3] [ref=e89]
+            - paragraph [ref=e90]: Upload recipient data and generate NFT certificates
+          - generic [ref=e91]:
+            - generic [ref=e92]: "3"
+            - heading "Store on IPFS" [level=3] [ref=e93]
+            - paragraph [ref=e94]: Certificate metadata stored on decentralized IPFS
+          - generic [ref=e95]:
+            - generic [ref=e96]: "4"
+            - heading "Verify Anywhere" [level=3] [ref=e97]
+            - paragraph [ref=e98]: Recipients share verifiable certificates globally
+      - generic [ref=e102]:
+        - heading "Ready to Transform Your Certification Process?" [level=2] [ref=e103]
+        - paragraph [ref=e104]: Join institutions worldwide using blockchain for credential verification
+        - link "Get Started for Free" [ref=e105] [cursor=pointer]:
+          - /url: /auth/signup
+          - button "Get Started for Free" [ref=e106]:
+            - text: Get Started for Free
+            - img
+      - contentinfo [ref=e107]:
+        - generic [ref=e108]:
+          - generic [ref=e109]:
+            - generic [ref=e110]:
+              - link "CertChain" [ref=e112] [cursor=pointer]:
+                - /url: /
+                - img "CertChain" [ref=e113]
+              - paragraph [ref=e114]: Decentralized certificate verification powered by Hedera.
+            - generic [ref=e115]:
+              - heading "Product" [level=4] [ref=e116]
+              - list [ref=e117]:
+                - listitem [ref=e118]:
+                  - link "Verify" [ref=e119] [cursor=pointer]:
+                    - /url: /verify
+                - listitem [ref=e120]:
+                  - link "Pricing" [ref=e121] [cursor=pointer]:
+                    - /url: /pricing
+                - listitem [ref=e122]:
+                  - link "Documentation" [ref=e123] [cursor=pointer]:
+                    - /url: /docs
+            - generic [ref=e124]:
+              - heading "Company" [level=4] [ref=e125]
+              - list [ref=e126]:
+                - listitem [ref=e127]:
+                  - link "About" [ref=e128] [cursor=pointer]:
+                    - /url: /about
+                - listitem [ref=e129]:
+                  - link "Contact" [ref=e130] [cursor=pointer]:
+                    - /url: /contact
+                - listitem [ref=e131]:
+                  - link "Terms of Service" [ref=e132] [cursor=pointer]:
+                    - /url: /terms-of-service
+                - listitem [ref=e133]:
+                  - link "Privacy Policy" [ref=e134] [cursor=pointer]:
+                    - /url: /privacy-policy
+            - generic [ref=e135]:
+              - heading "Resources" [level=4] [ref=e136]
+              - list [ref=e137]:
+                - listitem [ref=e138]:
+                  - link "Hedera Network" [ref=e139] [cursor=pointer]:
+                    - /url: https://hedera.com
+                - listitem [ref=e140]:
+                  - link "Hedera Docs" [ref=e141] [cursor=pointer]:
+                    - /url: https://docs.hedera.com
+                - listitem [ref=e142]:
+                  - link "API Reference" [ref=e143] [cursor=pointer]:
+                    - /url: /docs
+          - paragraph [ref=e145]: © 2025 CertChain. Built on Hedera. All rights reserved.
+  - generic:
+    - alertdialog
+```

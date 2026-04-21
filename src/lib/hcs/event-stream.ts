@@ -17,7 +17,6 @@ export interface HCSEvent {
     topicId: string;
     sequenceNumber: string;
     consensusTimestamp: string;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     message: any;
     transactionId?: string;
 }

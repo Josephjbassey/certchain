@@ -21,18 +21,15 @@ interface HederaWalletContextType {
   isConnecting: boolean;
   accountId: string | null;
   network: HederaNetwork;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   sessionData: any | null;
   connect: () => Promise<void>;
   disconnect: () => Promise<void>;
   switchNetwork: (network: HederaNetwork) => Promise<void>;
   executeTransaction: <T extends Transaction>(transaction: T) => Promise<{
     transactionId: string;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     receipt: any;
   }>;
   signTransaction: <T extends Transaction>(transaction: T) => Promise<T>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getSigner: () => any | null;
 }
 
@@ -48,7 +45,6 @@ export const HederaWalletProvider = ({ children }: HederaWalletProviderProps) =>
   const [isConnecting, setIsConnecting] = useState(false);
   const [accountId, setAccountId] = useState<string | null>(null);
   const [network, setNetwork] = useState<HederaNetwork>('testnet');
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [sessionData, setSessionData] = useState<any | null>(null);
 
   const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID;
@@ -103,7 +99,6 @@ export const HederaWalletProvider = ({ children }: HederaWalletProviderProps) =>
 
         await connector.init({ logger: 'error' });
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         connector.onSessionIframeCreated = (session: any) => {
           console.log('Session created:', session);
           setSessionData(session);

@@ -7,15 +7,10 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-# Node
-node_modules/
-
-# Build and Temp
-dist/
-dist-ssr/
-build/
-.cache
-*.tsbuildinfo
+node_modules
+dist
+dist-ssr
+*.local
 
 # Editor directories and files
 .vscode/*
@@ -28,21 +23,20 @@ build/
 *.sln
 *.sw?
 *.code-workspace
+*.log
+*.tsbuildinfo
+.cache
 
 # Environment files
 .env
-.env.*
-!.env.example
+.env.*.local
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.test
+.env.production
+.
 
-# Test and Verification Artifacts
-playwright-report/
-test-results/
-
-# Cloud platforms / Misc
 .gemini/
 gha-creds-*.json
-
-# Supabase
-supabase/.temp/
-.supabase/
-contracts/node_modules
