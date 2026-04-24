@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/lib/auth-context';
 
 export type UserRole =
@@ -10,28 +11,44 @@ export type UserRole =
 export const useUserRole = () => {
   const { user } = useAuth();
 
-  return useQuery<UserRole | null>({
+  return useQuery({
     queryKey: ['user-role', user?.id],
     queryFn: async () => {
       if (!user) return null;
 
-      // Development override support for quick UI testing
-      if (import.meta.env.MODE === 'development') {
-          const override = import.meta.env.VITE_DEV_LOCAL_ROLE as UserRole | undefined;
-          if (override) return override;
+      // In a multi-role system, a user might have several. We fetch all and determine the highest privilege.
+      const { data, error } = await supabase.from('user_roles').select('role').eq('user_id', user.id);
+
+      if (error) {
+        console.error('Error fetching user role:', error);
+        return 'candidate' as UserRole; // Safest default
       }
 
-      // Default to least-privileged role
-      // TODO: Replace with Smart Contract RBAC check in pure dApp mode
-      return 'candidate';
+      if (!data || data.length === 0) {
+        // This case should be rare if the signup trigger works, but as a fallback:
+        console.warn('No role found for user, defaulting to candidate.');
+        return 'candidate' as UserRole;
+      }
+
+      // Determine the highest-level role from the roles array
+      const roles = data.map(r => r.role);
+      if (roles.includes('super_admin')) return 'super_admin' as UserRole;
+      if (roles.includes('institution_admin')) return 'institution_admin' as UserRole;
+      if (roles.includes('instructor')) return 'instructor' as UserRole;
+      if (roles.includes('candidate')) return 'candidate' as UserRole;
+
+      return 'candidate' as UserRole; // Default fallback
     },
     enabled: !!user,
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    refetchOnWindowFocus: true,
   });
 };
 
 /**
  * Checks if the current user has a role that meets or exceeds the required role.
- * Hierarchy: super_admin > institution_admin > instructor > candidate.
+ * This follows the new hierarchy: super_admin > institution_admin > instructor > candidate.
+ * It also handles legacy roles for backward compatibility.
  */
 export const useHasRole = (requiredRole: UserRole) => {
   const { data: userRole, isLoading } = useUserRole();
@@ -39,21 +56,24 @@ export const useHasRole = (requiredRole: UserRole) => {
   const hasRole = () => {
     if (!userRole) return false;
 
+    const role = userRole as string;
+    const required = requiredRole as string;
+
     // Super admin has access to everything
-    if (userRole === 'super_admin') return true;
+    if (role === 'super_admin') return true;
 
     // Institution admin has access to institution features and below
-    if (requiredRole === 'institution_admin')
-      return userRole === 'institution_admin' || userRole === 'super_admin';
+    if (required === 'institution_admin')
+      return role === 'institution_admin' || role === 'super_admin';
 
     // Instructor has access to instructor and candidate features
-    if (requiredRole === 'instructor')
-      return ['instructor', 'institution_admin', 'super_admin'].includes(userRole);
+    if (required === 'instructor')
+      return ['instructor', 'institution_admin', 'super_admin'].includes(role);
 
-    // Candidate is the lowest access level; all authenticated roles may access candidate features
-    if (requiredRole === 'candidate') return true;
+    // Candidate only has access to candidate features
+    if (required === 'candidate') return true;
 
-    return userRole === requiredRole;
+    return role === required;
   };
 
   return { hasRole: hasRole(), isLoading };

@@ -2,7 +2,7 @@ import { useUserRole, type UserRole } from "./useUserRole";
 
 /**
  * Helper hook to generate role-based navigation paths
- * In the new hybrid architecture, we use unprefixed routes for the dashboard.
+ * This ensures all internal navigation matches the routing structure in App.tsx
  */
 export const useRoleBasedNavigation = () => {
   const { data: userRole } = useUserRole();
@@ -26,25 +26,36 @@ export const useRoleBasedNavigation = () => {
 
   const rolePrefix = getRolePrefix();
 
-  // Generate paths that match App.tsx unprefixed routing
+  // Generate role-based paths
   const getPath = (relativePath: string): string => {
     // Remove leading slash if present
     const cleanPath = relativePath.startsWith('/') ? relativePath.slice(1) : relativePath;
 
-    return `/${cleanPath}`;
+    // Settings routes are shared across all roles (no prefix)
+    if (cleanPath.startsWith('settings/')) {
+      return `/${cleanPath}`;
+    }
+
+    // Profile and identity routes (no prefix)
+    if (cleanPath.startsWith('profile/') || cleanPath.startsWith('identity/')) {
+      return `/${cleanPath}`;
+    }
+
+    // All other dashboard routes get role prefix
+    return `/${rolePrefix}/${cleanPath}`;
   };
 
   return {
     rolePrefix,
     userRole,
     getPath,
-    // Convenience methods for common paths matching App.tsx routes
-    dashboardPath: `/dashboard`,
-    certificatesPath: `/certificates`,
-    issuePath: `/issue`,
-    batchIssuePath: `/batch-issue`,
-    analyticsPath: `/analytics`,
-    myCertificatesPath: `/my-certificates`,
+    // Convenience methods for common paths
+    dashboardPath: `/${rolePrefix}/dashboard`,
+    certificatesPath: `/${rolePrefix}/certificates`,
+    issuePath: `/${rolePrefix}/issue`,
+    batchIssuePath: `/${rolePrefix}/batch-issue`,
+    analyticsPath: `/${rolePrefix}/analytics`,
+    myCertificatesPath: `/${rolePrefix}/my-certificates`,
     settingsPath: `/settings`,
   };
 };

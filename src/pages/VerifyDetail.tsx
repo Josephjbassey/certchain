@@ -64,7 +64,6 @@ const VerifyDetail = () => {
         if (result.certificateId && !metadata) {
           try {
             const ipfsData = await ipfsService.fetchFromIPFS(result.certificateId);
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             metadata = ipfsData as any;
           } catch (err) {
             console.warn('Failed to fetch IPFS metadata:', err);
