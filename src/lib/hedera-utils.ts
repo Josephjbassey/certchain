@@ -131,7 +131,7 @@ export class HederaTransactionError extends Error {
   }
 }
 
-export function handleHederaError(error: any): HederaTransactionError {
+export function handleHederaError(error: Error): HederaTransactionError {
   if (error instanceof HederaTransactionError) {
     return error;
   }

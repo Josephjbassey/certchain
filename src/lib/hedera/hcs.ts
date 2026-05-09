@@ -141,7 +141,7 @@ export async function getTopicInfo(client: Client, topicId: string) {
 /**
  * HCS Message wrapper for type safety
  */
-export interface HCSMessageEnvelope<T = any> {
+export interface HCSMessageEnvelope<T = unknown> {
   type: string;
   timestamp: number;
   version: string;

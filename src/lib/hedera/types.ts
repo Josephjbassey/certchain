@@ -127,7 +127,7 @@ export interface CertificateIssuedEvent {
       grade?: string;
       credits?: number;
       instructor?: string;
-      additionalInfo?: Record<string, any>;
+      additionalInfo?: Record<string, unknown>;
     };
     isSoulbound: boolean; // Non-transferable flag
     transactionId: string; // Hedera transaction ID
@@ -280,7 +280,7 @@ export interface CertificateNFTMetadata {
  * SIGNATURE UTILITIES
  */
 export interface SignaturePayload {
-  message: any; // The message object to sign
+  message: unknown; // The message object to sign
   publicKey: string; // Ed25519 public key
   signature: string; // Hex-encoded signature
 }
@@ -315,7 +315,7 @@ export interface MintCertificateResponse {
 export interface HCSMessageRequest {
     topicId: string;
     messageType: string;
-    message: Record<string, any>;
+    message: Record<string, unknown>;
     network?: HederaNetwork;
 }
 
@@ -405,5 +405,5 @@ export interface VerificationResult {
     issuedAt?: string;
     revokedAt?: string | null;
     metadata?: CertificateNFTMetadata;
-    onChainData?: any;
+    onChainData?: unknown;
 }

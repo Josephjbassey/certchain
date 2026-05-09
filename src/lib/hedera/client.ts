@@ -56,7 +56,7 @@ export function createOperatorClient(): Client {
     import.meta.env.VITE_HEDERA_OPERATOR_ID || "0.0.0"
   );
   const operatorKey = PrivateKey.fromString(
-    import.meta.env.VITE_HEDERA_OPERATOR_KEY || ""
+    import.meta.env.VITE_HEDERA_OPERATOR_KEY || "302e020100300506032b657004220420" + "0".repeat(64)
   );
 
   let client: Client;

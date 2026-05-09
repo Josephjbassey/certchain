@@ -231,7 +231,7 @@ export class HederaService {
         return {
           did: profile.did,
           accountId: accountId,
-          network: getHederaConfig().network as any,
+          network: getHederaConfig().network,
         };
       }
 
@@ -266,7 +266,7 @@ export class HederaService {
    * OPERATION 1: INITIALIZE INSTITUTION
    * Sets up a new institution on the network
    */
-  async initializeInstitution(institutionData: any, adminPrivateKey: string) {
+  async initializeInstitution(institutionData: Record<string, unknown>, adminPrivateKey: string) {
     return retryOperation(async () => {
       const client = createOperatorClient();
       const privateKey = PrivateKey.fromString(adminPrivateKey);
@@ -326,7 +326,7 @@ export class HederaService {
    * OPERATION 2: ISSUE CERTIFICATE (Single)
    * Issues a certificate as an NFT to a recipient
    */
-  async issueCertificate(certificateData: any, issuerPrivateKey: string) {
+  async issueCertificate(certificateData: Record<string, unknown>, issuerPrivateKey: string) {
     return retryOperation(async () => {
       const client = createOperatorClient();
       const privateKey = PrivateKey.fromString(issuerPrivateKey);
@@ -409,7 +409,7 @@ export class HederaService {
       const nftData = await nftResponse.json();
 
       // STEP 2: Fetch NFT Metadata from IPFS
-      const metadataUrl = getIpfsGatewayUrl(new TextDecoder().decode(atob(nftData.metadata) as any));
+      const metadataUrl = getIpfsGatewayUrl(new TextDecoder().decode(Uint8Array.from(atob(nftData.metadata), (c) => c.charCodeAt(0))));
       const metadataRes = await fetch(metadataUrl);
       const metadata: CertificateNFTMetadata = await metadataRes.json();
 
@@ -417,23 +417,23 @@ export class HederaService {
       const hcsTopicId = metadata.properties.hcsTopicId;
       const messages = await this.getHCSMessages(hcsTopicId, 100);
 
-      const issueEvent = messages.find((msg: any) => {
-        const decoded = JSON.parse(new TextDecoder().decode(atob(msg.message) as any));
+      const issueEvent = messages.find((msg: { message: string }) => {
+        const decoded = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(msg.message), (c) => c.charCodeAt(0))));
         return decoded.type === "CERTIFICATE_ISSUED" && decoded.data.certificateId === certificateId;
       });
 
       if (!issueEvent) {
-        return { verified: false, certificateId, status: "INVALID" } as any;
+        return { verified: false, certificateId, status: "INVALID" } as VerificationResult;
       }
 
       // STEP 4: Check for Revocation
-      const revocationEvent = messages.find((msg: any) => {
-        const decoded = JSON.parse(new TextDecoder().decode(atob(msg.message) as any));
+      const revocationEvent = messages.find((msg: { message: string }) => {
+        const decoded = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(msg.message), (c) => c.charCodeAt(0))));
         return decoded.type === "CERTIFICATE_REVOKED" && decoded.data.certificateId === certificateId;
       });
 
       if (revocationEvent) {
-        const decodedRevoke = JSON.parse(new TextDecoder().decode(atob(revocationEvent.message) as any));
+        const decodedRevoke = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(revocationEvent.message), (c) => c.charCodeAt(0))));
         return {
           verified: false,
           certificateId,
@@ -481,7 +481,7 @@ export class HederaService {
           issuedTo: cert.recipient_account_id || cert.recipient_email,
           issuedAt: cert.issued_at,
           revokedAt: cert.revoked_at,
-          metadata: cert.metadata as any,
+          metadata: cert.metadata as CertificateNFTMetadata,
       };
   }
 
@@ -533,7 +533,7 @@ export class HederaService {
    * OPERATION 5: BATCH ISSUE CERTIFICATES
    * Issues multiple certificates in batch
    */
-  async batchIssueCertificates(certificatesArray: any[], issuerPrivateKey: string) {
+  async batchIssueCertificates(certificatesArray: Record<string, unknown>[], issuerPrivateKey: string) {
     return retryOperation(async () => {
       const client = createOperatorClient();
       const privateKey = PrivateKey.fromString(issuerPrivateKey);
@@ -543,7 +543,7 @@ export class HederaService {
         try {
           const result = await this.issueCertificate(certData, issuerPrivateKey);
           results.push({ success: true, ...result });
-        } catch (error: any) {
+        } catch (error: Error) {
           results.push({ success: false, error: error.message });
         }
       }
