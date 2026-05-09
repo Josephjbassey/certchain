@@ -33,7 +33,7 @@ interface CreateNFTCollectionOptions {
   freezeKey?: PrivateKey;
   wipeKey?: PrivateKey;
   maxSupply?: number;
-  customFees?: any[];
+  customFees?: unknown[];
   memo?: string;
 }
 
