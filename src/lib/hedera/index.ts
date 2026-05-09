@@ -6,6 +6,14 @@
 export { HederaService, hederaService } from './service';
 export { getHederaConfig, getHederaEnv, getExplorerUrl, getIpfsGatewayUrl, getNetworkConstants } from './config';
 export {
+    createOperatorClient,
+    createWalletClient,
+    executeTransaction,
+    getNetworkConfig
+} from './client';
+export * from './hcs';
+export * from './nft';
+export {
     HederaServiceError,
     HederaTransactionError,
     HederaNetworkError,
@@ -35,4 +43,16 @@ export type {
     TokenCreateParams,
     TopicCreateParams,
     VerificationResult,
+    InstitutionProfile,
+    AuthorizedIssuer,
+    CertificateTemplate,
+    CertificateIssuedEvent,
+    CertificateRevokedEvent,
+    CertificateVerifiedEvent,
+    BatchOperationEvent,
+    UserPreferences,
+    DailyMetrics,
+    HCSMessage,
+    MirrorNodeTopicMessagesResponse,
+    SignaturePayload,
 } from './types';
