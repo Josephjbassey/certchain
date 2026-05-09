@@ -409,7 +409,7 @@ export class HederaService {
       const nftData = await nftResponse.json();
 
       // STEP 2: Fetch NFT Metadata from IPFS
-      const metadataUrl = getIpfsGatewayUrl(new TextDecoder().decode(atob(nftData.metadata) as any));
+      const metadataUrl = getIpfsGatewayUrl(new TextDecoder().decode(Uint8Array.from(atob(nftData.metadata), (c) => c.charCodeAt(0))));
       const metadataRes = await fetch(metadataUrl);
       const metadata: CertificateNFTMetadata = await metadataRes.json();
 
@@ -418,7 +418,7 @@ export class HederaService {
       const messages = await this.getHCSMessages(hcsTopicId, 100);
 
       const issueEvent = messages.find((msg: any) => {
-        const decoded = JSON.parse(new TextDecoder().decode(atob(msg.message) as any));
+        const decoded = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(msg.message), (c) => c.charCodeAt(0))));
         return decoded.type === "CERTIFICATE_ISSUED" && decoded.data.certificateId === certificateId;
       });
 
@@ -428,12 +428,12 @@ export class HederaService {
 
       // STEP 4: Check for Revocation
       const revocationEvent = messages.find((msg: any) => {
-        const decoded = JSON.parse(new TextDecoder().decode(atob(msg.message) as any));
+        const decoded = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(msg.message), (c) => c.charCodeAt(0))));
         return decoded.type === "CERTIFICATE_REVOKED" && decoded.data.certificateId === certificateId;
       });
 
       if (revocationEvent) {
-        const decodedRevoke = JSON.parse(new TextDecoder().decode(atob(revocationEvent.message) as any));
+        const decodedRevoke = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(revocationEvent.message), (c) => c.charCodeAt(0))));
         return {
           verified: false,
           certificateId,
